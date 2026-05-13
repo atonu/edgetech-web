@@ -1,66 +1,384 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronRight, ChevronLeft, Shield, Wifi, Monitor, HardDrive, Camera, Package, ArrowRight, Zap, Star, Clock } from 'lucide-react';
+import ProductCard from '@/components/products/ProductCard';
+import { ProductListDto, CategoryDto, BrandDto, productsApi, categoriesApi, brandsApi } from '@/lib/api';
+import styles from './page.module.css';
 
-export default function Home() {
+// Mock data for demo (will be replaced by API calls when backend is running)
+const mockProducts: ProductListDto[] = Array.from({ length: 12 }).map((_, i) => ({
+  id: i + 1,
+  name: ['Hikvision 4MP Dome Camera', 'Dahua 8CH NVR System', 'TP-Link 16-Port Switch', 'Seagate 4TB HDD', 'Hikvision PTZ Camera', 'Dahua 2MP Bullet Cam', 'APC UPS 1200VA', 'Cat6 Network Cable 305m', 'Hikvision 8MP Turret', 'Dell 24" Monitor', 'Dahua XVR 16CH', 'BNC Video Balun Pack'][i],
+  slug: `product-${i + 1}`,
+  price: [12500, 35000, 8500, 14000, 45000, 8900, 11500, 6500, 28000, 22000, 25000, 2500][i],
+  discountPrice: i % 3 === 0 ? [12500, 35000, 8500, 14000, 45000, 8900, 11500, 6500, 28000, 22000, 25000, 2500][i] * 0.85 : undefined,
+  primaryImageUrl: undefined,
+  stock: i === 5 ? 0 : 20 + i,
+  isFeatured: i < 8,
+  categoryName: ['IP Camera', 'NVR/DVR', 'Networking', 'Storage', 'IP Camera', 'CC Camera', 'UPS', 'Cable', 'IP Camera', 'Monitor', 'NVR/DVR', 'Accessories'][i],
+  brandName: ['Hikvision', 'Dahua', 'TP-Link', 'Seagate', 'Hikvision', 'Dahua', 'APC', 'Generic', 'Hikvision', 'Dell', 'Dahua', 'Generic'][i],
+}));
+
+const heroSlides = [
+  {
+    title: 'Secure Your World\nWith Smart Surveillance',
+    subtitle: 'Professional-grade CCTV systems trusted by thousands across Bangladesh',
+    cta: 'Shop CCTV Cameras',
+    ctaLink: '/products?category=cc-camera',
+    gradient: 'linear-gradient(135deg, rgba(0, 200, 224, 0.12), rgba(0, 229, 255, 0.06), transparent)',
+  },
+  {
+    title: 'Build Your Custom\nCCTV Package',
+    subtitle: 'Configure your perfect security system with our interactive package builder',
+    cta: 'Start Building',
+    ctaLink: '/package-builder',
+    gradient: 'linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(245, 166, 35, 0.06), transparent)',
+  },
+  {
+    title: 'Enterprise Networking\nSolutions',
+    subtitle: 'Switches, routers, and complete networking infrastructure for any scale',
+    cta: 'Explore Networking',
+    ctaLink: '/products?category=networking',
+    gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(139, 92, 246, 0.06), transparent)',
+  },
+];
+
+const categories = [
+  { name: 'IP Camera', slug: 'ip-camera', icon: Camera, color: '#00c8e0' },
+  { name: 'CC Camera', slug: 'cc-camera', icon: Shield, color: '#f5a623' },
+  { name: 'NVR / DVR', slug: 'nvr-dvr', icon: HardDrive, color: '#22c55e' },
+  { name: 'Networking', slug: 'networking', icon: Wifi, color: '#3b82f6' },
+  { name: 'Monitor', slug: 'monitor', icon: Monitor, color: '#a855f7' },
+  { name: 'Accessories', slug: 'accessories', icon: Package, color: '#ef4444' },
+];
+
+const brands = [
+  { name: 'Hikvision', slug: 'hikvision' },
+  { name: 'Dahua', slug: 'dahua' },
+  { name: 'TP-Link', slug: 'tp-link' },
+  { name: 'Imou', slug: 'imou' },
+  { name: 'Uniview', slug: 'uniview' },
+  { name: 'Tenda', slug: 'tenda' },
+  { name: 'ZKTeco', slug: 'zkteco' },
+  { name: 'Ruijie', slug: 'ruijie' },
+];
+
+export default function HomePage() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [products, setProducts] = useState<ProductListDto[]>(mockProducts);
+  const [countdown, setCountdown] = useState({ hours: 23, minutes: 45, seconds: 12 });
+
+  // Auto-advance hero carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % heroSlides.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Countdown timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        let { hours, minutes, seconds } = prev;
+        seconds--;
+        if (seconds < 0) { seconds = 59; minutes--; }
+        if (minutes < 0) { minutes = 59; hours--; }
+        if (hours < 0) { hours = 23; minutes = 59; seconds = 59; }
+        return { hours, minutes, seconds };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Try to fetch from API, fall back to mock
+  useEffect(() => {
+    productsApi.getFeatured(12).then(res => {
+      if (res.data && res.data.length > 0) setProducts(res.data);
+    }).catch(() => { /* keep mock data */ });
+  }, []);
+
+  const nextSlide = useCallback(() => setCurrentSlide(p => (p + 1) % heroSlides.length), []);
+  const prevSlide = useCallback(() => setCurrentSlide(p => (p - 1 + heroSlides.length) % heroSlides.length), []);
+
+  const featuredRow1 = products.filter(p => p.isFeatured).slice(0, 4);
+  const featuredRow2 = products.filter(p => p.isFeatured).slice(4, 8);
+  const newArrivals = products.slice(0, 6);
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className={styles.home}>
+      {/* ===== HERO SECTION ===== */}
+      <section className={styles.hero}>
+        <div className={styles.heroBackground}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              className={styles.heroBgSlide}
+              style={{ background: heroSlides[currentSlide].gradient }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </AnimatePresence>
+          <div className={styles.heroGrid} />
+          <div className={styles.heroOrb1} />
+          <div className={styles.heroOrb2} />
         </div>
-      </main>
+
+        <div className={`container ${styles.heroContent}`}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              className={styles.heroText}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.6 }}
+            >
+              <h1 className={styles.heroTitle}>
+                {heroSlides[currentSlide].title.split('\n').map((line, i) => (
+                  <span key={i}>
+                    {i === 1 ? <span className="gradient-text">{line}</span> : line}
+                    {i === 0 && <br />}
+                  </span>
+                ))}
+              </h1>
+              <p className={styles.heroSubtitle}>{heroSlides[currentSlide].subtitle}</p>
+              <div className={styles.heroCtas}>
+                <Link href={heroSlides[currentSlide].ctaLink} className="btn btn-primary btn-lg">
+                  {heroSlides[currentSlide].cta} <ArrowRight size={18} />
+                </Link>
+                <Link href="/products" className="btn btn-outline btn-lg">
+                  Browse All Products
+                </Link>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Hero Nav */}
+          <div className={styles.heroNav}>
+            <button className={styles.heroArrow} onClick={prevSlide}><ChevronLeft size={20} /></button>
+            <div className={styles.heroDots}>
+              {heroSlides.map((_, i) => (
+                <button
+                  key={i}
+                  className={`${styles.heroDot} ${i === currentSlide ? styles.heroDotActive : ''}`}
+                  onClick={() => setCurrentSlide(i)}
+                />
+              ))}
+            </div>
+            <button className={styles.heroArrow} onClick={nextSlide}><ChevronRight size={20} /></button>
+          </div>
+        </div>
+
+        {/* Stats bar */}
+        <div className={styles.statsBar}>
+          <div className="container">
+            <div className={styles.stats}>
+              <div className={styles.stat}>
+                <strong>5,000+</strong>
+                <span>Products Sold</span>
+              </div>
+              <div className={styles.stat}>
+                <strong>50+</strong>
+                <span>Top Brands</span>
+              </div>
+              <div className={styles.stat}>
+                <strong>2,000+</strong>
+                <span>Happy Clients</span>
+              </div>
+              <div className={styles.stat}>
+                <strong>24/7</strong>
+                <span>Support</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== CATEGORIES GRID ===== */}
+      <section className={styles.section}>
+        <div className="container">
+          <div className="section-header">
+            <div>
+              <span className="section-label">Browse by Category</span>
+              <h2>Find What You Need</h2>
+            </div>
+            <Link href="/products" className="btn btn-ghost btn-sm">
+              View All <ChevronRight size={16} />
+            </Link>
+          </div>
+          <div className={styles.categoryGrid}>
+            {categories.map((cat, i) => (
+              <motion.div
+                key={cat.slug}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+              >
+                <Link href={`/products?category=${cat.slug}`} className={styles.categoryCard}>
+                  <div className={styles.categoryIcon} style={{ background: `${cat.color}15`, borderColor: `${cat.color}30` }}>
+                    <cat.icon size={28} style={{ color: cat.color }} />
+                  </div>
+                  <span className={styles.categoryName}>{cat.name}</span>
+                  <ChevronRight size={14} className={styles.categoryArrow} />
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FEATURED PRODUCTS ROW 1 ===== */}
+      <section className={styles.section}>
+        <div className="container">
+          <div className="section-header">
+            <div>
+              <span className="section-label"><Zap size={14} /> Featured Products</span>
+              <h2>Bestselling Security Solutions</h2>
+            </div>
+            <Link href="/products?featured=true" className="btn btn-ghost btn-sm">
+              View All <ChevronRight size={16} />
+            </Link>
+          </div>
+          <div className="grid-4">
+            {featuredRow1.map((p, i) => (
+              <ProductCard key={p.id} product={p} index={i} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== HOT DEAL BANNER ===== */}
+      <section className={styles.hotDeal}>
+        <div className={styles.hotDealBg} />
+        <div className={`container ${styles.hotDealContent}`}>
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className={styles.hotDealText}
+          >
+            <span className="badge badge-warning" style={{ fontSize: '0.8rem', padding: '5px 14px' }}>
+              <Clock size={12} /> Limited Time Offer
+            </span>
+            <h2>Flash Sale — Up to <span className="gradient-text">40% OFF</span></h2>
+            <p className="text-muted">Get premium Hikvision & Dahua cameras at unbeatable prices. Offer ends soon!</p>
+            <div className={styles.countdownRow}>
+              {[
+                { val: countdown.hours, label: 'Hours' },
+                { val: countdown.minutes, label: 'Mins' },
+                { val: countdown.seconds, label: 'Secs' },
+              ].map((t) => (
+                <div key={t.label} className={styles.countdownBlock}>
+                  <span className={styles.countdownNum}>{String(t.val).padStart(2, '0')}</span>
+                  <span className={styles.countdownLabel}>{t.label}</span>
+                </div>
+              ))}
+            </div>
+            <Link href="/products?sale=true" className="btn btn-primary btn-lg" style={{ marginTop: 16 }}>
+              Shop the Sale <ArrowRight size={18} />
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ===== FEATURED PRODUCTS ROW 2 ===== */}
+      <section className={styles.section}>
+        <div className="container">
+          <div className="section-header">
+            <div>
+              <span className="section-label"><Star size={14} /> Top Picks</span>
+              <h2>Most Popular This Week</h2>
+            </div>
+          </div>
+          <div className="grid-4">
+            {featuredRow2.map((p, i) => (
+              <ProductCard key={p.id} product={p} index={i} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== BRAND CAROUSEL ===== */}
+      <section className={styles.section}>
+        <div className="container">
+          <div className="section-header" style={{ justifyContent: 'center' }}>
+            <div className="text-center">
+              <span className="section-label" style={{ justifyContent: 'center' }}>Trusted Partners</span>
+              <h2>Our Premium Brands</h2>
+            </div>
+          </div>
+          <div className={styles.brandTrack}>
+            <div className={styles.brandScroll}>
+              {[...brands, ...brands].map((b, i) => (
+                <Link key={`${b.slug}-${i}`} href={`/products?brand=${b.slug}`} className={styles.brandCard}>
+                  <span className={styles.brandLetter}>{b.name[0]}</span>
+                  <span className={styles.brandName}>{b.name}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== PACKAGE BUILDER CTA ===== */}
+      <section className={styles.builderCta}>
+        <div className={styles.builderBg} />
+        <div className={`container ${styles.builderContent}`}>
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className={styles.builderText}
+          >
+            <span className="badge badge-primary" style={{ fontSize: '0.85rem', padding: '6px 16px' }}>
+              <Package size={14} /> Interactive Tool
+            </span>
+            <h2>CCTV Package Builder</h2>
+            <p>Configure your perfect surveillance system. Choose cameras, DVR/NVR, storage, cables, and more — all in one interactive builder.</p>
+            <div className={styles.builderFeatures}>
+              <div className={styles.builderFeature}>
+                <Shield size={16} /> Select Components
+              </div>
+              <div className={styles.builderFeature}>
+                <Monitor size={16} /> Live Price Total
+              </div>
+              <div className={styles.builderFeature}>
+                <Package size={16} /> One-Click Cart Add
+              </div>
+            </div>
+            <Link href="/package-builder" className="btn btn-primary btn-lg" style={{ marginTop: 8 }}>
+              Start Building <ArrowRight size={18} />
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ===== NEW ARRIVALS ===== */}
+      <section className={styles.section}>
+        <div className="container">
+          <div className="section-header">
+            <div>
+              <span className="section-label">Just In</span>
+              <h2>New Arrivals</h2>
+            </div>
+            <Link href="/products?sort=newest" className="btn btn-ghost btn-sm">
+              View All <ChevronRight size={16} />
+            </Link>
+          </div>
+          <div className="grid-4">
+            {newArrivals.map((p, i) => (
+              <ProductCard key={`new-${p.id}`} product={p} index={i} />
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
