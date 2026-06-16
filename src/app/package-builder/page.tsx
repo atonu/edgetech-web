@@ -31,6 +31,26 @@ const slots: SlotDef[] = [
   { key: 'bnc', label: 'BNC / Balun', icon: Shield, color: '#e879f9', category: 'Accessories' },
 ];
 
+interface SectionDef {
+  key: string;
+  label: string;
+  category: string;
+  icon: React.ElementType;
+  color: string;
+}
+
+const sections: SectionDef[] = [
+  { key: 'camera', label: 'Camera', category: 'Camera', icon: Camera, color: '#00c8e0' },
+  { key: 'dvr', label: 'DVR / NVR', category: 'NVR/DVR', icon: HardDrive, color: '#f5a623' },
+  { key: 'monitor', label: 'Monitor', category: 'Monitor', icon: Monitor, color: '#a855f7' },
+  { key: 'storage', label: 'Storage', category: 'Storage', icon: HardDrive, color: '#ef4444' },
+  { key: 'cable', label: 'Cable', category: 'Cable', icon: Cable, color: '#3b82f6' },
+  { key: 'power', label: 'Power Adapter', category: 'Accessories', icon: Power, color: '#f59e0b' },
+  { key: 'switch', label: 'Network Switch', category: 'Networking', icon: Wifi, color: '#06b6d4' },
+  { key: 'ups', label: 'UPS', category: 'UPS', icon: Battery, color: '#84cc16' },
+  { key: 'bnc', label: 'BNC / Balun', category: 'Accessories', icon: Shield, color: '#e879f9' },
+];
+
 // Mock products per category
 const mockProductsByCategory: Record<string, ProductListDto[]> = {
   'IP Camera': Array.from({ length: 6 }).map((_, i) => ({
@@ -68,8 +88,31 @@ export default function PackageBuilderPage() {
   const [slotSearch, setSlotSearch] = useState('');
   const { addItem } = useCartStore();
 
-  const activeSlotDef = slots.find(s => s.key === activeSlot);
-  const slotProducts = activeSlotDef ? (mockProductsByCategory[activeSlotDef.category] || []) : [];
+  const activeSlotDef = useMemo(() => {
+    if (!activeSlot) return null;
+    const sectionKey = activeSlot.split('_')[0];
+    const section = sections.find(s => s.key === sectionKey);
+    if (!section) return null;
+    return {
+      key: activeSlot,
+      label: section.label,
+      icon: section.icon,
+      color: section.color,
+      category: section.category,
+    };
+  }, [activeSlot]);
+
+  const slotProducts = useMemo(() => {
+    if (!activeSlotDef) return [];
+    if (activeSlotDef.category === 'Camera') {
+      return [
+        ...(mockProductsByCategory['IP Camera'] || []),
+        ...(mockProductsByCategory['CC Camera'] || [])
+      ];
+    }
+    return mockProductsByCategory[activeSlotDef.category] || [];
+  }, [activeSlotDef]);
+
   const filteredSlotProducts = slotProducts.filter(p => p.name.toLowerCase().includes(slotSearch.toLowerCase()));
 
   const totalPrice = useMemo(() => {
@@ -112,37 +155,57 @@ export default function PackageBuilderPage() {
         </div>
 
         <div className={styles.layout}>
-          {/* Slot Grid */}
-          <div className={styles.slotGrid}>
-            {slots.map((slot, i) => {
-              const selected = selectedProducts[slot.key];
-              return (
-                <motion.div key={slot.key} className={`${styles.slotCard} ${selected ? styles.slotFilled : ''}`}
-                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <div className={styles.slotHeader}>
-                    <div className={styles.slotIcon} style={{ background: `${slot.color}15`, color: slot.color }}>
-                      <slot.icon size={18} />
-                    </div>
-                    <span className={styles.slotLabel}>{slot.label}</span>
-                    {selected && (
-                      <button className={styles.clearSlotBtn} onClick={() => clearSlot(slot.key)}>
-                        <X size={14} />
-                      </button>
-                    )}
-                  </div>
+          {/* Slot Grid grouped by Section */}
+          <div className={styles.sectionsContainer}>
+            {sections.map((section) => {
+              // Find filled products for this section
+              const filledProducts = Object.entries(selectedProducts)
+                .filter(([key]) => key.startsWith(`${section.key}_`))
+                .map(([key, product]) => ({ key, product }));
 
-                  {selected ? (
-                    <div className={styles.selectedProduct}>
-                      <span className={styles.selectedName}>{selected.name}</span>
-                      <span className={styles.selectedPrice}>৳{(selected.discountPrice ?? selected.price).toLocaleString()}</span>
-                      <span className={styles.selectedBrand}>{selected.brandName}</span>
-                    </div>
-                  ) : (
-                    <button className={styles.selectBtn} onClick={() => { setActiveSlot(slot.key); setSlotSearch(''); }}>
-                      <Plus size={16} /> Select {slot.label}
-                    </button>
-                  )}
-                </motion.div>
+              return (
+                <div key={section.key} className={styles.sectionRow}>
+                  <div className={styles.sectionHeaderCol}>
+                    <span className={styles.sectionRowLabel}>{section.label}</span>
+                  </div>
+                  <div className={styles.sectionCardsCol}>
+                    {/* Render filled slots */}
+                    {filledProducts.map(({ key, product }, cardIdx) => {
+                      return (
+                        <motion.div key={key} className={`${styles.slotCard} ${styles.slotFilled}`}
+                          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2, delay: cardIdx * 0.03 }}>
+                          <div className={styles.slotHeader}>
+                            <div className={styles.slotIcon} style={{ background: `${section.color}15`, color: section.color }}>
+                              <section.icon size={18} />
+                            </div>
+                            <span className={styles.slotLabel}>{`${section.label} ${cardIdx + 1}`}</span>
+                            <button className={styles.clearSlotBtn} onClick={() => clearSlot(key)}>
+                              <X size={14} />
+                            </button>
+                          </div>
+                          <div className={styles.selectedProduct}>
+                            <span className={styles.selectedName}>{product.name}</span>
+                            <span className={styles.selectedPrice}>৳{(product.discountPrice ?? product.price).toLocaleString()}</span>
+                            <span className={styles.selectedBrand}>{product.brandName}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+
+                    {/* Render exactly one Add card at the end of the row */}
+                    <motion.button key={`add-${section.key}`} className={styles.addCard}
+                      onClick={() => {
+                        const newUniqueId = Math.random().toString(36).substring(2, 9);
+                        setActiveSlot(`${section.key}_${newUniqueId}`);
+                        setSlotSearch('');
+                      }}
+                      initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}>
+                      <Plus size={24} />
+                    </motion.button>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -166,10 +229,14 @@ export default function PackageBuilderPage() {
               {filledSlots > 0 && (
                 <div className={styles.selectedList}>
                   {Object.entries(selectedProducts).map(([key, product]) => {
-                    const slot = slots.find(s => s.key === key);
+                    const sectionKey = key.split('_')[0];
+                    const section = sections.find(s => s.key === sectionKey);
+                    const filledKeys = Object.keys(selectedProducts).filter(k => k.startsWith(`${sectionKey}_`));
+                    const itemIndex = filledKeys.indexOf(key);
+                    const label = section ? `${section.label} ${itemIndex + 1}` : 'Item';
                     return (
                       <div key={key} className={styles.selectedItem}>
-                        <span className={styles.selectedItemSlot}>{slot?.label}</span>
+                        <span className={styles.selectedItemSlot}>{label}</span>
                         <span className={styles.selectedItemName}>{product.name}</span>
                         <span className={styles.selectedItemPrice}>৳{(product.discountPrice ?? product.price).toLocaleString()}</span>
                       </div>
@@ -201,7 +268,7 @@ export default function PackageBuilderPage() {
           <motion.div className={styles.modalOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setActiveSlot(null)}>
             <motion.div className={styles.modal} initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25 }} onClick={e => e.stopPropagation()}>
+              transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }} onClick={e => e.stopPropagation()}>
               <div className={styles.modalHeader}>
                 <h3>Select {activeSlotDef?.label}</h3>
                 <button className={styles.modalClose} onClick={() => setActiveSlot(null)}><X size={20} /></button>
