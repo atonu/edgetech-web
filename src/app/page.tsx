@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Shield, Wifi, Monitor, HardDrive, Camera, Package, ArrowRight, Zap, Star, Clock } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
-import { ProductListDto, CategoryDto, BrandDto, productsApi, categoriesApi, brandsApi } from '@/lib/api';
+import { ProductListDto, productsApi } from '@/lib/api';
 import styles from './page.module.css';
 
 // Mock data for demo (will be replaced by API calls when backend is running)
@@ -28,23 +28,36 @@ const heroSlides = [
     subtitle: 'Professional-grade CCTV systems trusted by thousands across Bangladesh',
     cta: 'Shop CCTV Cameras',
     ctaLink: '/products?category=cc-camera',
-    gradient: 'linear-gradient(135deg, rgba(0, 200, 224, 0.12), rgba(0, 229, 255, 0.06), transparent)',
+    image: '/1.png',
   },
   {
     title: 'Build Your Custom\nCCTV Package',
     subtitle: 'Configure your perfect security system with our interactive package builder',
     cta: 'Start Building',
     ctaLink: '/package-builder',
-    gradient: 'linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(245, 166, 35, 0.06), transparent)',
+    image: '/2.png',
   },
   {
     title: 'Enterprise Networking\nSolutions',
     subtitle: 'Switches, routers, and complete networking infrastructure for any scale',
     cta: 'Explore Networking',
     ctaLink: '/products?category=networking',
-    gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(139, 92, 246, 0.06), transparent)',
+    image: '/3.png',
+  },
+  {
+    title: 'Complete Office\nInfrastructure Stack',
+    subtitle: 'Servers, network switches, storage, and deployment-ready enterprise equipment',
+    cta: 'Shop Infrastructure',
+    ctaLink: '/products?category=office-equipment',
+    image: '/4.png',
   },
 ];
+
+const heroSlideVariants = {
+  enter: (direction: number) => ({ x: `${direction * 100}%` }),
+  center: { x: '0%' },
+  exit: (direction: number) => ({ x: `${direction * -100}%` }),
+};
 
 const categories = [
   { name: 'IP Camera', slug: 'ip-camera', icon: Camera, color: '#00c8e0' },
@@ -68,12 +81,14 @@ const brands = [
 
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [slideDirection, setSlideDirection] = useState(1);
   const [products, setProducts] = useState<ProductListDto[]>(mockProducts);
   const [countdown, setCountdown] = useState({ hours: 23, minutes: 45, seconds: 12 });
 
   // Auto-advance hero carousel
   useEffect(() => {
     const timer = setInterval(() => {
+      setSlideDirection(1);
       setCurrentSlide(prev => (prev + 1) % heroSlides.length);
     }, 6000);
     return () => clearInterval(timer);
@@ -101,11 +116,19 @@ export default function HomePage() {
     }).catch(() => { /* keep mock data */ });
   }, []);
 
-  const nextSlide = useCallback(() => setCurrentSlide(p => (p + 1) % heroSlides.length), []);
-  const prevSlide = useCallback(() => setCurrentSlide(p => (p - 1 + heroSlides.length) % heroSlides.length), []);
+  const nextSlide = useCallback(() => {
+    setSlideDirection(1);
+    setCurrentSlide(p => (p + 1) % heroSlides.length);
+  }, []);
+
+  const prevSlide = useCallback(() => {
+    setSlideDirection(-1);
+    setCurrentSlide(p => (p - 1 + heroSlides.length) % heroSlides.length);
+  }, []);
 
   const featuredRow1 = products.filter(p => p.isFeatured).slice(0, 4);
   const featuredRow2 = products.filter(p => p.isFeatured).slice(4, 8);
+  const hotDealProducts = (featuredRow2.length >= 2 ? featuredRow2 : products).slice(0, 2);
   const newArrivals = products.slice(0, 6);
 
   return (
@@ -113,65 +136,92 @@ export default function HomePage() {
       {/* ===== HERO SECTION ===== */}
       <section className={styles.hero}>
         <div className={styles.heroBackground}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSlide}
-              className={styles.heroBgSlide}
-              style={{ background: heroSlides[currentSlide].gradient }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.8 }}
-            />
-          </AnimatePresence>
           <div className={styles.heroGrid} />
           <div className={styles.heroOrb1} />
           <div className={styles.heroOrb2} />
         </div>
 
         <div className={`container ${styles.heroContent}`}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSlide}
-              className={styles.heroText}
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h1 className={styles.heroTitle}>
-                {heroSlides[currentSlide].title.split('\n').map((line, i) => (
-                  <span key={i}>
-                    {i === 1 ? <span className="gradient-text">{line}</span> : line}
-                    {i === 0 && <br />}
-                  </span>
-                ))}
-              </h1>
-              <p className={styles.heroSubtitle}>{heroSlides[currentSlide].subtitle}</p>
-              <div className={styles.heroCtas}>
-                <Link href={heroSlides[currentSlide].ctaLink} className="btn btn-primary btn-lg">
-                  {heroSlides[currentSlide].cta} <ArrowRight size={18} />
-                </Link>
-                <Link href="/products" className="btn btn-outline btn-lg">
-                  Browse All Products
-                </Link>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+          <div className={styles.heroMain}>
+            <div className={styles.heroBanner}>
+              <AnimatePresence initial={false} custom={slideDirection}>
+                <motion.div
+                  key={`slide-${currentSlide}`}
+                  className={styles.heroSlide}
+                  custom={slideDirection}
+                  variants={heroSlideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.6, ease: 'easeInOut' }}
+                >
+                  <Image
+                    src={heroSlides[currentSlide].image}
+                    alt={`Hero slide ${currentSlide + 1}`}
+                    fill
+                    priority={currentSlide === 0}
+                    sizes="(max-width: 900px) 100vw, 70vw"
+                    className={styles.heroSlideImage}
+                  />
+                  <div className={styles.heroImageMask} />
 
-          {/* Hero Nav */}
-          <div className={styles.heroNav}>
-            <button className={styles.heroArrow} onClick={prevSlide}><ChevronLeft size={20} /></button>
-            <div className={styles.heroDots}>
-              {heroSlides.map((_, i) => (
-                <button
-                  key={i}
-                  className={`${styles.heroDot} ${i === currentSlide ? styles.heroDotActive : ''}`}
-                  onClick={() => setCurrentSlide(i)}
-                />
-              ))}
+                  <div className={styles.heroSlideContent}>
+                    <div className={styles.heroText}>
+                      <h1 className={styles.heroTitle}>
+                        {heroSlides[currentSlide].title.split('\n').map((line, i) => (
+                          <span key={i}>
+                            {i === 1 ? <span className="gradient-text">{line}</span> : line}
+                            {i === 0 && <br />}
+                          </span>
+                        ))}
+                      </h1>
+                      <p className={styles.heroSubtitle}>{heroSlides[currentSlide].subtitle}</p>
+                      <div className={styles.heroCtas}>
+                        <Link href={heroSlides[currentSlide].ctaLink} className="btn btn-primary btn-lg">
+                          {heroSlides[currentSlide].cta} <ArrowRight size={18} />
+                        </Link>
+                        <Link href="/products" className="btn btn-outline btn-lg">
+                          Browse All Products
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Hero Nav */}
+              <div className={styles.heroNav}>
+                <button className={styles.heroArrow} onClick={prevSlide}><ChevronLeft size={20} /></button>
+                <div className={styles.heroDots}>
+                  {heroSlides.map((_, i) => (
+                    <button
+                      key={i}
+                      className={`${styles.heroDot} ${i === currentSlide ? styles.heroDotActive : ''}`}
+                      onClick={() => {
+                        if (i === currentSlide) return;
+                        setSlideDirection(i > currentSlide ? 1 : -1);
+                        setCurrentSlide(i);
+                      }}
+                    />
+                  ))}
+                </div>
+                <button className={styles.heroArrow} onClick={nextSlide}><ChevronRight size={20} /></button>
+              </div>
             </div>
-            <button className={styles.heroArrow} onClick={nextSlide}><ChevronRight size={20} /></button>
+
+            <aside className={styles.hotDealsPanel}>
+              <div className={styles.hotDealsHeader}>HOT DEAL OF THE DAY</div>
+              <div className={styles.hotDealsList}>
+                {hotDealProducts.map((product, index) => (
+                  <div key={`hot-${product.id}`} className={styles.hotDealCardWrap}>
+                    <ProductCard product={product} index={index} />
+                  </div>
+                ))}
+              </div>
+              <Link href="/products?sale=true" className={styles.hotDealsViewAll}>
+                View All <ChevronRight size={16} />
+              </Link>
+            </aside>
           </div>
         </div>
 
