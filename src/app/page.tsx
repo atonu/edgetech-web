@@ -177,10 +177,10 @@ export default function HomePage() {
                       </h1>
                       <p className={styles.heroSubtitle}>{heroSlides[currentSlide].subtitle}</p>
                       <div className={styles.heroCtas}>
-                        <Link href={heroSlides[currentSlide].ctaLink} className="btn btn-primary btn-lg">
+                        <Link href={heroSlides[currentSlide].ctaLink} className="btn btn-outline btn-lg">
                           {heroSlides[currentSlide].cta} <ArrowRight size={18} />
                         </Link>
-                        <Link href="/products" className="btn btn-outline btn-lg">
+                        <Link href="/products" className="btn btn-primary  btn-lg">
                           Browse All Products
                         </Link>
                       </div>

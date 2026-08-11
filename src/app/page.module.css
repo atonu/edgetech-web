@@ -27,10 +27,11 @@
 
 .heroSlideContent {
   position: absolute;
+  margin: 30px 20px;
   inset: 0;
   z-index: 2;
   display: flex;
-  align-items: center;
+  align-items: start;
 }
 
 .heroGrid {
@@ -103,10 +104,14 @@
 .heroText {
   max-width: 580px;
   width: 100%;
-  padding: clamp(20px, 3.5vw, 36px);
+  padding: clamp(26px, 3.5vw, 16px);
   display: flex;
   flex-direction: column;
   justify-content: center;
+  background: rgba(255, 255, 255, .4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  backdrop-filter: blur(2px);
 }
 
 .heroTitle {
@@ -116,15 +121,15 @@
   margin-bottom: 12px;
   letter-spacing: -0.03em;
   color: #ffffff;
-  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 .heroSubtitle {
   font-size: 0.95rem;
-  color: rgba(240, 248, 255, 0.92);
-  max-width: 480px;
+  color: rgba(255, 255,255, 1);
   margin-bottom: 18px;
   line-height: 1.5;
+  /* text-shadow: 0 4px 10px rgba(0, 0, 0, 0.55); */
 }
 
 .heroCtas {
@@ -287,9 +292,10 @@
   position: relative;
   z-index: 1;
   padding: 24px 0;
-  background: var(--color-primary);
-  border-top: 1px solid transparent;
-  border-bottom: 1px solid transparent;
+  background: rgba(17, 24, 39, 0.6);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-glass-border);
+  border-bottom: 1px solid var(--color-glass-border);
 }
 
 .stats {
@@ -310,14 +316,29 @@
   font-family: var(--font-primary);
   font-size: 1.6rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--color-primary);
 }
 
 .stat span {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+:global([data-theme='light']) .statsBar {
+  background: var(--color-primary);
+  backdrop-filter: none;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+}
+
+:global([data-theme='light']) .stat strong {
+  color: #ffffff;
+}
+
+:global([data-theme='light']) .stat span {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* ===== SECTIONS ===== */
