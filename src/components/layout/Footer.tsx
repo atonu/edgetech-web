@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Shield, Mail, Phone, MapPin, Globe, ExternalLink, MessageCircle, Rss } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Phone, MapPin, Globe, ExternalLink, MessageCircle, Rss } from 'lucide-react';
 import styles from './Footer.module.css';
 
 export default function Footer() {
@@ -20,7 +21,9 @@ export default function Footer() {
           {/* Brand */}
           <div className={styles.brand}>
             <Link href="/" className={styles.logo}>
-              <div className={styles.logoIcon}><Shield size={20} /></div>
+              <div className={styles.logoIcon}>
+                <Image src="/logo.png" alt="EdgeTech Logo" width={38} height={38} className={styles.logoImage} />
+              </div>
               <span>Edge<span className={styles.accent}>Tech</span></span>
             </Link>
             <p className={styles.tagline}>

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Search, Menu, X, User, LogOut, ChevronDown, Package, Shield } from 'lucide-react';
@@ -55,7 +56,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className={styles.logo}>
             <div className={styles.logoIcon}>
-              <Shield size={20} />
+              <Image src="/logo.png" alt="EdgeTech Logo" width={38} height={38} className={styles.logoImage} />
             </div>
             <span className={styles.logoText}>
               Edge<span className={styles.logoAccent}>Tech</span>
