@@ -4,7 +4,7 @@
 /* ===== HERO ===== */
 .hero {
   position: relative;
-  min-height: 88vh;
+  min-height: 44vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -73,21 +73,22 @@
 .heroContent {
   position: relative;
   z-index: 1;
-  padding-top: 120px;
-  padding-bottom: 60px;
+  padding-top: 60px;
+  padding-bottom: 30px;
   flex: 1;
 }
 
 .heroMain {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 316px;
-  gap: 20px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) 656px;
+  gap: var(--space-lg);
+  align-items: start;
 }
 
 .heroBanner {
   position: relative;
-  min-height: 104px;
+  height: 50vh;
+  min-height: 50vh;
   border-radius: 22px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -191,7 +192,8 @@
   border: none;
   border-radius: 22px;
   min-height: 260px;
-  width: 316px;
+  width: 100%;
+  max-width: 656px;
   display: flex;
   flex-direction: column;
 }
@@ -201,24 +203,25 @@
   line-height: 1.2;
   font-weight: 800;
   color: #ffffff;
-  padding: 10px 4px 14px;
+  padding: 0 0 16px 0;
+  text-align: left;
 }
 
 .hotDealsList {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg);
   flex: 1;
 }
 
 .hotDealCardWrap {
   position: relative;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .hotDealsViewAll {
-  margin: 14px 2px 4px;
+  margin: 16px 0 0 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -512,8 +515,8 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
-  .heroMain { grid-template-columns: minmax(0, 1fr) 300px; }
-  .hotDealsPanel { width: 300px; }
+  .heroMain { grid-template-columns: minmax(0, 1fr) 580px; gap: var(--space-lg); }
+  .hotDealsPanel { width: 100%; max-width: 580px; }
   .categoryGrid { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -521,10 +524,11 @@
   .hero { min-height: auto; }
   .heroMain {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: var(--space-lg);
   }
   .heroBanner {
-    min-height: 88px;
+    height: 42vh;
+    min-height: 42vh;
     border-radius: 18px;
   }
   .heroText {
@@ -536,13 +540,14 @@
     min-height: auto;
     border-radius: 18px;
     width: 100%;
+    max-width: 100%;
   }
   .hotDealCardWrap {
     width: 100%;
   }
   .hotDealsHeader {
     font-size: 1.7rem;
-    padding: 4px 2px 12px;
+    padding: 0 0 12px 0;
   }
   .categoryGrid { grid-template-columns: repeat(3, 1fr); }
   .stats { flex-wrap: wrap; gap: 16px; }
@@ -550,8 +555,11 @@
 }
 
 @media (max-width: 600px) {
-  .heroContent { padding-top: 100px; }
-  .heroBanner { min-height: 86px; }
+  .heroContent { padding-top: 50px; }
+  .heroBanner {
+    height: 34vh;
+    min-height: 34vh;
+  }
   .heroCtas { flex-direction: column; gap: 12px; }
   .heroCtas a { text-align: center; justify-content: center; }
   .heroNav {
@@ -564,7 +572,10 @@
     height: 34px;
   }
   .heroDotActive { width: 24px; }
-  .hotDealsList { gap: 12px; }
+  .hotDealsList {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
   .hotDealsViewAll { margin-top: 8px; }
   .categoryGrid { grid-template-columns: repeat(2, 1fr); }
   .stats { gap: 12px; }
