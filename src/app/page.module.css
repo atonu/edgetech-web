@@ -27,7 +27,7 @@
 
 .heroSlideContent {
   position: absolute;
-  margin: 30px 20px;
+  margin: 40px 20px;
   inset: 0;
   z-index: 2;
   display: flex;
@@ -104,11 +104,11 @@
 .heroText {
   max-width: 580px;
   width: 100%;
-  padding: clamp(26px, 3.5vw, 16px);
+  padding: clamp(32px, 3.5vw, 16px);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: rgba(255, 255, 255, .4);
+  background: rgba(255, 255, 255, .7);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   backdrop-filter: blur(2px);
@@ -136,6 +136,7 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  margin-top: 32px;
 }
 
 .heroNav {

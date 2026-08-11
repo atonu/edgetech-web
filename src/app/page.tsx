@@ -175,7 +175,7 @@ export default function HomePage() {
                           </span>
                         ))}
                       </h1>
-                      <p className={styles.heroSubtitle}>{heroSlides[currentSlide].subtitle}</p>
+                      {/* <p className={styles.heroSubtitle}>{heroSlides[currentSlide].subtitle}</p> */}
                       <div className={styles.heroCtas}>
                         <Link href={heroSlides[currentSlide].ctaLink} className="btn btn-outline btn-lg">
                           {heroSlides[currentSlide].cta} <ArrowRight size={18} />
@@ -210,8 +210,11 @@ export default function HomePage() {
             </div>
 
             <aside className={styles.hotDealsPanel}>
-              <div className={styles.hotDealsHeader}>HOT DEAL OF THE DAY</div>
-              <div className={styles.hotDealsList}>
+              <span className="section-label">Browse by Category</span>
+              <h3>HOT DEAL OF THE DAY</h3>
+              <br/>
+            
+            <div className={styles.hotDealsList}>
                 {hotDealProducts.map((product, index) => (
                   <div key={`hot-${product.id}`} className={styles.hotDealCardWrap}>
                     <ProductCard product={product} index={index} />
