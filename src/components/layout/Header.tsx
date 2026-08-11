@@ -3,15 +3,23 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Search, Menu, X, User, LogOut, ChevronDown, Package, Shield } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, User, LogOut, ChevronDown, Package, Shield, Sun, Moon } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { categoriesApi, CategoryDto } from '@/lib/api';
 import styles from './Header.module.css';
 
+type ThemeMode = 'dark' | 'light';
+
 export default function Header() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const savedTheme = localStorage.getItem('theme') as ThemeMode | null;
+    if (savedTheme) return savedTheme;
+    return 'light';
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +42,16 @@ export default function Header() {
   useEffect(() => {
     if (searchOpen) searchRef.current?.focus();
   }, [searchOpen]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const nextTheme: ThemeMode = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +125,15 @@ export default function Header() {
 
           {/* Actions */}
           <div className={styles.actions}>
+            <button
+              onClick={toggleTheme}
+              className={`${styles.iconBtn} ${styles.themeBtn}`}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
+            </button>
+
             {/* Search */}
             <div className={`${styles.searchWrapper} ${searchOpen ? styles.searchOpen : ''}`}>
               {searchOpen ? (
