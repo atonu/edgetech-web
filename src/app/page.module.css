@@ -72,8 +72,8 @@
 .heroContent {
   position: relative;
   z-index: 1;
-  padding-top: 88px;
-  padding-bottom: 20px;
+  padding-top: 44px;
+  padding-bottom: 40px;
   flex: 1;
 }
 
@@ -604,7 +604,7 @@
 }
 
 @media (max-width: 600px) {
-  .heroContent { padding-top: 80px; }
+  .heroContent { padding-top: 40px; padding-bottom: 40px; }
   .heroBanner {
     height: 280px;
   }
