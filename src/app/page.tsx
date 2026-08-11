@@ -60,12 +60,12 @@ const heroSlideVariants = {
 };
 
 const categories = [
-  { name: 'IP Camera', slug: 'ip-camera', icon: Camera, color: '#00c8e0' },
-  { name: 'CC Camera', slug: 'cc-camera', icon: Shield, color: '#f5a623' },
-  { name: 'NVR / DVR', slug: 'nvr-dvr', icon: HardDrive, color: '#22c55e' },
-  { name: 'Networking', slug: 'networking', icon: Wifi, color: '#3b82f6' },
-  { name: 'Monitor', slug: 'monitor', icon: Monitor, color: '#a855f7' },
-  { name: 'Accessories', slug: 'accessories', icon: Package, color: '#ef4444' },
+  { name: 'IP Camera', slug: 'ip-camera', icon: Camera, color: '#00c8e0', image: '/categories/ip-camera.jpg' },
+  { name: 'CC Camera', slug: 'cc-camera', icon: Shield, color: '#f5a623', image: '/categories/cc-camera.jpg' },
+  { name: 'NVR / DVR', slug: 'nvr-dvr', icon: HardDrive, color: '#22c55e', image: '/categories/nvr-dvr.jpg' },
+  { name: 'Networking', slug: 'networking', icon: Wifi, color: '#3b82f6', image: '/categories/networking.jpg' },
+  { name: 'Monitor', slug: 'monitor', icon: Monitor, color: '#a855f7', image: '/categories/monitor.jpg' },
+  { name: 'Accessories', slug: 'accessories', icon: Package, color: '#ef4444', image: '/categories/accessories.jpg' },
 ];
 
 const brands = [
@@ -272,7 +272,12 @@ export default function HomePage() {
                 transition={{ delay: i * 0.08 }}
               >
                 <Link href={`/products?category=${cat.slug}`} className={styles.categoryCard}>
-                  <div className={styles.categoryIcon} style={{ background: `${cat.color}15`, borderColor: `${cat.color}30` }}>
+                  <div
+                    className={styles.categoryBgImage}
+                    style={{ backgroundImage: `url(${cat.image})` }}
+                  />
+                  <div className={styles.categoryOverlay} />
+                  <div className={styles.categoryIcon} style={{ background: `${cat.color}25`, borderColor: `${cat.color}50` }}>
                     <cat.icon size={28} style={{ color: cat.color }} />
                   </div>
                   <span className={styles.categoryName}>{cat.name}</span>
