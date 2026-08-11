@@ -523,13 +523,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 24px 32px;
+  gap: 12px;
+  padding: 18px 20px;
   background: var(--color-surface);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-lg);
-  min-width: 140px;
+  min-width: 200px;
   transition: all var(--transition-base);
+  
 }
 
 .brandCard:hover {
@@ -538,22 +539,26 @@
   box-shadow: var(--shadow-glow-sm);
 }
 
-.brandLetter {
-  width: 48px;
-  height: 48px;
+.brandLogoWrap {
+  position: relative;
+  width: 160px;
+  height: 86px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-primary);
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--color-primary);
-  background: rgba(0, 200, 224, 0.1);
-  border-radius: var(--radius-md);
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.brandLogo {
+  object-fit: cover;
+  object-position: center;
 }
 
 .brandName {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -680,4 +685,14 @@
   .countdownBlock { min-width: 60px; padding: 12px 14px; }
   .countdownNum { font-size: 1.5rem; }
   .builderFeatures { flex-direction: column; align-items: center; }
+
+  .brandCard {
+    min-width: 176px;
+    padding: 14px 16px;
+  }
+
+  .brandLogoWrap {
+    width: 140px;
+    height: 74px;
+  }
 }

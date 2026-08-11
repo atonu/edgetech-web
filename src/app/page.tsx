@@ -69,14 +69,14 @@ const categories = [
 ];
 
 const brands = [
-  { name: 'Hikvision', slug: 'hikvision' },
-  { name: 'Dahua', slug: 'dahua' },
-  { name: 'TP-Link', slug: 'tp-link' },
-  { name: 'Imou', slug: 'imou' },
-  { name: 'Uniview', slug: 'uniview' },
-  { name: 'Tenda', slug: 'tenda' },
-  { name: 'ZKTeco', slug: 'zkteco' },
-  { name: 'Ruijie', slug: 'ruijie' },
+  { name: 'Hikvision', slug: 'hikvision', logo: '/brand/hikvision.jpg' },
+  { name: 'Dahua', slug: 'dahua', logo: '/brand/dahua.jpg' },
+  { name: 'TP-Link', slug: 'tp-link', logo: '/brand/tp-link.png' },
+  { name: 'Imou', slug: 'imou', logo: '/brand/imou.png' },
+  { name: 'ZKTeco', slug: 'zkteco', logo: '/brand/zkteco.png' },
+  { name: 'Ruijie', slug: 'ruijie', logo: '/brand/ruijie.png' },
+  { name: 'Seagate', slug: 'seagate', logo: '/brand/seagate.png' },
+  { name: 'Dell', slug: 'dell', logo: '/brand/dell.png' },
 ];
 
 export default function HomePage() {
@@ -376,7 +376,15 @@ export default function HomePage() {
             <div className={styles.brandScroll}>
               {[...brands, ...brands].map((b, i) => (
                 <Link key={`${b.slug}-${i}`} href={`/products?brand=${b.slug}`} className={styles.brandCard}>
-                  <span className={styles.brandLetter}>{b.name[0]}</span>
+                  <div className={styles.brandLogoWrap}>
+                    <Image
+                      src={b.logo}
+                      alt={`${b.name} logo`}
+                      fill
+                      sizes="160px"
+                      className={styles.brandLogo}
+                    />
+                  </div>
                   <span className={styles.brandName}>{b.name}</span>
                 </Link>
               ))}
