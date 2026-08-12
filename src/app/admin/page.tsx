@@ -42,7 +42,7 @@ import {
 import { useAuthStore } from '@/store/useAuthStore';
 import styles from './admin.module.css';
 
-type TabKey = 'products' | 'categories' | 'services' | 'orders' | 'groups';
+type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups';
 
 const ORDER_STATUSES = ['Placed', 'Verified', 'InProgress', 'Done', 'Cancelled'] as const;
 
@@ -75,7 +75,8 @@ export default function AdminPage() {
     isActive: true,
   });
 
-  const [categoryForm, setCategoryForm] = useState({ id: 0, name: '', description: '', displayOrder: 0, imageUrl: '' });
+  const [categoryForm, setCategoryForm] = useState({ id: 0, name: '', isActive: true });
+  const [brandForm, setBrandForm] = useState({ id: 0, name: '', description: '', logoUrl: '', isActive: true });
   const [serviceForm, setServiceForm] = useState({ id: 0, name: '', description: '', isActive: true });
   const [groupForm, setGroupForm] = useState({ id: 0, key: 'best-sellers', name: '', isActive: true, productIds: [] as number[] });
   const canAccessAdmin = isAuthenticated && isAdmin();
@@ -95,21 +96,24 @@ export default function AdminPage() {
   const loadCore = async () => {
     setLoading(true);
     try {
-      const [pRes, cRes, bRes, sRes, oRes, gRes] = await Promise.all([
+      const [pRes, cRes, bRes, sRes, oRes, gRes] = await Promise.allSettled([
         productsApi.getAll({ page: 1, pageSize: 100 }),
-        categoriesApi.getAll(),
-        brandsApi.getAll(),
+        categoriesApi.getAllAdmin(),
+        brandsApi.getAllAdmin(),
         adminServicesApi.getAll(),
         ordersApi.getAllOrders({ page: 1, pageSize: 100 }),
         adminProductGroupsApi.getAll(),
       ]);
 
-      setProducts(pRes.data.items ?? []);
-      setCategories(cRes.data ?? []);
-      setBrands(bRes.data ?? []);
-      setServices(sRes.data ?? []);
-      setOrders(oRes.data.items ?? []);
-      setGroups(gRes.data ?? []);
+      setProducts(pRes.status === 'fulfilled' ? (pRes.value.data.items ?? []) : []);
+      setCategories(cRes.status === 'fulfilled' ? (cRes.value.data ?? []) : []);
+      setBrands(bRes.status === 'fulfilled' ? (bRes.value.data ?? []) : []);
+      setServices(sRes.status === 'fulfilled' ? (sRes.value.data ?? []) : []);
+      setOrders(oRes.status === 'fulfilled' ? (oRes.value.data.items ?? []) : []);
+      setGroups(gRes.status === 'fulfilled' ? (gRes.value.data ?? []) : []);
+
+      const failed = [pRes, cRes, bRes, sRes, oRes, gRes].filter(r => r.status === 'rejected').length;
+      if (failed > 0) toast.error(`Some admin data failed to load (${failed}). Showing available data.`);
     } catch {
       toast.error('Failed to load admin data.');
     } finally {
@@ -232,24 +236,46 @@ export default function AdminPage() {
     try {
       const payload = {
         name: categoryForm.name,
-        description: categoryForm.description,
-        imageUrl: categoryForm.imageUrl,
-        displayOrder: Number(categoryForm.displayOrder),
-        parentCategoryId: null,
+        isActive: categoryForm.isActive,
       };
 
       if (categoryForm.id) {
-        await categoriesApi.update(categoryForm.id, { ...payload, isActive: true });
+        await categoriesApi.update(categoryForm.id, payload);
         toast.success('Category updated.');
       } else {
         await categoriesApi.create(payload);
         toast.success('Category created.');
       }
 
-      setCategoryForm({ id: 0, name: '', description: '', displayOrder: 0, imageUrl: '' });
+      setCategoryForm({ id: 0, name: '', isActive: true });
       await loadCore();
     } catch {
       toast.error('Failed to save category.');
+    }
+  };
+
+  const saveBrand = async (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        name: brandForm.name,
+        description: brandForm.description || null,
+        logoUrl: brandForm.logoUrl || null,
+        isActive: brandForm.isActive,
+      };
+
+      if (brandForm.id) {
+        await brandsApi.update(brandForm.id, payload);
+        toast.success('Brand updated.');
+      } else {
+        await brandsApi.create(payload);
+        toast.success('Brand created.');
+      }
+
+      setBrandForm({ id: 0, name: '', description: '', logoUrl: '', isActive: true });
+      await loadCore();
+    } catch {
+      toast.error('Failed to save brand.');
     }
   };
 
@@ -343,6 +369,7 @@ export default function AdminPage() {
             {[
               { key: 'products', label: 'Products' },
               { key: 'categories', label: 'Categories' },
+              { key: 'brands', label: 'Brands' },
               { key: 'services', label: 'Services' },
               { key: 'groups', label: 'Groups' },
               { key: 'orders', label: 'Orders' },
@@ -439,16 +466,19 @@ export default function AdminPage() {
         {tab === 'categories' && (
           <div className={styles.panelGrid}>
             <Card>
-              <CardHeader><CardTitle>Category Form</CardTitle><CardDescription>Create or update product categories.</CardDescription></CardHeader>
+              <CardHeader><CardTitle>Category Form</CardTitle><CardDescription>Category schema: name + active only.</CardDescription></CardHeader>
               <CardContent>
                 <form onSubmit={saveCategory} className={styles.grid2}>
                   <Field label="Name"><Input value={categoryForm.name} onChange={e => setCategoryForm(f => ({ ...f, name: e.target.value }))} required /></Field>
-                  <Field label="Display Order"><Input type="number" value={categoryForm.displayOrder} onChange={e => setCategoryForm(f => ({ ...f, displayOrder: Number(e.target.value) }))} /></Field>
-                  <Field label="Image URL"><Input value={categoryForm.imageUrl} onChange={e => setCategoryForm(f => ({ ...f, imageUrl: e.target.value }))} /></Field>
-                  <Field label="Description"><Input value={categoryForm.description} onChange={e => setCategoryForm(f => ({ ...f, description: e.target.value }))} /></Field>
+                  <Field label="Active">
+                    <Select value={String(categoryForm.isActive)} onChange={e => setCategoryForm(f => ({ ...f, isActive: e.target.value === 'true' }))}>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </Select>
+                  </Field>
                   <div className={`${styles.actions} ${styles.fullWidth}`}>
                     <Button type="submit">Save Category</Button>
-                    <Button variant="ghost" type="button" onClick={() => setCategoryForm({ id: 0, name: '', description: '', displayOrder: 0, imageUrl: '' })}>Clear</Button>
+                    <Button variant="ghost" type="button" onClick={() => setCategoryForm({ id: 0, name: '', isActive: true })}>Clear</Button>
                   </div>
                 </form>
               </CardContent>
@@ -459,15 +489,66 @@ export default function AdminPage() {
               <CardContent>
                 <TableWrap>
                   <Table>
-                    <thead><tr><TH>ID</TH><TH>Name</TH><TH>Slug</TH><TH>Actions</TH></tr></thead>
+                    <thead><tr><TH>ID</TH><TH>Name</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
                     <tbody>
                       {flatCategories.map(c => (
                         <tr key={c.id}>
-                          <TD>{c.id}</TD><TD>{c.name}</TD><TD>{c.slug}</TD>
+                          <TD>{c.id}</TD><TD>{c.name}</TD><TD><Badge variant={c.isActive ? 'success' : 'secondary'}>{c.isActive ? 'Active' : 'Inactive'}</Badge></TD>
                           <TD>
                             <div className={styles.actions}>
-                              <Button size="sm" variant="outline" onClick={() => setCategoryForm({ id: c.id, name: c.name, description: c.description ?? '', displayOrder: c.displayOrder, imageUrl: c.imageUrl ?? '' })}>Edit</Button>
+                              <Button size="sm" variant="outline" onClick={() => setCategoryForm({ id: c.id, name: c.name, isActive: c.isActive })}>Edit</Button>
                               <Button size="sm" variant="destructive" onClick={async () => { await categoriesApi.delete(c.id); await loadCore(); }}>Delete</Button>
+                            </div>
+                          </TD>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </TableWrap>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {tab === 'brands' && (
+          <div className={styles.panelGrid}>
+            <Card>
+              <CardHeader><CardTitle>Brand Form</CardTitle><CardDescription>Create and update brands used by products.</CardDescription></CardHeader>
+              <CardContent>
+                <form onSubmit={saveBrand} className={styles.grid2}>
+                  <Field label="Name"><Input value={brandForm.name} onChange={e => setBrandForm(f => ({ ...f, name: e.target.value }))} required /></Field>
+                  <Field label="Logo URL"><Input value={brandForm.logoUrl} onChange={e => setBrandForm(f => ({ ...f, logoUrl: e.target.value }))} /></Field>
+                  <Field label="Description"><Input value={brandForm.description} onChange={e => setBrandForm(f => ({ ...f, description: e.target.value }))} /></Field>
+                  <Field label="Active">
+                    <Select value={String(brandForm.isActive)} onChange={e => setBrandForm(f => ({ ...f, isActive: e.target.value === 'true' }))}>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </Select>
+                  </Field>
+                  <div className={`${styles.actions} ${styles.fullWidth}`}>
+                    <Button type="submit">Save Brand</Button>
+                    <Button variant="ghost" type="button" onClick={() => setBrandForm({ id: 0, name: '', description: '', logoUrl: '', isActive: true })}>Clear</Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle>Brand List</CardTitle><CardDescription>Existing brands from database.</CardDescription></CardHeader>
+              <CardContent>
+                <TableWrap>
+                  <Table>
+                    <thead><tr><TH>ID</TH><TH>Name</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
+                    <tbody>
+                      {brands.map(b => (
+                        <tr key={b.id}>
+                          <TD>{b.id}</TD>
+                          <TD>{b.name}</TD>
+                          <TD><Badge variant={b.isActive ? 'success' : 'secondary'}>{b.isActive ? 'Active' : 'Inactive'}</Badge></TD>
+                          <TD>
+                            <div className={styles.actions}>
+                              <Button size="sm" variant="outline" onClick={() => setBrandForm({ id: b.id, name: b.name, description: b.description ?? '', logoUrl: b.logoUrl ?? '', isActive: b.isActive })}>Edit</Button>
+                              <Button size="sm" variant="destructive" onClick={async () => { await brandsApi.delete(b.id); await loadCore(); }}>Delete</Button>
                             </div>
                           </TD>
                         </tr>

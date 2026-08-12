@@ -64,14 +64,21 @@ export interface ProductSpecDto {
 export interface CategoryDto {
   id: number;
   name: string;
-  slug: string;
+  isActive: boolean;
+  slug?: string;
   description?: string;
   imageUrl?: string;
-  displayOrder: number;
-  isActive: boolean;
+  displayOrder?: number;
   parentCategoryId?: number;
   subCategories?: CategoryDto[];
 }
+
+export interface CreateCategoryRequest {
+  name: string;
+  isActive: boolean;
+}
+
+export interface UpdateCategoryRequest extends CreateCategoryRequest {}
 
 export interface BrandDto {
   id: number;
@@ -240,6 +247,7 @@ export const productsApi = {
 
 export const categoriesApi = {
   getAll: () => api.get<CategoryDto[]>('/categories'),
+  getAllAdmin: () => api.get<CategoryDto[]>('/categories', { params: { includeInactive: true } }),
   getBySlug: (slug: string) => api.get<CategoryDto>(`/categories/${slug}`),
   create: (data: unknown) => api.post('/categories', data),
   update: (id: number, data: unknown) => api.put(`/categories/${id}`, data),
@@ -248,6 +256,7 @@ export const categoriesApi = {
 
 export const brandsApi = {
   getAll: () => api.get<BrandDto[]>('/brands'),
+  getAllAdmin: () => api.get<BrandDto[]>('/brands', { params: { includeInactive: true } }),
   getBySlug: (slug: string) => api.get<BrandDto>(`/brands/${slug}`),
   create: (data: unknown) => api.post('/brands', data),
   update: (id: number, data: unknown) => api.put(`/brands/${id}`, data),
