@@ -27,7 +27,7 @@
 
 .heroSlideContent {
   position: absolute;
-  margin: 40px 20px;
+  margin: 100px 20px;
   inset: 0;
   z-index: 2;
   display: flex;
@@ -102,9 +102,9 @@
 }
 
 .heroText {
-  max-width: 580px;
-  width: 100%;
-  padding: clamp(32px, 3.5vw, 16px);
+  max-width: 60%;
+  width: 60%;
+  padding: 32px 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -115,28 +115,33 @@
 }
 
 .heroTitle {
-  font-size: clamp(1.8rem, 3.5vw, 2.7rem);
+  font-size: clamp(1.38rem, 2.6vw, 2.05rem);
   font-weight: 800;
   line-height: 1.1;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   letter-spacing: -0.03em;
   color: #ffffff;
   text-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 .heroSubtitle {
-  font-size: 0.95rem;
+  font-size: 0.84rem;
   color: rgba(255, 255,255, 1);
-  margin-bottom: 18px;
-  line-height: 1.5;
+  margin-bottom: 12px;
+  line-height: 1.35;
   /* text-shadow: 0 4px 10px rgba(0, 0, 0, 0.55); */
 }
 
 .heroCtas {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-top: 32px;
+  margin-top: 16px;
+}
+
+.heroCtas :global(.btn) {
+  padding: 9px 16px;
+  font-size: 0.8rem;
 }
 
 .heroNav {
@@ -638,9 +643,11 @@
     border-radius: 18px;
   }
   .heroText {
-    padding: 22px;
+    width: 78%;
+    max-width: 78%;
+    padding: 16px;
   }
-  .heroTitle { font-size: clamp(1.8rem, 5vw, 2.6rem); }
+  .heroTitle { font-size: clamp(1.25rem, 4vw, 1.7rem); }
   .heroNav { left: 22px; bottom: 16px; }
   .hotDealsPanel {
     height: auto;
@@ -660,6 +667,11 @@
   .heroContent { padding-top: 40px; padding-bottom: 40px; }
   .heroBanner {
     height: 280px;
+  }
+  .heroText {
+    width: 88%;
+    max-width: 88%;
+    padding: 14px;
   }
   .heroCtas { flex-direction: column; gap: 12px; }
   .heroCtas a { text-align: center; justify-content: center; }
