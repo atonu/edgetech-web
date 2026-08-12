@@ -27,6 +27,7 @@ export default function Header() {
   const [megaMenuOpen, setMegaMenuOpen] = useState<string | null>(null);
   const { count, toggleCart } = useCartStore();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const isAdmin = user?.role === 'Admin';
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -67,6 +68,10 @@ export default function Header() {
     { href: '/package-builder', label: '📦 Package Builder', highlight: true },
   ];
 
+  const visibleNavLinks = isAdmin
+    ? [{ href: '/admin', label: 'Admin', highlight: false }, ...navLinks]
+    : navLinks;
+
   return (
     <>
       <header className={`${styles.header} ${scrolled ? styles.scrolled : ''}`}>
@@ -83,7 +88,7 @@ export default function Header() {
 
           {/* Desktop Nav */}
           <nav className={styles.nav}>
-            {navLinks.map(link => (
+            {visibleNavLinks.map(link => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -173,7 +178,7 @@ export default function Header() {
                 <div className={styles.userDropdown}>
                   <Link href="/account" className={styles.dropdownItem}><User size={15} /> My Account</Link>
                   <Link href="/account/orders" className={styles.dropdownItem}><Package size={15} /> Orders</Link>
-                  {user?.role === 'Admin' && (
+                  {isAdmin && (
                     <Link href="/admin" className={`${styles.dropdownItem} ${styles.adminItem}`}><Shield size={15} /> Admin Panel</Link>
                   )}
                   <button onClick={logout} className={`${styles.dropdownItem} ${styles.logoutItem}`}><LogOut size={15} /> Logout</button>
@@ -202,7 +207,7 @@ export default function Header() {
               />
               <button type="submit"><Search size={16} /></button>
             </form>
-            {navLinks.map(link => (
+            {visibleNavLinks.map(link => (
               <Link key={link.href} href={link.href} className={styles.mobileNavLink} onClick={() => setMenuOpen(false)}>
                 {link.label}
               </Link>
@@ -215,7 +220,7 @@ export default function Header() {
             {isAuthenticated ? (
               <>
                 <Link href="/account" className={styles.mobileNavLink} onClick={() => setMenuOpen(false)}>My Account</Link>
-                {user?.role === 'Admin' && <Link href="/admin" className={styles.mobileNavLink} onClick={() => setMenuOpen(false)}>Admin Panel</Link>}
+                {isAdmin && <Link href="/admin" className={styles.mobileNavLink} onClick={() => setMenuOpen(false)}>Admin Panel</Link>}
                 <button onClick={() => { logout(); setMenuOpen(false); }} className={styles.mobileNavLink}>Logout</button>
               </>
             ) : (

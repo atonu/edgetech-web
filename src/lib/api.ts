@@ -1,7 +1,7 @@
 // src/lib/api.ts
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5217';
 
 export const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -102,11 +102,18 @@ export interface OrderDto {
   id: number;
   status: string;
   totalAmount: number;
+  customer: CustomerInfo;
   shippingAddress: ShippingAddress;
   notes?: string;
   paymentMethod?: string;
   createdAt: string;
   items: OrderItemDto[];
+}
+
+export interface CustomerInfo {
+  fullName: string;
+  email: string;
+  phone: string;
 }
 
 export interface OrderItemDto {
@@ -126,6 +133,19 @@ export interface ShippingAddress {
   state: string;
   postalCode: string;
   country: string;
+}
+
+export interface PlaceOrderItemRequest {
+  productId: number;
+  quantity: number;
+}
+
+export interface PlaceOrderRequest {
+  shippingAddress: ShippingAddress;
+  notes?: string;
+  paymentMethod: string;
+  customer: CustomerInfo;
+  items: PlaceOrderItemRequest[];
 }
 
 export interface UserDto {
@@ -181,6 +201,28 @@ export interface PackageComponentDto {
   quantity: number;
 }
 
+export interface ServiceItemDto {
+  id: number;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface ProductGroupDto {
+  id: number;
+  key: string;
+  name: string;
+  isActive: boolean;
+  productIds: number[];
+  updatedAt: string;
+}
+
+export interface HomeGroupsResponse {
+  bestSellers: ProductListDto[];
+  mostPopular: ProductListDto[];
+  newArrivals: ProductListDto[];
+}
+
 // API functions
 export const productsApi = {
   getAll: (params?: Record<string, unknown>) => api.get<PagedResult<ProductListDto>>('/products', { params }),
@@ -229,11 +271,12 @@ export const cartApi = {
 };
 
 export const ordersApi = {
-  place: (data: unknown) => api.post('/orders', data),
+  place: (data: PlaceOrderRequest) => api.post<{ orderId: number }>('/orders', data),
   getMyOrders: () => api.get<OrderDto[]>('/orders'),
   getOrder: (id: number) => api.get<OrderDto>(`/orders/${id}`),
   getAllOrders: (params?: Record<string, unknown>) => api.get<PagedResult<OrderDto>>('/orders/all', { params }),
   updateStatus: (id: number, status: string) => api.put(`/orders/${id}/status`, { status }),
+  updateAdmin: (id: number, status: string, notes?: string) => api.put(`/orders/${id}/admin`, { status, notes }),
 };
 
 export const recentlyViewedApi = {
@@ -255,4 +298,26 @@ export const adminApi = {
   createUser: (data: unknown) => api.post('/admin/users', data),
   changeRole: (id: string, role: string) => api.put(`/admin/users/${id}/role`, { role }),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
+};
+
+export const servicesApi = {
+  getAll: () => api.get<ServiceItemDto[]>('/services'),
+};
+
+export const adminServicesApi = {
+  getAll: () => api.get<ServiceItemDto[]>('/admin/services'),
+  create: (data: { name: string; description?: string }) => api.post<ServiceItemDto>('/admin/services', data),
+  update: (id: number, data: { name: string; description?: string; isActive: boolean }) => api.put(`/admin/services/${id}`, data),
+  delete: (id: number) => api.delete(`/admin/services/${id}`),
+};
+
+export const productGroupsApi = {
+  getHome: () => api.get<HomeGroupsResponse>('/product-groups/home'),
+};
+
+export const adminProductGroupsApi = {
+  getAll: () => api.get<ProductGroupDto[]>('/admin/product-groups'),
+  create: (data: { key: string; name: string; isActive: boolean; productIds: number[] }) => api.post<ProductGroupDto>('/admin/product-groups', data),
+  update: (id: number, data: { name: string; isActive: boolean; productIds: number[] }) => api.put(`/admin/product-groups/${id}`, data),
+  delete: (id: number) => api.delete(`/admin/product-groups/${id}`),
 };

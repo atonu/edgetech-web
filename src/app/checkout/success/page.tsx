@@ -21,7 +21,7 @@ export default function CheckoutSuccessPage() {
             </div>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>Status</span>
-              <span className="badge badge-warning">Processing</span>
+              <span className="badge badge-warning">Placed</span>
             </div>
           </div>
           <div className={styles.actions}>

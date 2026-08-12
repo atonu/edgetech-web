@@ -1,0 +1,226 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all var(--transition-base);
+  border: 1px solid transparent;
+  cursor: none;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.buttonDefault {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: #021015;
+  box-shadow: var(--shadow-glow-sm);
+}
+
+.buttonDefault:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow);
+}
+
+.buttonSecondary {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border-color: var(--color-glass-border);
+}
+
+.buttonSecondary:hover {
+  background: var(--color-surface-3);
+}
+
+.buttonOutline {
+  background: transparent;
+  border-color: var(--color-glass-border);
+  color: var(--color-text);
+}
+
+.buttonOutline:hover {
+  background: rgba(0, 200, 224, 0.08);
+}
+
+.buttonGhost {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.buttonGhost:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.buttonDestructive {
+  background: linear-gradient(135deg, var(--color-error), #c93f3f);
+  color: #fff;
+}
+
+.buttonDestructive:hover {
+  filter: brightness(1.05);
+}
+
+.buttonSm {
+  height: 34px;
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+}
+
+.buttonMd {
+  height: 40px;
+  padding: 0 1rem;
+  font-size: 0.9rem;
+}
+
+.buttonLg {
+  height: 46px;
+  padding: 0 1.1rem;
+  font-size: 0.95rem;
+}
+
+.card {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--color-glass-border);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+}
+
+.cardHeader {
+  padding: 1rem 1rem 0.7rem;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.cardDescription {
+  margin-top: 0.35rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.cardContent {
+  padding: 0.9rem 1rem 1rem;
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--color-glass-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  padding: 0.6rem 0.72rem;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 200, 224, 0.15);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 84px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.18rem 0.58rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.badgeDefault {
+  background: rgba(0, 200, 224, 0.14);
+  border-color: rgba(0, 200, 224, 0.32);
+  color: var(--color-primary-light);
+}
+
+.badgeSecondary {
+  background: rgba(125, 145, 170, 0.14);
+  border-color: rgba(125, 145, 170, 0.3);
+  color: var(--color-text-muted);
+}
+
+.badgeSuccess {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #6be18f;
+}
+
+.badgeWarning {
+  background: rgba(245, 166, 35, 0.17);
+  border-color: rgba(245, 166, 35, 0.35);
+  color: #ffcb66;
+}
+
+.badgeDestructive {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ffa8a8;
+}
+
+.tabs {
+  width: 100%;
+}
+
+.tabsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.tabsTrigger {
+  border-radius: 10px;
+  border: 1px solid var(--color-glass-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  padding: 0.52rem 0.88rem;
+}
+
+.tabsTriggerActive {
+  color: #001319;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 780px;
+}
+
+.th,
+.td {
+  padding: 0.66rem 0.45rem;
+  border-bottom: 1px solid var(--color-glass-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}

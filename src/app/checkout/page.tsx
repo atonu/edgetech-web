@@ -6,13 +6,14 @@ import { CreditCard, Truck, MapPin, ChevronRight, ShieldCheck, Check, Zap } from
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ordersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import styles from './checkout.module.css';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, total, count, clearCart } = useCartStore();
-  const { isAuthenticated, user } = useAuthStore();
+  const { user } = useAuthStore();
   const [step, setStep] = useState(1);
   const [isPlacing, setIsPlacing] = useState(false);
 
@@ -34,12 +35,44 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    setIsPlacing(true);
-    // Simulate order placement
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    clearCart();
-    toast.success('Order placed successfully!');
-    router.push('/checkout/success');
+    if (!form.fullName || !form.phone || !form.address || !form.city) {
+      toast.error('Please complete required shipping details.');
+      return;
+    }
+
+    try {
+      setIsPlacing(true);
+      await ordersApi.place({
+        shippingAddress: {
+          fullName: form.fullName,
+          phone: form.phone,
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          postalCode: form.postalCode,
+          country: form.country,
+        },
+        notes: form.notes,
+        paymentMethod: form.paymentMethod,
+        customer: {
+          fullName: form.fullName,
+          email: form.email,
+          phone: form.phone,
+        },
+        items: items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      });
+
+      clearCart();
+      toast.success('Order placed successfully!');
+      router.push('/checkout/success');
+    } catch {
+      toast.error('Unable to place order. Please try again.');
+    } finally {
+      setIsPlacing(false);
+    }
   };
 
   const totalAmount = total();

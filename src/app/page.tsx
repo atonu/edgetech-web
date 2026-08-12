@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Shield, Wifi, Monitor, HardDrive, Camera, Package, ArrowRight, Zap, Star, Clock } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
-import { ProductListDto, productsApi } from '@/lib/api';
+import { HomeGroupsResponse, ProductListDto, productGroupsApi, productsApi } from '@/lib/api';
 import styles from './page.module.css';
 
 // Mock data for demo (will be replaced by API calls when backend is running)
@@ -83,6 +83,7 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideDirection, setSlideDirection] = useState(1);
   const [products, setProducts] = useState<ProductListDto[]>(mockProducts);
+  const [homeGroups, setHomeGroups] = useState<HomeGroupsResponse | null>(null);
   const [countdown, setCountdown] = useState({ hours: 23, minutes: 45, seconds: 12 });
 
   // Auto-advance hero carousel
@@ -114,6 +115,12 @@ export default function HomePage() {
     productsApi.getFeatured(12).then(res => {
       if (res.data && res.data.length > 0) setProducts(res.data);
     }).catch(() => { /* keep mock data */ });
+
+    productGroupsApi.getHome().then(res => {
+      setHomeGroups(res.data);
+    }).catch(() => {
+      setHomeGroups(null);
+    });
   }, []);
 
   const nextSlide = useCallback(() => {
@@ -126,10 +133,11 @@ export default function HomePage() {
     setCurrentSlide(p => (p - 1 + heroSlides.length) % heroSlides.length);
   }, []);
 
-  const featuredRow1 = products.filter(p => p.isFeatured).slice(0, 4);
-  const featuredRow2 = products.filter(p => p.isFeatured).slice(4, 8);
+  const fallbackFeatured = products.filter(p => p.isFeatured);
+  const featuredRow1 = homeGroups?.bestSellers?.slice(0, 4) ?? fallbackFeatured.slice(0, 4);
+  const featuredRow2 = homeGroups?.mostPopular?.slice(0, 4) ?? fallbackFeatured.slice(4, 8);
   const hotDealProducts = (featuredRow2.length >= 2 ? featuredRow2 : products).slice(0, 2);
-  const newArrivals = products.slice(0, 6);
+  const newArrivals = homeGroups?.newArrivals?.slice(0, 6) ?? products.slice(0, 6);
 
   return (
     <div className={styles.home}>
