@@ -687,21 +687,23 @@ export default function AdminPage() {
         )}
 
         {tab === 'orders' && (
-          <Card>
-            <CardHeader><CardTitle>Orders</CardTitle><CardDescription>Update status and admin notes for incoming orders.</CardDescription></CardHeader>
-            <CardContent>
-              <TableWrap>
-                <Table>
-                  <thead><tr><TH>ID</TH><TH>Customer</TH><TH>Total</TH><TH>Status</TH><TH>Notes</TH><TH>Actions</TH></tr></thead>
-                  <tbody>
-                    {orders.map(o => (
-                      <OrderRow key={o.id} order={o} onSave={updateOrder} />
-                    ))}
-                  </tbody>
-                </Table>
-              </TableWrap>
-            </CardContent>
-          </Card>
+          <div className={styles.panelGrid}>
+            <Card>
+              <CardHeader><CardTitle>Orders</CardTitle><CardDescription>Update status and admin notes for incoming orders.</CardDescription></CardHeader>
+              <CardContent>
+                <TableWrap>
+                  <Table>
+                    <thead><tr><TH>ID</TH><TH>Customer</TH><TH>Total</TH><TH>Status</TH><TH>Notes</TH><TH>Actions</TH></tr></thead>
+                    <tbody>
+                      {orders.map(o => (
+                        <OrderRow key={o.id} order={o} onSave={updateOrder} />
+                      ))}
+                    </tbody>
+                  </Table>
+                </TableWrap>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

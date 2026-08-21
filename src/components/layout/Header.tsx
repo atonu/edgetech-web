@@ -25,10 +25,12 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [megaMenuOpen, setMegaMenuOpen] = useState<string | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { count, toggleCart } = useCartStore();
   const { user, isAuthenticated, logout } = useAuthStore();
   const isAdmin = user?.role === 'Admin';
   const searchRef = useRef<HTMLInputElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -43,6 +45,17 @@ export default function Header() {
   useEffect(() => {
     if (searchOpen) searchRef.current?.focus();
   }, [searchOpen]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [userMenuOpen]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -169,20 +182,22 @@ export default function Header() {
 
             {/* Auth */}
             {isAuthenticated ? (
-              <div className={styles.userMenu}>
-                <button className={styles.userBtn}>
+              <div className={styles.userMenu} ref={userMenuRef}>
+                <button className={styles.userBtn} onClick={() => setUserMenuOpen(o => !o)}>
                   <User size={18} />
                   <span>{user?.firstName}</span>
                   <ChevronDown size={14} />
                 </button>
-                <div className={styles.userDropdown}>
-                  <Link href="/account" className={styles.dropdownItem}><User size={15} /> My Account</Link>
-                  <Link href="/account/orders" className={styles.dropdownItem}><Package size={15} /> Orders</Link>
-                  {isAdmin && (
-                    <Link href="/admin" className={`${styles.dropdownItem} ${styles.adminItem}`}><Shield size={15} /> Admin Panel</Link>
-                  )}
-                  <button onClick={logout} className={`${styles.dropdownItem} ${styles.logoutItem}`}><LogOut size={15} /> Logout</button>
-                </div>
+                {userMenuOpen && (
+                  <div className={styles.userDropdown}>
+                    <Link href="/account" className={styles.dropdownItem} onClick={() => setUserMenuOpen(false)}><User size={15} /> My Account</Link>
+                    <Link href="/account/orders" className={styles.dropdownItem} onClick={() => setUserMenuOpen(false)}><Package size={15} /> Orders</Link>
+                    {isAdmin && (
+                      <Link href="/admin" className={`${styles.dropdownItem} ${styles.adminItem}`} onClick={() => setUserMenuOpen(false)}><Shield size={15} /> Admin Panel</Link>
+                    )}
+                    <button onClick={() => { logout(); setUserMenuOpen(false); }} className={`${styles.dropdownItem} ${styles.logoutItem}`}><LogOut size={15} /> Logout</button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link href="/auth/login" className="btn btn-primary btn-sm">Login</Link>

@@ -484,6 +484,19 @@ p { line-height: 1.7; }
   border-color: var(--color-accent);
 }
 
+/* Custom cursor is a dark-mode-only effect; light mode keeps the OS cursor */
+[data-theme='light'] .cursor-dot,
+[data-theme='light'] .cursor-ring {
+  display: none;
+}
+[data-theme='light'] body {
+  cursor: auto;
+}
+[data-theme='light'] button,
+[data-theme='light'] .btn {
+  cursor: pointer;
+}
+
 /* ===== SCROLLED STATE ===== */
 .header-scrolled {
   background: rgba(8, 12, 24, 0.95) !important;

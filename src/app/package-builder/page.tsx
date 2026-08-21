@@ -1,117 +1,66 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { Camera, HardDrive, Monitor, Cable, Power, Wifi, Battery, Shield, Package, X, Search, Check, ShoppingCart, Save, ArrowRight, Zap, Plus } from 'lucide-react';
+import { Camera, HardDrive, Monitor, Cable, Power, Battery, Package, X, Search, Check, ShoppingCart, Save, ArrowRight, Zap, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
-import { ProductListDto } from '@/lib/api';
+import { ProductListDto, packageBuilderApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import styles from './builder.module.css';
-
-interface SlotDef {
-  key: string;
-  label: string;
-  icon: React.ElementType;
-  color: string;
-  category: string;
-}
-
-const slots: SlotDef[] = [
-  { key: 'camera_1', label: 'Camera 1', icon: Camera, color: '#00c8e0', category: 'IP Camera' },
-  { key: 'camera_2', label: 'Camera 2', icon: Camera, color: '#00c8e0', category: 'IP Camera' },
-  { key: 'camera_3', label: 'Camera 3', icon: Camera, color: '#22c55e', category: 'CC Camera' },
-  { key: 'camera_4', label: 'Camera 4', icon: Camera, color: '#22c55e', category: 'CC Camera' },
-  { key: 'dvr', label: 'DVR / NVR', icon: HardDrive, color: '#f5a623', category: 'NVR/DVR' },
-  { key: 'monitor', label: 'Monitor', icon: Monitor, color: '#a855f7', category: 'Monitor' },
-  { key: 'storage', label: 'HDD Storage', icon: HardDrive, color: '#ef4444', category: 'Storage' },
-  { key: 'cable', label: 'Network Cable', icon: Cable, color: '#3b82f6', category: 'Cable' },
-  { key: 'power', label: 'Power Adapter', icon: Power, color: '#f59e0b', category: 'Accessories' },
-  { key: 'switch', label: 'Network Switch', icon: Wifi, color: '#06b6d4', category: 'Networking' },
-  { key: 'ups', label: 'UPS', icon: Battery, color: '#84cc16', category: 'UPS' },
-  { key: 'bnc', label: 'BNC / Balun', icon: Shield, color: '#e879f9', category: 'Accessories' },
-];
 
 interface SectionDef {
   key: string;
   label: string;
-  category: string;
   icon: React.ElementType;
   color: string;
 }
 
+// One row per real package-builder slot type the API knows about (camera_1..4 collapse into one "camera" row).
 const sections: SectionDef[] = [
-  { key: 'camera', label: 'Camera', category: 'Camera', icon: Camera, color: '#00c8e0' },
-  { key: 'dvr', label: 'DVR / NVR', category: 'NVR/DVR', icon: HardDrive, color: '#f5a623' },
-  { key: 'monitor', label: 'Monitor', category: 'Monitor', icon: Monitor, color: '#a855f7' },
-  { key: 'storage', label: 'Storage', category: 'Storage', icon: HardDrive, color: '#ef4444' },
-  { key: 'cable', label: 'Cable', category: 'Cable', icon: Cable, color: '#3b82f6' },
-  { key: 'power', label: 'Power Adapter', category: 'Accessories', icon: Power, color: '#f59e0b' },
-  { key: 'switch', label: 'Network Switch', category: 'Networking', icon: Wifi, color: '#06b6d4' },
-  { key: 'ups', label: 'UPS', category: 'UPS', icon: Battery, color: '#84cc16' },
-  { key: 'bnc', label: 'BNC / Balun', category: 'Accessories', icon: Shield, color: '#e879f9' },
+  { key: 'camera', label: 'Camera', icon: Camera, color: '#00c8e0' },
+  { key: 'dvr', label: 'DVR / NVR', icon: HardDrive, color: '#f5a623' },
+  { key: 'monitor', label: 'Monitor', icon: Monitor, color: '#a855f7' },
+  { key: 'storage', label: 'Storage', icon: HardDrive, color: '#ef4444' },
+  { key: 'cable', label: 'Cable', icon: Cable, color: '#3b82f6' },
+  { key: 'power', label: 'Power Adapter', icon: Power, color: '#f59e0b' },
+  { key: 'ups', label: 'UPS', icon: Battery, color: '#84cc16' },
 ];
-
-// Mock products per category
-const mockProductsByCategory: Record<string, ProductListDto[]> = {
-  'IP Camera': Array.from({ length: 6 }).map((_, i) => ({
-    id: 100 + i, name: ['Hikvision 4MP Dome', 'Hikvision 8MP Turret', 'Dahua 4MP Bullet', 'Imou Cruiser 4MP', 'Uniview 2MP Dome', 'Hikvision 2MP Bullet'][i],
-    slug: `ip-cam-${i}`, price: [12500, 28000, 9500, 15000, 7800, 6500][i], stock: 20,
-    isFeatured: i < 2, categoryName: 'IP Camera', brandName: ['Hikvision', 'Hikvision', 'Dahua', 'Imou', 'Uniview', 'Hikvision'][i],
-  })),
-  'CC Camera': Array.from({ length: 4 }).map((_, i) => ({
-    id: 200 + i, name: ['Dahua 2MP CC Cam', 'Hikvision HD CC Cam', 'Uniview CC Camera', 'Generic 1080P CC'][i],
-    slug: `cc-cam-${i}`, price: [4500, 5800, 4200, 3500][i], stock: 15,
-    isFeatured: false, categoryName: 'CC Camera', brandName: ['Dahua', 'Hikvision', 'Uniview', 'Generic'][i],
-  })),
-  'NVR/DVR': Array.from({ length: 4 }).map((_, i) => ({
-    id: 300 + i, name: ['Dahua 8CH NVR', 'Hikvision 4CH DVR', 'Dahua 16CH XVR', 'Uniview 8CH NVR'][i],
-    slug: `nvr-${i}`, price: [18000, 12000, 25000, 15500][i], stock: 10,
-    isFeatured: false, categoryName: 'NVR/DVR', brandName: ['Dahua', 'Hikvision', 'Dahua', 'Uniview'][i],
-  })),
-  'Monitor': [{ id: 400, name: 'Dell 24" FHD Monitor', slug: 'monitor-1', price: 22000, stock: 8, isFeatured: false, categoryName: 'Monitor', brandName: 'Dell' },
-    { id: 401, name: 'Hikvision 22" Monitor', slug: 'monitor-2', price: 16000, stock: 5, isFeatured: false, categoryName: 'Monitor', brandName: 'Hikvision' }],
-  'Storage': [{ id: 500, name: 'Seagate 4TB HDD', slug: 'hdd-1', price: 14000, stock: 20, isFeatured: false, categoryName: 'Storage', brandName: 'Seagate' },
-    { id: 501, name: 'WD Purple 2TB', slug: 'hdd-2', price: 8500, stock: 15, isFeatured: false, categoryName: 'Storage', brandName: 'WD' }],
-  'Cable': [{ id: 600, name: 'Cat6 Cable 305m', slug: 'cable-1', price: 6500, stock: 30, isFeatured: false, categoryName: 'Cable', brandName: 'Generic' },
-    { id: 601, name: 'RG59 BNC Cable 305m', slug: 'cable-2', price: 5500, stock: 20, isFeatured: false, categoryName: 'Cable', brandName: 'Generic' }],
-  'Accessories': [{ id: 700, name: '12V Power Adapter', slug: 'power-1', price: 350, stock: 50, isFeatured: false, categoryName: 'Accessories', brandName: 'Generic' },
-    { id: 701, name: 'BNC Video Balun 10-Pack', slug: 'bnc-1', price: 2500, stock: 25, isFeatured: false, categoryName: 'Accessories', brandName: 'Generic' }],
-  'Networking': [{ id: 800, name: 'TP-Link 8-Port PoE Switch', slug: 'switch-1', price: 8500, stock: 12, isFeatured: false, categoryName: 'Networking', brandName: 'TP-Link' },
-    { id: 801, name: 'Ruijie 16-Port Switch', slug: 'switch-2', price: 12000, stock: 8, isFeatured: false, categoryName: 'Networking', brandName: 'Ruijie' }],
-  'UPS': [{ id: 900, name: 'APC UPS 1200VA', slug: 'ups-1', price: 11500, stock: 10, isFeatured: false, categoryName: 'UPS', brandName: 'APC' },
-    { id: 901, name: 'Power Guard 650VA', slug: 'ups-2', price: 4500, stock: 15, isFeatured: false, categoryName: 'UPS', brandName: 'Power Guard' }],
-};
 
 export default function PackageBuilderPage() {
   const [selectedProducts, setSelectedProducts] = useState<Record<string, ProductListDto>>({});
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
   const [slotSearch, setSlotSearch] = useState('');
+  const [productsByBase, setProductsByBase] = useState<Record<string, ProductListDto[]>>({});
+  const [loading, setLoading] = useState(true);
   const { addItem } = useCartStore();
+
+  useEffect(() => {
+    packageBuilderApi.getSlots()
+      .then(res => {
+        const byBase: Record<string, Map<number, ProductListDto>> = {};
+        for (const { slot, products } of res.data) {
+          const base = slot.slotKey.split('_')[0];
+          const bucket = byBase[base] ?? (byBase[base] = new Map());
+          for (const p of products) bucket.set(p.id, p);
+        }
+        setProductsByBase(Object.fromEntries(Object.entries(byBase).map(([k, v]) => [k, [...v.values()]])));
+      })
+      .catch(() => toast.error('Failed to load package builder products.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const activeSlotDef = useMemo(() => {
     if (!activeSlot) return null;
     const sectionKey = activeSlot.split('_')[0];
     const section = sections.find(s => s.key === sectionKey);
     if (!section) return null;
-    return {
-      key: activeSlot,
-      label: section.label,
-      icon: section.icon,
-      color: section.color,
-      category: section.category,
-    };
+    return { ...section, key: activeSlot };
   }, [activeSlot]);
 
   const slotProducts = useMemo(() => {
     if (!activeSlotDef) return [];
-    if (activeSlotDef.category === 'Camera') {
-      return [
-        ...(mockProductsByCategory['IP Camera'] || []),
-        ...(mockProductsByCategory['CC Camera'] || [])
-      ];
-    }
-    return mockProductsByCategory[activeSlotDef.category] || [];
-  }, [activeSlotDef]);
+    return productsByBase[activeSlotDef.key.split('_')[0]] || [];
+  }, [activeSlotDef, productsByBase]);
 
   const filteredSlotProducts = slotProducts.filter(p => p.name.toLowerCase().includes(slotSearch.toLowerCase()));
 
@@ -221,7 +170,7 @@ export default function PackageBuilderPage() {
                   <span className={styles.statLabel}>Components</span>
                 </div>
                 <div className={styles.statItem}>
-                  <span className={styles.statValue}>{slots.length - filledSlots}</span>
+                  <span className={styles.statValue}>{Math.max(sections.length - filledSlots, 0)}</span>
                   <span className={styles.statLabel}>Remaining</span>
                 </div>
               </div>
@@ -275,11 +224,13 @@ export default function PackageBuilderPage() {
               </div>
               <div className={styles.modalSearch}>
                 <Search size={16} />
-                <input type="text" placeholder={`Search ${activeSlotDef?.category} products...`}
+                <input type="text" placeholder={`Search ${activeSlotDef?.label} products...`}
                   value={slotSearch} onChange={e => setSlotSearch(e.target.value)} autoFocus />
               </div>
               <div className={styles.modalProducts}>
-                {filteredSlotProducts.length === 0 ? (
+                {loading ? (
+                  <div className={styles.noProducts}>Loading products...</div>
+                ) : filteredSlotProducts.length === 0 ? (
                   <div className={styles.noProducts}>No products found</div>
                 ) : (
                   filteredSlotProducts.map(product => {
