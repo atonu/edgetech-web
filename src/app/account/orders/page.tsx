@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { OrderDto, ordersApi } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { Skeleton } from '@/components/ui/Skeleton';
 import styles from '../account.module.css';
 
 export default function AccountOrdersPage() {
@@ -39,7 +40,30 @@ export default function AccountOrdersPage() {
 
         <div className={styles.card}>
           {loading ? (
-            <p className={styles.muted}>Loading orders...</p>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Items</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={`order-skeleton-${i}`}>
+                      <td><Skeleton width="3rem" /></td>
+                      <td><Skeleton width="5rem" /></td>
+                      <td><Skeleton width="4rem" /></td>
+                      <td><Skeleton width="3rem" /></td>
+                      <td><Skeleton width="2rem" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : orders.length === 0 ? (
             <>
               <p className={styles.muted}>You have no orders yet.</p>

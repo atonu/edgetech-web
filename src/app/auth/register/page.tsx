@@ -6,6 +6,7 @@ import { Mail, Lock, Eye, EyeOff, UserPlus, Shield, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/api';
+import { Spinner } from '@/components/ui/Spinner';
 import toast from 'react-hot-toast';
 import styles from '../login/auth.module.css';
 
@@ -91,7 +92,7 @@ export default function RegisterPage() {
           </div>
 
           <button type="submit" className="btn btn-primary btn-lg w-full" style={{ justifyContent: 'center' }} disabled={isLoading}>
-            {isLoading ? 'Creating Account...' : <><UserPlus size={18} /> Create Account</>}
+            {isLoading ? <><Spinner size={16} /> Creating Account...</> : <><UserPlus size={18} /> Create Account</>}
           </button>
         </form>
 

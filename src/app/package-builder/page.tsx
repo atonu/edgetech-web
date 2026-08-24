@@ -5,6 +5,7 @@ import { Camera, HardDrive, Monitor, Cable, Power, Battery, Package, X, Search, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { ProductListDto, packageBuilderApi } from '@/lib/api';
+import { Skeleton } from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 import styles from './builder.module.css';
 
@@ -229,7 +230,16 @@ export default function PackageBuilderPage() {
               </div>
               <div className={styles.modalProducts}>
                 {loading ? (
-                  <div className={styles.noProducts}>Loading products...</div>
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <div key={`slot-skeleton-${i}`} className={styles.productOption}>
+                      <Skeleton width={36} height={36} radius="var(--radius-md)" />
+                      <div className={styles.productOptionInfo}>
+                        <Skeleton width="70%" height="0.9rem" style={{ marginBottom: 6 }} />
+                        <Skeleton width="40%" height="0.75rem" />
+                      </div>
+                      <Skeleton width="20%" height="0.9rem" />
+                    </div>
+                  ))
                 ) : filteredSlotProducts.length === 0 ? (
                   <div className={styles.noProducts}>No products found</div>
                 ) : (

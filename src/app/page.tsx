@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Shield, Wifi, Monitor, HardDrive, Camera, Package, ArrowRight, Zap, Star, Clock } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
+import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
 import { HomeGroupsResponse, ProductListDto, productGroupsApi, productsApi } from '@/lib/api';
 import styles from './page.module.css';
 
@@ -70,6 +71,7 @@ export default function HomePage() {
   const [slideDirection, setSlideDirection] = useState(1);
   const [products, setProducts] = useState<ProductListDto[]>([]);
   const [homeGroups, setHomeGroups] = useState<HomeGroupsResponse | null>(null);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [countdown, setCountdown] = useState({ hours: 23, minutes: 45, seconds: 12 });
 
   // Auto-advance hero carousel
@@ -103,6 +105,7 @@ export default function HomePage() {
     ]).then(([featuredResult, groupsResult]) => {
       if (featuredResult.status === 'fulfilled') setProducts(featuredResult.value.data);
       if (groupsResult.status === 'fulfilled') setHomeGroups(groupsResult.value.data);
+      setProductsLoading(false);
     });
   }, []);
 
@@ -206,11 +209,19 @@ export default function HomePage() {
               <br/>
             
             <div className={styles.hotDealsList}>
-                {hotDealProducts.map((product, index) => (
-                  <div key={`hot-${product.id}`} className={styles.hotDealCardWrap}>
-                    <ProductCard product={product} index={index} />
-                  </div>
-                ))}
+                {productsLoading ? (
+                  Array.from({ length: 2 }).map((_, i) => (
+                    <div key={`hot-skeleton-${i}`} className={styles.hotDealCardWrap}>
+                      <ProductCardSkeleton />
+                    </div>
+                  ))
+                ) : (
+                  hotDealProducts.map((product, index) => (
+                    <div key={`hot-${product.id}`} className={styles.hotDealCardWrap}>
+                      <ProductCard product={product} index={index} />
+                    </div>
+                  ))
+                )}
               </div>
               <Link href="/products?sale=true" className={styles.hotDealsViewAll}>
                 View All <ChevronRight size={16} />
@@ -296,9 +307,9 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid-4">
-            {featuredRow1.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
-            ))}
+            {productsLoading
+              ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={`row1-skeleton-${i}`} />)
+              : featuredRow1.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </div>
       </section>
@@ -347,9 +358,9 @@ export default function HomePage() {
             </div>
           </div>
           <div className="grid-4">
-            {featuredRow2.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
-            ))}
+            {productsLoading
+              ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={`row2-skeleton-${i}`} />)
+              : featuredRow2.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </div>
       </section>
@@ -430,9 +441,9 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid-4">
-            {newArrivals.map((p, i) => (
-              <ProductCard key={`new-${p.id}`} product={p} index={i} />
-            ))}
+            {productsLoading
+              ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={`new-skeleton-${i}`} />)
+              : newArrivals.map((p, i) => <ProductCard key={`new-${p.id}`} product={p} index={i} />)}
           </div>
         </div>
       </section>

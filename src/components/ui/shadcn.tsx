@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Spinner } from './Spinner';
 import styles from './shadcn.module.css';
 
 type Variant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive';
@@ -12,8 +13,11 @@ export function Button({
   className,
   variant = 'default',
   size = 'md',
+  loading = false,
+  disabled,
+  children,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size; loading?: boolean }) {
   return (
     <button
       className={cn(
@@ -26,10 +30,16 @@ export function Button({
         size === 'sm' && styles.buttonSm,
         size === 'md' && styles.buttonMd,
         size === 'lg' && styles.buttonLg,
+        loading && styles.buttonLoading,
         className
       )}
+      disabled={disabled || loading}
+      aria-busy={loading}
       {...props}
-    />
+    >
+      {loading && <Spinner size={size === 'lg' ? 18 : 14} />}
+      {children}
+    </button>
   );
 }
 

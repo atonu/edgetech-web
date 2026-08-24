@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ordersApi } from '@/lib/api';
+import { Spinner } from '@/components/ui/Spinner';
 import toast from 'react-hot-toast';
 import styles from './checkout.module.css';
 
@@ -207,7 +208,7 @@ export default function CheckoutPage() {
                 <div className={styles.stepBtns}>
                   <button className="btn btn-ghost" onClick={() => setStep(2)}>← Back</button>
                   <button className="btn btn-primary btn-lg" onClick={handlePlaceOrder} disabled={isPlacing}>
-                    {isPlacing ? 'Placing Order...' : `Place Order — ৳${totalAmount.toLocaleString()}`}
+                    {isPlacing ? <><Spinner size={16} /> Placing Order...</> : `Place Order — ৳${totalAmount.toLocaleString()}`}
                   </button>
                 </div>
               </motion.div>

@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, Grid3X3, LayoutList, ChevronDown, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
+import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
 import { ProductListDto, productsApi, categoriesApi, brandsApi, CategoryDto } from '@/lib/api';
 import styles from './products.module.css';
 
@@ -208,7 +209,11 @@ function ProductsContent() {
 
           {/* Product Grid */}
           <div className={styles.productArea}>
-            {!loading && products.length === 0 ? (
+            {loading ? (
+              <div className={viewMode === 'grid' ? 'grid-4' : styles.listView}>
+                {Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={`skeleton-${i}`} />)}
+              </div>
+            ) : products.length === 0 ? (
               <div className={styles.emptyState}>
                 <Search size={48} />
                 <h3>No products found</h3>

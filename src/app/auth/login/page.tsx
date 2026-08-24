@@ -6,6 +6,7 @@ import { Mail, Lock, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/api';
+import { Spinner } from '@/components/ui/Spinner';
 import toast from 'react-hot-toast';
 import styles from './auth.module.css';
 
@@ -68,7 +69,7 @@ export default function LoginPage() {
           </div>
 
           <button type="submit" className="btn btn-primary btn-lg w-full" style={{ justifyContent: 'center' }} disabled={isLoading}>
-            {isLoading ? 'Signing in...' : <><LogIn size={18} /> Sign In</>}
+            {isLoading ? <><Spinner size={16} /> Signing in...</> : <><LogIn size={18} /> Sign In</>}
           </button>
         </form>
 

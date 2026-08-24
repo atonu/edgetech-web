@@ -8,31 +8,9 @@ import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { ProductDto, ProductListDto, productsApi } from '@/lib/api';
 import ProductCard from '@/components/products/ProductCard';
+import { Skeleton } from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 import styles from './detail.module.css';
-
-// Mock product
-const createMockProduct = (slug: string): ProductDto => ({
-  id: 1, name: 'Hikvision DS-2CD1143G2-I 4MP IR Fixed Dome Network Camera',
-  slug, description: 'The Hikvision DS-2CD1143G2-I is a 4MP IR Fixed Dome Network Camera featuring advanced H.265+ compression, built-in IR LEDs up to 30m, water and dust resistant (IP67), and PoE support. Ideal for indoor/outdoor surveillance in retail, office, and residential settings.',
-  shortDescription: '4MP IR Fixed Dome Network Camera with H.265+, PoE, and IP67 rating',
-  price: 12500, discountPrice: 10625, sku: 'HK-DS2CD1143G2I',
-  primaryImageUrl: undefined, stock: 25, isFeatured: true, isActive: true,
-  categoryId: 1, categoryName: 'IP Camera', categorySlug: 'ip-camera',
-  brandId: 1, brandName: 'Hikvision', brandSlug: 'hikvision',
-  averageRating: 4.5, reviewCount: 23, createdAt: new Date().toISOString(),
-  images: [],
-  specifications: [
-    { id: 1, key: 'Resolution', value: '4MP (2560×1440)', displayOrder: 1 },
-    { id: 2, key: 'Lens', value: '2.8mm Fixed', displayOrder: 2 },
-    { id: 3, key: 'IR Range', value: 'Up to 30m', displayOrder: 3 },
-    { id: 4, key: 'Compression', value: 'H.265+/H.265/H.264+/H.264', displayOrder: 4 },
-    { id: 5, key: 'Protection', value: 'IP67, IK10', displayOrder: 5 },
-    { id: 6, key: 'Power', value: 'PoE (802.3af) / 12V DC', displayOrder: 6 },
-    { id: 7, key: 'WDR', value: '120dB True WDR', displayOrder: 7 },
-    { id: 8, key: 'Storage', value: 'microSD up to 256GB', displayOrder: 8 },
-  ],
-});
 
 const mockRelated: ProductListDto[] = Array.from({ length: 4 }).map((_, i) => ({
   id: i + 10, name: ['Dahua 4MP Bullet Cam', 'Hikvision 2MP Turret', 'Uniview 4MP Dome', 'Imou Cruiser SE'][i],
@@ -44,7 +22,8 @@ const mockRelated: ProductListDto[] = Array.from({ length: 4 }).map((_, i) => ({
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
-  const [product, setProduct] = useState<ProductDto>(createMockProduct(resolvedParams.slug));
+  const [product, setProduct] = useState<ProductDto | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'reviews'>('description');
@@ -53,16 +32,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
   useEffect(() => {
     productsApi.getBySlug(resolvedParams.slug).then(res => {
-      if (res.data) setProduct(res.data);
-    }).catch(() => {});
+      setProduct(res.data);
+    }).catch(() => setNotFound(true));
   }, [resolvedParams.slug]);
 
-  const discount = product.discountPrice
+  const discount = product?.discountPrice
     ? Math.round((1 - product.discountPrice / product.price) * 100)
     : null;
-  const effectivePrice = product.discountPrice ?? product.price;
+  const effectivePrice = product ? (product.discountPrice ?? product.price) : 0;
 
   const handleAddToCart = () => {
+    if (!product) return;
     const listDto: ProductListDto = {
       id: product.id, name: product.name, slug: product.slug,
       price: product.price, discountPrice: product.discountPrice,
@@ -73,6 +53,40 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     for (let i = 0; i < quantity; i++) addItem(listDto);
     toast.success(`${product.name} added to cart!`);
   };
+
+  if (notFound) {
+    return (
+      <div className={styles.detailPage}>
+        <div className="container" style={{ padding: '80px 0', textAlign: 'center' }}>
+          <h2>Product not found</h2>
+          <p className="text-muted">This product may have been removed or is no longer available.</p>
+          <Link href="/products" className="btn btn-primary" style={{ marginTop: 16 }}>Back to Products</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className={styles.detailPage}>
+        <div className="container">
+          <Skeleton width="40%" height="1rem" style={{ marginBottom: 24 }} />
+          <div className={styles.productSection}>
+            <div className={styles.gallery}>
+              <Skeleton height="420px" radius="var(--radius-lg)" />
+            </div>
+            <div className={styles.info}>
+              <Skeleton width="30%" height="1.4rem" style={{ marginBottom: 16 }} />
+              <Skeleton width="80%" height="1.8rem" style={{ marginBottom: 16 }} />
+              <Skeleton width="50%" height="1rem" style={{ marginBottom: 20 }} />
+              <Skeleton width="40%" height="2.2rem" style={{ marginBottom: 20 }} />
+              <Skeleton width="100%" height="46px" radius="var(--radius-md)" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.detailPage}>

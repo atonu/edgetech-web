@@ -39,6 +39,7 @@ import {
   Textarea,
   TH,
 } from '@/components/ui/shadcn';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuthStore } from '@/store/useAuthStore';
 import styles from './admin.module.css';
 
@@ -51,6 +52,16 @@ export default function AdminPage() {
   const { isAuthenticated, isAdmin } = useAuthStore();
   const [tab, setTab] = useState<TabKey>('products');
   const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const withBusy = async (key: string, fn: () => Promise<void>) => {
+    setBusy(key);
+    try {
+      await fn();
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const [products, setProducts] = useState<ProductListDto[]>([]);
   const [productDetails, setProductDetails] = useState<ProductDto | null>(null);
@@ -191,151 +202,213 @@ export default function AdminPage() {
 
   const saveProduct = async (e: FormEvent) => {
     e.preventDefault();
-    try {
-      const payload = {
-        name: productForm.name,
-        description: productForm.description,
-        shortDescription: productForm.shortDescription,
-        price: Number(productForm.price),
-        discountPrice: productForm.discountPrice > 0 ? Number(productForm.discountPrice) : null,
-        sku: productForm.sku,
-        stock: Number(productForm.stock),
-        categoryId: Number(productForm.categoryId),
-        brandId: Number(productForm.brandId),
-        isFeatured: productForm.isFeatured,
-        isActive: productForm.isActive,
-      };
+    await withBusy('save-product', async () => {
+      try {
+        const payload = {
+          name: productForm.name,
+          description: productForm.description,
+          shortDescription: productForm.shortDescription,
+          price: Number(productForm.price),
+          discountPrice: productForm.discountPrice > 0 ? Number(productForm.discountPrice) : null,
+          sku: productForm.sku,
+          stock: Number(productForm.stock),
+          categoryId: Number(productForm.categoryId),
+          brandId: Number(productForm.brandId),
+          isFeatured: productForm.isFeatured,
+          isActive: productForm.isActive,
+        };
 
-      if (productForm.id) {
-        await productsApi.update(productForm.id, payload);
-        toast.success('Product updated.');
-      } else {
-        await productsApi.create(payload);
-        toast.success('Product created.');
+        if (productForm.id) {
+          await productsApi.update(productForm.id, payload);
+          toast.success('Product updated.');
+        } else {
+          await productsApi.create(payload);
+          toast.success('Product created.');
+        }
+
+        resetProductForm();
+        await loadCore();
+      } catch {
+        toast.error('Failed to save product.');
       }
-
-      resetProductForm();
-      await loadCore();
-    } catch {
-      toast.error('Failed to save product.');
-    }
+    });
   };
 
   const removeProduct = async (id: number) => {
-    try {
-      await productsApi.delete(id);
-      toast.success('Product removed.');
-      await loadCore();
-    } catch {
-      toast.error('Failed to remove product.');
-    }
+    await withBusy(`delete-product-${id}`, async () => {
+      try {
+        await productsApi.delete(id);
+        toast.success('Product removed.');
+        await loadCore();
+      } catch {
+        toast.error('Failed to remove product.');
+      }
+    });
   };
 
   const saveCategory = async (e: FormEvent) => {
     e.preventDefault();
-    try {
-      const payload = {
-        name: categoryForm.name,
-        isActive: categoryForm.isActive,
-      };
+    await withBusy('save-category', async () => {
+      try {
+        const payload = {
+          name: categoryForm.name,
+          isActive: categoryForm.isActive,
+        };
 
-      if (categoryForm.id) {
-        await categoriesApi.update(categoryForm.id, payload);
-        toast.success('Category updated.');
-      } else {
-        await categoriesApi.create(payload);
-        toast.success('Category created.');
+        if (categoryForm.id) {
+          await categoriesApi.update(categoryForm.id, payload);
+          toast.success('Category updated.');
+        } else {
+          await categoriesApi.create(payload);
+          toast.success('Category created.');
+        }
+
+        setCategoryForm({ id: 0, name: '', isActive: true });
+        await loadCore();
+      } catch {
+        toast.error('Failed to save category.');
       }
+    });
+  };
 
-      setCategoryForm({ id: 0, name: '', isActive: true });
-      await loadCore();
-    } catch {
-      toast.error('Failed to save category.');
-    }
+  const removeCategory = async (id: number) => {
+    await withBusy(`delete-category-${id}`, async () => {
+      try {
+        await categoriesApi.delete(id);
+        toast.success('Category removed.');
+        await loadCore();
+      } catch {
+        toast.error('Failed to remove category.');
+      }
+    });
   };
 
   const saveBrand = async (e: FormEvent) => {
     e.preventDefault();
-    try {
-      const payload = {
-        name: brandForm.name,
-        description: brandForm.description || null,
-        logoUrl: brandForm.logoUrl || null,
-        isActive: brandForm.isActive,
-      };
+    await withBusy('save-brand', async () => {
+      try {
+        const payload = {
+          name: brandForm.name,
+          description: brandForm.description || null,
+          logoUrl: brandForm.logoUrl || null,
+          isActive: brandForm.isActive,
+        };
 
-      if (brandForm.id) {
-        await brandsApi.update(brandForm.id, payload);
-        toast.success('Brand updated.');
-      } else {
-        await brandsApi.create(payload);
-        toast.success('Brand created.');
+        if (brandForm.id) {
+          await brandsApi.update(brandForm.id, payload);
+          toast.success('Brand updated.');
+        } else {
+          await brandsApi.create(payload);
+          toast.success('Brand created.');
+        }
+
+        setBrandForm({ id: 0, name: '', description: '', logoUrl: '', isActive: true });
+        await loadCore();
+      } catch {
+        toast.error('Failed to save brand.');
       }
+    });
+  };
 
-      setBrandForm({ id: 0, name: '', description: '', logoUrl: '', isActive: true });
-      await loadCore();
-    } catch {
-      toast.error('Failed to save brand.');
-    }
+  const removeBrand = async (id: number) => {
+    await withBusy(`delete-brand-${id}`, async () => {
+      try {
+        await brandsApi.delete(id);
+        toast.success('Brand removed.');
+        await loadCore();
+      } catch {
+        toast.error('Failed to remove brand.');
+      }
+    });
   };
 
   const saveService = async (e: FormEvent) => {
     e.preventDefault();
-    try {
-      if (serviceForm.id) {
-        await adminServicesApi.update(serviceForm.id, {
-          name: serviceForm.name,
-          description: serviceForm.description,
-          isActive: serviceForm.isActive,
-        });
-        toast.success('Service updated.');
-      } else {
-        await adminServicesApi.create({ name: serviceForm.name, description: serviceForm.description });
-        toast.success('Service created.');
-      }
+    await withBusy('save-service', async () => {
+      try {
+        if (serviceForm.id) {
+          await adminServicesApi.update(serviceForm.id, {
+            name: serviceForm.name,
+            description: serviceForm.description,
+            isActive: serviceForm.isActive,
+          });
+          toast.success('Service updated.');
+        } else {
+          await adminServicesApi.create({ name: serviceForm.name, description: serviceForm.description });
+          toast.success('Service created.');
+        }
 
-      setServiceForm({ id: 0, name: '', description: '', isActive: true });
-      await loadCore();
-    } catch {
-      toast.error('Failed to save service.');
-    }
+        setServiceForm({ id: 0, name: '', description: '', isActive: true });
+        await loadCore();
+      } catch {
+        toast.error('Failed to save service.');
+      }
+    });
+  };
+
+  const removeService = async (id: number) => {
+    await withBusy(`delete-service-${id}`, async () => {
+      try {
+        await adminServicesApi.delete(id);
+        toast.success('Service removed.');
+        await loadCore();
+      } catch {
+        toast.error('Failed to remove service.');
+      }
+    });
   };
 
   const saveGroup = async (e: FormEvent) => {
     e.preventDefault();
-    try {
-      if (groupForm.id) {
-        await adminProductGroupsApi.update(groupForm.id, {
-          name: groupForm.name,
-          isActive: groupForm.isActive,
-          productIds: groupForm.productIds,
-        });
-        toast.success('Group updated.');
-      } else {
-        await adminProductGroupsApi.create({
-          key: groupForm.key,
-          name: groupForm.name,
-          isActive: groupForm.isActive,
-          productIds: groupForm.productIds,
-        });
-        toast.success('Group created.');
-      }
+    await withBusy('save-group', async () => {
+      try {
+        if (groupForm.id) {
+          await adminProductGroupsApi.update(groupForm.id, {
+            name: groupForm.name,
+            isActive: groupForm.isActive,
+            productIds: groupForm.productIds,
+          });
+          toast.success('Group updated.');
+        } else {
+          await adminProductGroupsApi.create({
+            key: groupForm.key,
+            name: groupForm.name,
+            isActive: groupForm.isActive,
+            productIds: groupForm.productIds,
+          });
+          toast.success('Group created.');
+        }
 
-      setGroupForm({ id: 0, key: 'best-sellers', name: '', isActive: true, productIds: [] });
-      await loadCore();
-    } catch {
-      toast.error('Failed to save group.');
-    }
+        setGroupForm({ id: 0, key: 'best-sellers', name: '', isActive: true, productIds: [] });
+        await loadCore();
+      } catch {
+        toast.error('Failed to save group.');
+      }
+    });
+  };
+
+  const removeGroup = async (id: number) => {
+    await withBusy(`delete-group-${id}`, async () => {
+      try {
+        await adminProductGroupsApi.delete(id);
+        toast.success('Group removed.');
+        await loadCore();
+      } catch {
+        toast.error('Failed to remove group.');
+      }
+    });
   };
 
   const updateOrder = async (id: number, status: string, notes: string) => {
-    try {
-      await ordersApi.updateAdmin(id, status, notes);
-      toast.success('Order updated.');
-      await loadCore();
-    } catch {
-      toast.error('Failed to update order.');
-    }
+    await withBusy(`save-order-${id}`, async () => {
+      try {
+        await ordersApi.updateAdmin(id, status, notes);
+        toast.success('Order updated.');
+        await loadCore();
+      } catch {
+        toast.error('Failed to update order.');
+      }
+    });
   };
 
   return (
@@ -349,7 +422,7 @@ export default function AdminPage() {
               <p className={styles.muted}>Manage products, categories, services, homepage groups, and orders from one dashboard.</p>
             </div>
             <div className={styles.heroActions}>
-              <Button variant="secondary" onClick={loadCore} disabled={loading}>
+              <Button variant="secondary" onClick={loadCore} loading={loading}>
                 <RefreshCcw size={16} /> Refresh
               </Button>
             </div>
@@ -425,7 +498,7 @@ export default function AdminPage() {
                     </Select>
                   </Field>
                   <div className={`${styles.actions} ${styles.fullWidth}`}>
-                    <Button type="submit">Save Product</Button>
+                    <Button type="submit" loading={busy === 'save-product'}>Save Product</Button>
                     <Button variant="ghost" type="button" onClick={resetProductForm}>Clear</Button>
                     {productDetails && <Badge variant="secondary">Slug: {productDetails.slug}</Badge>}
                   </div>
@@ -443,14 +516,16 @@ export default function AdminPage() {
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Name</TH><TH>Category</TH><TH>Brand</TH><TH>Price</TH><TH>Stock</TH><TH>Actions</TH></tr></thead>
                     <tbody>
-                      {products.map(p => (
+                      {loading ? (
+                        <SkeletonRows cols={7} />
+                      ) : products.map(p => (
                         <tr key={p.id}>
                           <TD>{p.id}</TD><TD>{p.name}</TD><TD>{p.categoryName}</TD><TD>{p.brandName}</TD>
                           <TD>{(p.discountPrice ?? p.price).toLocaleString()}</TD><TD>{p.stock}</TD>
                           <TD>
                             <div className={styles.actions}>
                               <Button size="sm" variant="outline" onClick={() => editProduct(p.slug)}>Edit</Button>
-                              <Button size="sm" variant="destructive" onClick={() => removeProduct(p.id)}>Delete</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-product-${p.id}`} onClick={() => removeProduct(p.id)}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -477,7 +552,7 @@ export default function AdminPage() {
                     </Select>
                   </Field>
                   <div className={`${styles.actions} ${styles.fullWidth}`}>
-                    <Button type="submit">Save Category</Button>
+                    <Button type="submit" loading={busy === 'save-category'}>Save Category</Button>
                     <Button variant="ghost" type="button" onClick={() => setCategoryForm({ id: 0, name: '', isActive: true })}>Clear</Button>
                   </div>
                 </form>
@@ -491,13 +566,15 @@ export default function AdminPage() {
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Name</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
                     <tbody>
-                      {flatCategories.map(c => (
+                      {loading ? (
+                        <SkeletonRows cols={4} />
+                      ) : flatCategories.map(c => (
                         <tr key={c.id}>
                           <TD>{c.id}</TD><TD>{c.name}</TD><TD><Badge variant={c.isActive ? 'success' : 'secondary'}>{c.isActive ? 'Active' : 'Inactive'}</Badge></TD>
                           <TD>
                             <div className={styles.actions}>
                               <Button size="sm" variant="outline" onClick={() => setCategoryForm({ id: c.id, name: c.name, isActive: c.isActive })}>Edit</Button>
-                              <Button size="sm" variant="destructive" onClick={async () => { await categoriesApi.delete(c.id); await loadCore(); }}>Delete</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-category-${c.id}`} onClick={() => removeCategory(c.id)}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -526,7 +603,7 @@ export default function AdminPage() {
                     </Select>
                   </Field>
                   <div className={`${styles.actions} ${styles.fullWidth}`}>
-                    <Button type="submit">Save Brand</Button>
+                    <Button type="submit" loading={busy === 'save-brand'}>Save Brand</Button>
                     <Button variant="ghost" type="button" onClick={() => setBrandForm({ id: 0, name: '', description: '', logoUrl: '', isActive: true })}>Clear</Button>
                   </div>
                 </form>
@@ -540,7 +617,9 @@ export default function AdminPage() {
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Name</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
                     <tbody>
-                      {brands.map(b => (
+                      {loading ? (
+                        <SkeletonRows cols={4} />
+                      ) : brands.map(b => (
                         <tr key={b.id}>
                           <TD>{b.id}</TD>
                           <TD>{b.name}</TD>
@@ -548,7 +627,7 @@ export default function AdminPage() {
                           <TD>
                             <div className={styles.actions}>
                               <Button size="sm" variant="outline" onClick={() => setBrandForm({ id: b.id, name: b.name, description: b.description ?? '', logoUrl: b.logoUrl ?? '', isActive: b.isActive })}>Edit</Button>
-                              <Button size="sm" variant="destructive" onClick={async () => { await brandsApi.delete(b.id); await loadCore(); }}>Delete</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-brand-${b.id}`} onClick={() => removeBrand(b.id)}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -576,7 +655,7 @@ export default function AdminPage() {
                   </Field>
                   <div className={styles.fullWidth}><Label>Description</Label><Textarea rows={2} value={serviceForm.description} onChange={e => setServiceForm(f => ({ ...f, description: e.target.value }))} /></div>
                   <div className={`${styles.actions} ${styles.fullWidth}`}>
-                    <Button type="submit">Save Service</Button>
+                    <Button type="submit" loading={busy === 'save-service'}>Save Service</Button>
                     <Button variant="ghost" type="button" onClick={() => setServiceForm({ id: 0, name: '', description: '', isActive: true })}>Clear</Button>
                   </div>
                 </form>
@@ -590,14 +669,16 @@ export default function AdminPage() {
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Name</TH><TH>Description</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
                     <tbody>
-                      {services.map(s => (
+                      {loading ? (
+                        <SkeletonRows cols={5} />
+                      ) : services.map(s => (
                         <tr key={s.id}>
                           <TD>{s.id}</TD><TD>{s.name}</TD><TD>{s.description}</TD>
                           <TD><Badge variant={s.isActive ? 'success' : 'secondary'}>{s.isActive ? 'Active' : 'Inactive'}</Badge></TD>
                           <TD>
                             <div className={styles.actions}>
                               <Button size="sm" variant="outline" onClick={() => setServiceForm({ id: s.id, name: s.name, description: s.description ?? '', isActive: s.isActive })}>Edit</Button>
-                              <Button size="sm" variant="destructive" onClick={async () => { await adminServicesApi.delete(s.id); await loadCore(); }}>Delete</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-service-${s.id}`} onClick={() => removeService(s.id)}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -653,7 +734,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className={`${styles.actions} ${styles.fullWidth}`}>
-                    <Button type="submit">Save Group</Button>
+                    <Button type="submit" loading={busy === 'save-group'}>Save Group</Button>
                     <Button variant="ghost" type="button" onClick={() => setGroupForm({ id: 0, key: 'best-sellers', name: '', isActive: true, productIds: [] })}>Clear</Button>
                   </div>
                 </form>
@@ -667,13 +748,15 @@ export default function AdminPage() {
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Key</TH><TH>Name</TH><TH>Products</TH><TH>Actions</TH></tr></thead>
                     <tbody>
-                      {groups.map(g => (
+                      {loading ? (
+                        <SkeletonRows cols={5} />
+                      ) : groups.map(g => (
                         <tr key={g.id}>
                           <TD>{g.id}</TD><TD><Badge variant="secondary">{g.key}</Badge></TD><TD>{g.name}</TD><TD>{g.productIds.join(', ')}</TD>
                           <TD>
                             <div className={styles.actions}>
                               <Button size="sm" variant="outline" onClick={() => setGroupForm({ id: g.id, key: g.key, name: g.name, isActive: g.isActive, productIds: g.productIds })}>Edit</Button>
-                              <Button size="sm" variant="destructive" onClick={async () => { await adminProductGroupsApi.delete(g.id); await loadCore(); }}>Delete</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-group-${g.id}`} onClick={() => removeGroup(g.id)}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -695,8 +778,10 @@ export default function AdminPage() {
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Customer</TH><TH>Total</TH><TH>Status</TH><TH>Notes</TH><TH>Actions</TH></tr></thead>
                     <tbody>
-                      {orders.map(o => (
-                        <OrderRow key={o.id} order={o} onSave={updateOrder} />
+                      {loading ? (
+                        <SkeletonRows cols={6} />
+                      ) : orders.map(o => (
+                        <OrderRow key={o.id} order={o} saving={busy === `save-order-${o.id}`} onSave={updateOrder} />
                       ))}
                     </tbody>
                   </Table>
@@ -733,7 +818,21 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function OrderRow({ order, onSave }: { order: OrderDto; onSave: (id: number, status: string, notes: string) => Promise<void> }) {
+function SkeletonRows({ rows = 4, cols }: { rows?: number; cols: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, r) => (
+        <tr key={`skeleton-row-${r}`}>
+          {Array.from({ length: cols }).map((_, c) => (
+            <TD key={`skeleton-cell-${r}-${c}`}><Skeleton width={c === cols - 1 ? '4rem' : '80%'} /></TD>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function OrderRow({ order, saving, onSave }: { order: OrderDto; saving: boolean; onSave: (id: number, status: string, notes: string) => Promise<void> }) {
   const [status, setStatus] = useState(order.status);
   const [notes, setNotes] = useState(order.notes ?? '');
 
@@ -755,7 +854,7 @@ function OrderRow({ order, onSave }: { order: OrderDto; onSave: (id: number, sta
         <Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
       </TD>
       <TD>
-        <Button size="sm" onClick={() => onSave(order.id, status, notes)}>Save</Button>
+        <Button size="sm" loading={saving} onClick={() => onSave(order.id, status, notes)}>Save</Button>
       </TD>
     </tr>
   );
