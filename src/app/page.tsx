@@ -8,26 +8,12 @@ import ProductCard from '@/components/products/ProductCard';
 import { HomeGroupsResponse, ProductListDto, productGroupsApi, productsApi } from '@/lib/api';
 import styles from './page.module.css';
 
-// Mock data for demo (will be replaced by API calls when backend is running)
-const mockProducts: ProductListDto[] = Array.from({ length: 12 }).map((_, i) => ({
-  id: i + 1,
-  name: ['Hikvision 4MP Dome Camera', 'Dahua 8CH NVR System', 'TP-Link 16-Port Switch', 'Seagate 4TB HDD', 'Hikvision PTZ Camera', 'Dahua 2MP Bullet Cam', 'APC UPS 1200VA', 'Cat6 Network Cable 305m', 'Hikvision 8MP Turret', 'Dell 24" Monitor', 'Dahua XVR 16CH', 'BNC Video Balun Pack'][i],
-  slug: `product-${i + 1}`,
-  price: [12500, 35000, 8500, 14000, 45000, 8900, 11500, 6500, 28000, 22000, 25000, 2500][i],
-  discountPrice: i % 3 === 0 ? [12500, 35000, 8500, 14000, 45000, 8900, 11500, 6500, 28000, 22000, 25000, 2500][i] * 0.85 : undefined,
-  primaryImageUrl: undefined,
-  stock: i === 5 ? 0 : 20 + i,
-  isFeatured: i < 8,
-  categoryName: ['IP Camera', 'NVR/DVR', 'Networking', 'Storage', 'IP Camera', 'CC Camera', 'UPS', 'Cable', 'IP Camera', 'Monitor', 'NVR/DVR', 'Accessories'][i],
-  brandName: ['Hikvision', 'Dahua', 'TP-Link', 'Seagate', 'Hikvision', 'Dahua', 'APC', 'Generic', 'Hikvision', 'Dell', 'Dahua', 'Generic'][i],
-}));
-
 const heroSlides = [
   {
     title: 'Secure Your World\nWith Smart Surveillance',
     subtitle: 'Professional-grade CCTV systems trusted by thousands across Bangladesh',
     cta: 'Shop CCTV Cameras',
-    ctaLink: '/products?category=cc-camera',
+    ctaLink: '/products?category=analog-cameras',
     image: '/1.png',
   },
   {
@@ -48,7 +34,7 @@ const heroSlides = [
     title: 'Complete Office\nInfrastructure Stack',
     subtitle: 'Servers, network switches, storage, and deployment-ready enterprise equipment',
     cta: 'Shop Infrastructure',
-    ctaLink: '/products?category=office-equipment',
+    ctaLink: '/products?category=storage',
     image: '/4.png',
   },
 ];
@@ -60,9 +46,9 @@ const heroSlideVariants = {
 };
 
 const categories = [
-  { name: 'IP Camera', slug: 'ip-camera', icon: Camera, color: '#00c8e0', image: '/categories/ip-camera.jpg' },
-  { name: 'CC Camera', slug: 'cc-camera', icon: Shield, color: '#f5a623', image: '/categories/cc-camera.jpg' },
-  { name: 'NVR / DVR', slug: 'nvr-dvr', icon: HardDrive, color: '#22c55e', image: '/categories/nvr-dvr.jpg' },
+  { name: 'IP Camera', slug: 'ip-cameras', icon: Camera, color: '#00c8e0', image: '/categories/ip-camera.jpg' },
+  { name: 'CC Camera', slug: 'analog-cameras', icon: Shield, color: '#f5a623', image: '/categories/cc-camera.jpg' },
+  { name: 'NVR / DVR', slug: 'dvr-nvr', icon: HardDrive, color: '#22c55e', image: '/categories/nvr-dvr.jpg' },
   { name: 'Networking', slug: 'networking', icon: Wifi, color: '#3b82f6', image: '/categories/networking.jpg' },
   { name: 'Monitor', slug: 'monitor', icon: Monitor, color: '#a855f7', image: '/categories/monitor.jpg' },
   { name: 'Accessories', slug: 'accessories', icon: Package, color: '#ef4444', image: '/categories/accessories.jpg' },
@@ -82,7 +68,7 @@ const brands = [
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideDirection, setSlideDirection] = useState(1);
-  const [products, setProducts] = useState<ProductListDto[]>(mockProducts);
+  const [products, setProducts] = useState<ProductListDto[]>([]);
   const [homeGroups, setHomeGroups] = useState<HomeGroupsResponse | null>(null);
   const [countdown, setCountdown] = useState({ hours: 23, minutes: 45, seconds: 12 });
 
@@ -110,16 +96,13 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Try to fetch from API, fall back to mock
   useEffect(() => {
-    productsApi.getFeatured(12).then(res => {
-      if (res.data && res.data.length > 0) setProducts(res.data);
-    }).catch(() => { /* keep mock data */ });
-
-    productGroupsApi.getHome().then(res => {
-      setHomeGroups(res.data);
-    }).catch(() => {
-      setHomeGroups(null);
+    Promise.allSettled([
+      productsApi.getFeatured(12),
+      productGroupsApi.getHome(),
+    ]).then(([featuredResult, groupsResult]) => {
+      if (featuredResult.status === 'fulfilled') setProducts(featuredResult.value.data);
+      if (groupsResult.status === 'fulfilled') setHomeGroups(groupsResult.value.data);
     });
   }, []);
 

@@ -1,29 +1,10 @@
 'use client';
-import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { SlidersHorizontal, Grid3X3, LayoutList, ChevronDown, X, Search } from 'lucide-react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { SlidersHorizontal, Grid3X3, LayoutList, ChevronDown, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
-import { ProductListDto, productsApi, categoriesApi, brandsApi, CategoryDto, BrandDto, PagedResult } from '@/lib/api';
+import { ProductListDto, productsApi, categoriesApi, brandsApi, CategoryDto } from '@/lib/api';
 import styles from './products.module.css';
-
-// Mock data
-const mockProducts: ProductListDto[] = Array.from({ length: 16 }).map((_, i) => ({
-  id: i + 1,
-  name: ['Hikvision 4MP Dome Camera', 'Dahua 8CH NVR System', 'TP-Link 16-Port Switch', 'Seagate 4TB HDD',
-    'Hikvision PTZ Camera', 'Dahua 2MP Bullet Cam', 'APC UPS 1200VA', 'Cat6 Network Cable 305m',
-    'Hikvision 8MP Turret', 'Dell 24" Monitor', 'Dahua XVR 16CH', 'BNC Video Balun Pack',
-    'Imou Cruiser 4MP', 'Uniview 4CH NVR', 'Ruijie 24-Port Switch', 'ZKTeco Biometric'][i],
-  slug: `product-${i + 1}`,
-  price: [12500, 35000, 8500, 14000, 45000, 8900, 11500, 6500, 28000, 22000, 25000, 2500, 15000, 18000, 12000, 9500][i],
-  discountPrice: i % 4 === 0 ? [12500, 35000, 8500, 14000, 45000, 8900, 11500, 6500, 28000, 22000, 25000, 2500, 15000, 18000, 12000, 9500][i] * 0.85 : undefined,
-  primaryImageUrl: undefined,
-  stock: i === 5 ? 0 : 20 + i,
-  isFeatured: i < 8,
-  categoryName: ['IP Camera', 'NVR/DVR', 'Networking', 'Storage', 'IP Camera', 'CC Camera', 'UPS', 'Cable',
-    'IP Camera', 'Monitor', 'NVR/DVR', 'Accessories', 'IP Camera', 'NVR/DVR', 'Networking', 'Access Control'][i],
-  brandName: ['Hikvision', 'Dahua', 'TP-Link', 'Seagate', 'Hikvision', 'Dahua', 'APC', 'Generic',
-    'Hikvision', 'Dell', 'Dahua', 'Generic', 'Imou', 'Uniview', 'Ruijie', 'ZKTeco'][i],
-}));
 
 const sortOptions = [
   { value: 'newest', label: 'Newest First' },
@@ -33,41 +14,93 @@ const sortOptions = [
   { value: 'popular', label: 'Most Popular' },
 ];
 
+interface FilterOption { name: string; slug: string; }
+
+function flattenCategories(categories: CategoryDto[]): FilterOption[] {
+  const result: FilterOption[] = [];
+  for (const c of categories) {
+    result.push({ name: c.name, slug: c.slug ?? '' });
+    if (c.subCategories?.length) result.push(...flattenCategories(c.subCategories));
+  }
+  return result;
+}
+
 function ProductsContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const [products, setProducts] = useState<ProductListDto[]>(mockProducts);
-  const [filteredProducts, setFilteredProducts] = useState<ProductListDto[]>(mockProducts);
+
+  const [products, setProducts] = useState<ProductListDto[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(null);
+
+  const [categoryOptions, setCategoryOptions] = useState<FilterOption[]>([]);
+  const [brandOptions, setBrandOptions] = useState<FilterOption[]>([]);
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(true);
   const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
 
-  const categoryList = ['IP Camera', 'CC Camera', 'NVR/DVR', 'Networking', 'Monitor', 'Storage', 'UPS', 'Accessories', 'Cable', 'Access Control'];
-  const brandList = ['Hikvision', 'Dahua', 'TP-Link', 'Imou', 'Uniview', 'Seagate', 'APC', 'Dell', 'ZKTeco', 'Ruijie'];
-
-  // Filter + sort logic (client-side for mock)
+  // Load filter option lists once
   useEffect(() => {
-    let result = [...products];
-    if (search) result = result.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
-    if (selectedCategory) result = result.filter(p => p.categoryName.toLowerCase().replace(/[^a-z]/g, '') === selectedCategory.toLowerCase().replace(/[^a-z-]/g, '').replace(/-/g, ''));
-    if (selectedBrand) result = result.filter(p => p.brandName.toLowerCase() === selectedBrand.toLowerCase());
-    result = result.filter(p => {
-      const effectivePrice = p.discountPrice ?? p.price;
-      return effectivePrice >= priceRange[0] && effectivePrice <= priceRange[1];
+    categoriesApi.getAll().then(res => setCategoryOptions(flattenCategories(res.data))).catch(() => setCategoryOptions([]));
+    brandsApi.getAll().then(res => setBrandOptions(res.data.map(b => ({ name: b.name, slug: b.slug })))).catch(() => setBrandOptions([]));
+  }, []);
+
+  // Debounce free-text search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Filters identify a page-1 request; changing any of them invalidates the current page.
+  // Adjusted during render (React's documented pattern) rather than in an effect.
+  const filterKey = JSON.stringify([debouncedSearch, selectedCategory, selectedBrand, sortBy, priceRange]);
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  let page = currentPage;
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
+    setCurrentPage(1);
+    page = 1;
+  }
+
+  const requestKey = `${filterKey}|${page}`;
+  const loading = requestKey !== resolvedRequestKey;
+
+  // Fetch products from the API whenever filters/page change
+  useEffect(() => {
+    let active = true;
+    productsApi.getAll({
+      search: debouncedSearch || undefined,
+      category: selectedCategory || undefined,
+      brand: selectedBrand || undefined,
+      sort: sortBy,
+      minPrice: priceRange[0] || undefined,
+      maxPrice: priceRange[1] === 100000 ? undefined : priceRange[1],
+      page,
+      pageSize: 12,
+    }).then(res => {
+      if (!active) return;
+      setProducts(res.data.items);
+      setTotalCount(res.data.totalCount);
+      setTotalPages(res.data.totalPages);
+    }).catch(() => {
+      if (!active) return;
+      setProducts([]);
+      setTotalCount(0);
+      setTotalPages(1);
+    }).finally(() => {
+      if (active) setResolvedRequestKey(requestKey);
     });
-    
-    if (sortBy === 'price-asc') result.sort((a, b) => (a.discountPrice ?? a.price) - (b.discountPrice ?? b.price));
-    if (sortBy === 'price-desc') result.sort((a, b) => (b.discountPrice ?? b.price) - (a.discountPrice ?? a.price));
-    if (sortBy === 'name-asc') result.sort((a, b) => a.name.localeCompare(b.name));
-    
-    setFilteredProducts(result);
-  }, [products, search, selectedCategory, selectedBrand, sortBy, priceRange]);
+    return () => { active = false; };
+    // requestKey already encodes every filter plus the page, so it's the only real dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestKey]);
 
   const clearFilters = () => {
     setSearch('');
@@ -86,7 +119,7 @@ function ProductsContent() {
         <div className={styles.pageHeader}>
           <div>
             <h1>Products</h1>
-            <p className="text-muted">{filteredProducts.length} products found</p>
+            <p className="text-muted">{loading ? 'Loading…' : `${totalCount} products found`}</p>
           </div>
           <div className={styles.headerControls}>
             <div className={styles.sortWrap}>
@@ -137,10 +170,10 @@ function ProductsContent() {
               <div className={styles.filterGroup}>
                 <label className={styles.filterLabel}>Category</label>
                 <div className={styles.filterOptions}>
-                  {categoryList.map(cat => (
-                    <button key={cat} className={`${styles.filterOption} ${selectedCategory === cat.toLowerCase().replace(/[\s/]+/g, '-') ? styles.filterOptionActive : ''}`}
-                      onClick={() => setSelectedCategory(selectedCategory === cat.toLowerCase().replace(/[\s/]+/g, '-') ? '' : cat.toLowerCase().replace(/[\s/]+/g, '-'))}>
-                      {cat}
+                  {categoryOptions.map(cat => (
+                    <button key={cat.slug} className={`${styles.filterOption} ${selectedCategory === cat.slug ? styles.filterOptionActive : ''}`}
+                      onClick={() => setSelectedCategory(selectedCategory === cat.slug ? '' : cat.slug)}>
+                      {cat.name}
                     </button>
                   ))}
                 </div>
@@ -150,10 +183,10 @@ function ProductsContent() {
               <div className={styles.filterGroup}>
                 <label className={styles.filterLabel}>Brand</label>
                 <div className={styles.filterOptions}>
-                  {brandList.map(brand => (
-                    <button key={brand} className={`${styles.filterOption} ${selectedBrand === brand.toLowerCase() ? styles.filterOptionActive : ''}`}
-                      onClick={() => setSelectedBrand(selectedBrand === brand.toLowerCase() ? '' : brand.toLowerCase())}>
-                      {brand}
+                  {brandOptions.map(brand => (
+                    <button key={brand.slug} className={`${styles.filterOption} ${selectedBrand === brand.slug ? styles.filterOptionActive : ''}`}
+                      onClick={() => setSelectedBrand(selectedBrand === brand.slug ? '' : brand.slug)}>
+                      {brand.name}
                     </button>
                   ))}
                 </div>
@@ -175,7 +208,7 @@ function ProductsContent() {
 
           {/* Product Grid */}
           <div className={styles.productArea}>
-            {filteredProducts.length === 0 ? (
+            {!loading && products.length === 0 ? (
               <div className={styles.emptyState}>
                 <Search size={48} />
                 <h3>No products found</h3>
@@ -183,11 +216,33 @@ function ProductsContent() {
                 <button className="btn btn-primary" onClick={clearFilters}>Clear Filters</button>
               </div>
             ) : (
-              <div className={viewMode === 'grid' ? 'grid-4' : styles.listView}>
-                {filteredProducts.map((p, i) => (
-                  <ProductCard key={p.id} product={p} index={i} />
-                ))}
-              </div>
+              <>
+                <div className={viewMode === 'grid' ? 'grid-4' : styles.listView}>
+                  {products.map((p, i) => (
+                    <ProductCard key={p.id} product={p} index={i} />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className={styles.pagination}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    >
+                      <ChevronLeft size={16} /> Prev
+                    </button>
+                    <span className={styles.pageIndicator}>Page {currentPage} of {totalPages}</span>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    >
+                      Next <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
