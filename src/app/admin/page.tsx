@@ -125,7 +125,7 @@ export default function AdminPage() {
   const [productTable, setProductTable] = useState<{ items: ProductListDto[]; totalCount: number; totalPages: number }>({ items: [], totalCount: 0, totalPages: 1 });
   const [productRefreshTick, setProductRefreshTick] = useState(0);
   const [resolvedProductKey, setResolvedProductKey] = useState<string | null>(null);
-  const productRequestKey = `${debouncedProductSearch}|${productTablePage}|${productRefreshTick}`;
+  const productRequestKey = useMemo(() => `${debouncedProductSearch}|${productTablePage}|${productRefreshTick}`, [debouncedProductSearch, productTablePage, productRefreshTick]);
   const productTableLoading = productRequestKey !== resolvedProductKey;
 
   // Orders table: server-side search + pagination.
@@ -135,7 +135,7 @@ export default function AdminPage() {
   const [orderTable, setOrderTable] = useState<{ items: OrderDto[]; totalCount: number; totalPages: number }>({ items: [], totalCount: 0, totalPages: 1 });
   const [orderRefreshTick, setOrderRefreshTick] = useState(0);
   const [resolvedOrderKey, setResolvedOrderKey] = useState<string | null>(null);
-  const orderRequestKey = `${debouncedOrderSearch}|${orderTablePage}|${orderRefreshTick}`;
+  const orderRequestKey = useMemo(() => `${debouncedOrderSearch}|${orderTablePage}|${orderRefreshTick}`, [debouncedOrderSearch, orderTablePage, orderRefreshTick]);
   const orderTableLoading = orderRequestKey !== resolvedOrderKey;
 
   // Categories/Brands/Services/Groups: small, curated lists — client-side search + pagination
