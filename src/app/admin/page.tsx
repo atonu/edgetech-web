@@ -816,13 +816,13 @@ export default function AdminPage() {
         <Tabs>
           <TabsList>
             {[
+              { key: 'orders', label: 'Orders' },
               { key: 'products', label: 'Products' },
               { key: 'categories', label: 'Categories' },
               { key: 'brands', label: 'Brands' },
               { key: 'services', label: 'Services' },
               { key: 'groups', label: 'Groups' },
               { key: 'users', label: 'Users' },
-              { key: 'orders', label: 'Orders' },
             ].map(t => (
               <TabsTrigger key={t.key} active={tab === t.key} onClick={() => setTab(t.key as TabKey)}>
                 {t.label}
