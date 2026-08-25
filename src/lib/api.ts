@@ -17,6 +17,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle 401 responses
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/auth/login?returnTo=${returnTo}`;
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Types
 export interface ProductListDto {
   id: number;

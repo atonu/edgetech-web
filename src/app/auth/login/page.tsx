@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -12,6 +12,7 @@ import styles from './auth.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +26,8 @@ export default function LoginPage() {
       const res = await authApi.login({ email, password });
       setAuth(res.data.user, res.data.token);
       toast.success('Welcome back!');
-      router.push('/');
+      const returnTo = searchParams.get('returnTo');
+      router.push(returnTo ? decodeURIComponent(returnTo) : '/');
     } catch {
       toast.error('Invalid email or password');
     } finally {
