@@ -119,11 +119,13 @@ export interface CartDto {
 
 export interface OrderDto {
   id: number;
+  orderNumber?: string;
   status: string;
   totalAmount: number;
   customer: CustomerInfo;
   shippingAddress: ShippingAddress;
   notes?: string;
+  adminNotes?: string;
   paymentMethod?: string;
   createdAt: string;
   items: OrderItemDto[];
@@ -322,12 +324,12 @@ export const cartApi = {
 };
 
 export const ordersApi = {
-  place: (data: PlaceOrderRequest) => api.post<{ orderId: number }>('/orders', data),
+  place: (data: PlaceOrderRequest) => api.post<{ orderId: number; orderNumber?: string }>('/orders', data),
   getMyOrders: () => api.get<OrderDto[]>('/orders'),
   getOrder: (id: number) => api.get<OrderDto>(`/orders/${id}`),
   getAllOrders: (params?: Record<string, unknown>) => api.get<PagedResult<OrderDto>>('/orders/all', { params }),
   updateStatus: (id: number, status: string) => api.put(`/orders/${id}/status`, { status }),
-  updateAdmin: (id: number, status: string, notes?: string) => api.put(`/orders/${id}/admin`, { status, notes }),
+  updateAdmin: (id: number, status: string, notes?: string, adminNotes?: string) => api.put(`/orders/${id}/admin`, { status, notes, adminNotes }),
 };
 
 export const recentlyViewedApi = {

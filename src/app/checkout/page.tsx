@@ -45,7 +45,7 @@ export default function CheckoutPage() {
 
     try {
       setIsPlacing(true);
-      await ordersApi.place({
+      const res = await ordersApi.place({
         shippingAddress: {
           fullName: form.fullName,
           phone: form.phone,
@@ -70,7 +70,8 @@ export default function CheckoutPage() {
 
       clearCart();
       toast.success('Order placed successfully!');
-      router.push('/checkout/success');
+      const orderNumber = res.data?.orderNumber;
+      router.push(orderNumber ? `/checkout/success?orderNumber=${encodeURIComponent(orderNumber)}` : '/checkout/success');
     } catch {
       toast.error('Unable to place order. Please try again.');
     } finally {

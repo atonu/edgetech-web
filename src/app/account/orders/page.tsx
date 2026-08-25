@@ -86,11 +86,11 @@ export default function AccountOrdersPage() {
                 <tbody>
                   {orders.map(order => (
                     <tr key={order.id}>
-                      <td>#{order.id}</td>
+                      <td><strong>{order.orderNumber ? (order.orderNumber.startsWith('#') ? order.orderNumber : `#${order.orderNumber}`) : `#ET-${String(order.id).padStart(6, '0')}`}</strong></td>
                       <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                       <td><span className={styles.badge}>{order.status}</span></td>
-                      <td>{order.totalAmount.toLocaleString()}</td>
-                      <td>{order.items.length}</td>
+                      <td>৳{order.totalAmount.toLocaleString()}</td>
+                      <td>{order.items.length} items</td>
                     </tr>
                   ))}
                 </tbody>

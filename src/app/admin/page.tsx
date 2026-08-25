@@ -628,10 +628,10 @@ export default function AdminPage() {
     });
   };
 
-  const updateOrder = async (id: number, status: string, notes: string) => {
+  const updateOrder = async (id: number, status: string, notes?: string, adminNotes?: string) => {
     await withBusy(`save-order-${id}`, async () => {
       try {
-        await ordersApi.updateAdmin(id, status, notes);
+        await ordersApi.updateAdmin(id, status, notes, adminNotes);
         toast.success('Order updated.');
         await loadCore();
       } catch {
@@ -1140,12 +1140,12 @@ export default function AdminPage() {
                 </div>
                 <TableWrap>
                   <Table>
-                    <thead><tr><TH>ID</TH><TH>Customer</TH><TH>Total</TH><TH>Status</TH><TH>Notes</TH><TH>Actions</TH></tr></thead>
+                    <thead><tr><TH>Order #</TH><TH>Customer</TH><TH>Shipping Address</TH><TH>Total</TH><TH>Status</TH><TH>Notes</TH><TH>Actions</TH></tr></thead>
                     <tbody>
                       {orderTableLoading ? (
-                        <SkeletonRows cols={6} />
+                        <SkeletonRows cols={7} />
                       ) : orderTable.items.length === 0 ? (
-                        <tr><TD colSpan={6}>No orders found.</TD></tr>
+                        <tr><TD colSpan={7}>No orders found.</TD></tr>
                       ) : orderTable.items.map(o => (
                         <OrderRow key={o.id} order={o} saving={busy === `save-order-${o.id}`} onSave={updateOrder} />
                       ))}
@@ -1215,29 +1215,93 @@ function SkeletonRows({ rows = 4, cols }: { rows?: number; cols: number }) {
   );
 }
 
-function OrderRow({ order, saving, onSave }: { order: OrderDto; saving: boolean; onSave: (id: number, status: string, notes: string) => Promise<void> }) {
+function OrderRow({
+  order,
+  saving,
+  onSave,
+}: {
+  order: OrderDto;
+  saving: boolean;
+  onSave: (id: number, status: string, notes?: string, adminNotes?: string) => Promise<void>;
+}) {
   const [status, setStatus] = useState(order.status);
-  const [notes, setNotes] = useState(order.notes ?? '');
+  const [adminNotes, setAdminNotes] = useState(order.adminNotes ?? order.notes ?? '');
+
+  const orderNum = order.orderNumber
+    ? (order.orderNumber.startsWith('#') ? order.orderNumber : `#${order.orderNumber}`)
+    : `#ET-${String(order.id).padStart(6, '0')}`;
+
+  const createdDate = order.createdAt ? new Date(order.createdAt) : null;
 
   return (
     <tr>
-      <TD>#{order.id}</TD>
       <TD>
-        <strong>{order.customer?.fullName || order.shippingAddress.fullName}</strong>
-        <div className={styles.muted}>{order.customer?.email || 'No email'}</div>
-        <div className={styles.muted}>{order.customer?.phone || order.shippingAddress.phone}</div>
+        <div className={styles.orderNumBadge}>{orderNum}</div>
+        <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 2 }}>ID: #{order.id}</div>
+        {createdDate && (
+          <div className={styles.muted} style={{ fontSize: '0.75rem' }}>
+            {createdDate.toLocaleDateString()} {createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        )}
       </TD>
-      <TD>{order.totalAmount.toLocaleString()}</TD>
+      <TD>
+        <strong>{order.customer?.fullName || order.shippingAddress?.fullName}</strong>
+        <div className={styles.muted}>{order.customer?.email || 'No email'}</div>
+        <div className={styles.muted}>{order.customer?.phone || order.shippingAddress?.phone}</div>
+      </TD>
+      <TD>
+        <div className={styles.addressBlock}>
+          <div className={styles.streetAddress}>{order.shippingAddress?.address || 'No street address'}</div>
+          <div className={styles.cityStateZip}>
+            {[
+              order.shippingAddress?.city,
+              order.shippingAddress?.state,
+              order.shippingAddress?.postalCode,
+            ]
+              .filter(Boolean)
+              .join(', ')}
+          </div>
+          {order.shippingAddress?.country && (
+            <div className={styles.muted} style={{ fontSize: '0.78rem' }}>
+              {order.shippingAddress.country}
+            </div>
+          )}
+        </div>
+      </TD>
+      <TD>
+        <div style={{ fontWeight: 600 }}>৳{order.totalAmount.toLocaleString()}</div>
+        {order.paymentMethod && (
+          <div style={{ marginTop: 3 }}>
+            <Badge variant="secondary">{order.paymentMethod.toUpperCase()}</Badge>
+          </div>
+        )}
+        <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 2 }}>
+          {order.items?.length ?? 0} item{(order.items?.length ?? 0) === 1 ? '' : 's'}
+        </div>
+      </TD>
       <TD>
         <Select value={status} onChange={e => setStatus(e.target.value)}>
           {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
         </Select>
       </TD>
       <TD>
-        <Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+        <div className={styles.notesContainer}>
+          {order.notes && (
+            <div className={styles.customerNoteBox}>
+              <span className={styles.customerNoteLabel}>Customer Note:</span>
+              <span>{order.notes}</span>
+            </div>
+          )}
+          <Textarea
+            rows={2}
+            placeholder="Admin internal notes…"
+            value={adminNotes}
+            onChange={e => setAdminNotes(e.target.value)}
+          />
+        </div>
       </TD>
       <TD>
-        <Button size="sm" loading={saving} onClick={() => onSave(order.id, status, notes)}>Save</Button>
+        <Button size="sm" loading={saving} onClick={() => onSave(order.id, status, order.notes, adminNotes)}>Save</Button>
       </TD>
     </tr>
   );
