@@ -347,9 +347,11 @@ export const packageBuilderApi = {
 };
 
 export const adminApi = {
-  getUsers: () => api.get('/admin/users'),
-  createUser: (data: unknown) => api.post('/admin/users', data),
-  changeRole: (id: string, role: string) => api.put(`/admin/users/${id}/role`, { role }),
+  getUsers: (params?: Record<string, unknown>) => api.get<PagedResult<UserDto>>('/admin/users', { params }),
+  createUser: (data: { email: string; password: string; firstName: string; lastName: string; role: string }) =>
+    api.post<UserDto>('/admin/users', data),
+  updateUser: (id: string, data: { firstName: string; lastName: string; role: string }) =>
+    api.put(`/admin/users/${id}`, data),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
 };
 

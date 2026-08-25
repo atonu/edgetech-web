@@ -2,9 +2,10 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Boxes, FolderTree, PackageSearch, RefreshCcw, Search, ShoppingBag, Wrench } from 'lucide-react';
+import { Boxes, FolderTree, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
+  adminApi,
   adminProductGroupsApi,
   adminServicesApi,
   brandsApi,
@@ -19,6 +20,7 @@ import {
   ProductListDto,
   ServiceItemDto,
   OrderDto,
+  UserDto,
 } from '@/lib/api';
 import ProductImageManager, { StagedImage } from '@/components/admin/ProductImageManager';
 import AdminPagination from '@/components/admin/AdminPagination';
@@ -50,9 +52,9 @@ import styles from './admin.module.css';
 
 const ADMIN_PAGE_SIZE = 10;
 
-type DeleteTarget = { type: 'product' | 'category' | 'brand' | 'service' | 'group'; id: number; label: string };
+type DeleteTarget = { type: 'product' | 'category' | 'brand' | 'service' | 'group' | 'user'; id: number | string; label: string };
 
-type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups';
+type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'users';
 
 const ORDER_STATUSES = ['Placed', 'Verified', 'InProgress', 'Done', 'Cancelled'] as const;
 
@@ -86,6 +88,7 @@ export default function AdminPage() {
   const [brands, setBrands] = useState<BrandDto[]>([]);
   const [services, setServices] = useState<ServiceItemDto[]>([]);
   const [groups, setGroups] = useState<ProductGroupDto[]>([]);
+  const [users, setUsers] = useState<UserDto[]>([]);
 
   const [productForm, setProductForm] = useState({
     id: 0,
@@ -149,6 +152,25 @@ export default function AdminPage() {
   const [groupSearch, setGroupSearch] = useState('');
   const [groupTablePage, setGroupTablePage] = usePageWithReset(groupSearch);
 
+  // Users table: server-side search + pagination
+  const [userSearch, setUserSearch] = useState('');
+  const [debouncedUserSearch, setDebouncedUserSearch] = useState('');
+  const [userTablePage, setUserTablePage] = usePageWithReset(debouncedUserSearch);
+  const [userTable, setUserTable] = useState<{ items: UserDto[]; totalCount: number; totalPages: number }>({ items: [], totalCount: 0, totalPages: 1 });
+  const [userRefreshTick, setUserRefreshTick] = useState(0);
+  const [resolvedUserKey, setResolvedUserKey] = useState<string | null>(null);
+  const userRequestKey = useMemo(() => `${debouncedUserSearch}|${userTablePage}|${userRefreshTick}`, [debouncedUserSearch, userTablePage, userRefreshTick]);
+  const userTableLoading = userRequestKey !== resolvedUserKey;
+
+  const [userForm, setUserForm] = useState({
+    id: '',
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    role: 'User',
+  });
+
   const flatCategories = useMemo(() => {
     const out: CategoryDto[] = [];
     const walk = (arr: CategoryDto[]) => {
@@ -188,6 +210,7 @@ export default function AdminPage() {
 
     setProductRefreshTick(t => t + 1);
     setOrderRefreshTick(t => t + 1);
+    setUserRefreshTick(t => t + 1);
   };
 
   useEffect(() => {
@@ -224,6 +247,11 @@ export default function AdminPage() {
   }, [orderSearch]);
 
   useEffect(() => {
+    const timer = setTimeout(() => setDebouncedUserSearch(userSearch), 350);
+    return () => clearTimeout(timer);
+  }, [userSearch]);
+
+  useEffect(() => {
     let active = true;
     productsApi.getAll({ search: debouncedProductSearch || undefined, page: productTablePage, pageSize: ADMIN_PAGE_SIZE })
       .then(res => {
@@ -258,6 +286,24 @@ export default function AdminPage() {
     // orderRequestKey already encodes search, page, and the manual refresh tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderRequestKey]);
+
+  useEffect(() => {
+    let active = true;
+    adminApi.getUsers({ search: debouncedUserSearch || undefined, page: userTablePage, pageSize: ADMIN_PAGE_SIZE })
+      .then(res => {
+        if (!active) return;
+        setUserTable({ items: res.data.items ?? [], totalCount: res.data.totalCount, totalPages: res.data.totalPages || 1 });
+      })
+      .catch(() => {
+        if (active) setUserTable({ items: [], totalCount: 0, totalPages: 1 });
+      })
+      .finally(() => {
+        if (active) setResolvedUserKey(userRequestKey);
+      });
+    return () => { active = false; };
+    // userRequestKey already encodes search, page, and the manual refresh tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userRequestKey]);
 
   const categoryTableResult = useMemo(
     () => paginateClient(
@@ -664,6 +710,65 @@ export default function AdminPage() {
     scrollToForm();
   };
 
+  const resetUserForm = () => {
+    setUserForm({
+      id: '',
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      role: 'User',
+    });
+  };
+
+  const saveUser = async (e: FormEvent) => {
+    e.preventDefault();
+    await withBusy('save-user', async () => {
+      try {
+        if (userForm.id) {
+          await adminApi.updateUser(userForm.id, {
+            firstName: userForm.firstName,
+            lastName: userForm.lastName,
+            role: userForm.role,
+          });
+          toast.success('User updated.');
+        } else {
+          await adminApi.createUser({
+            email: userForm.email,
+            password: userForm.password,
+            firstName: userForm.firstName,
+            lastName: userForm.lastName,
+            role: userForm.role,
+          });
+          toast.success('User created.');
+        }
+
+        resetUserForm();
+        await loadCore();
+      } catch {
+        toast.error('Failed to save user.');
+      }
+    });
+  };
+
+  const removeUser = async (id: string) => {
+    await withBusy(`delete-user-${id}`, async () => {
+      try {
+        await adminApi.deleteUser(id);
+        toast.success('User removed.');
+        await loadCore();
+      } catch {
+        toast.error('Failed to remove user.');
+      }
+    });
+  };
+
+  const editUser = (u: UserDto) => {
+    setUserForm({ id: u.id, email: u.email, password: '', firstName: u.firstName, lastName: u.lastName, role: u.role });
+    setTab('users');
+    scrollToForm();
+  };
+
   const confirmDeleteLabel = (target: DeleteTarget) =>
     `Delete ${target.type === 'group' ? 'homepage group' : target.type} "${target.label}"? This action cannot be undone.`;
 
@@ -672,11 +777,12 @@ export default function AdminPage() {
     setConfirmDelete(null);
     if (!target) return;
     switch (target.type) {
-      case 'product': return void removeProduct(target.id);
-      case 'category': return void removeCategory(target.id);
-      case 'brand': return void removeBrand(target.id);
-      case 'service': return void removeService(target.id);
-      case 'group': return void removeGroup(target.id);
+      case 'product': return void removeProduct(target.id as number);
+      case 'category': return void removeCategory(target.id as number);
+      case 'brand': return void removeBrand(target.id as number);
+      case 'service': return void removeService(target.id as number);
+      case 'group': return void removeGroup(target.id as number);
+      case 'user': return void removeUser(target.id as string);
     }
   };
 
@@ -704,6 +810,7 @@ export default function AdminPage() {
           <Metric icon={<Wrench size={16} />} label="Services" value={services.length} />
           <Metric icon={<ShoppingBag size={16} />} label="Orders" value={orderTable.totalCount} />
           <Metric icon={<PackageSearch size={16} />} label="Groups" value={groups.length} />
+          <Metric icon={<Users size={16} />} label="Users" value={userTable.totalCount} />
         </div>
 
         <Tabs>
@@ -714,6 +821,7 @@ export default function AdminPage() {
               { key: 'brands', label: 'Brands' },
               { key: 'services', label: 'Services' },
               { key: 'groups', label: 'Groups' },
+              { key: 'users', label: 'Users' },
               { key: 'orders', label: 'Orders' },
             ].map(t => (
               <TabsTrigger key={t.key} active={tab === t.key} onClick={() => setTab(t.key as TabKey)}>
@@ -1123,6 +1231,75 @@ export default function AdminPage() {
                   totalCount={groupTableResult.totalCount}
                   pageSize={ADMIN_PAGE_SIZE}
                   onPageChange={setGroupTablePage}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {tab === 'users' && (
+          <div className={styles.panelGrid}>
+            <Card>
+              <div ref={formTopRef} />
+              <CardHeader><CardTitle>{userForm.id ? `Edit User` : 'Create User'}</CardTitle><CardDescription>Manage user accounts and roles.</CardDescription></CardHeader>
+              <CardContent>
+                <form onSubmit={saveUser} className={styles.grid2}>
+                  <Field label="Email"><Input type="email" value={userForm.email} onChange={e => setUserForm(f => ({ ...f, email: e.target.value }))} required disabled={userForm.id !== ''} /></Field>
+                  {!userForm.id && <Field label="Password"><Input type="password" value={userForm.password} onChange={e => setUserForm(f => ({ ...f, password: e.target.value }))} required /></Field>}
+                  <Field label="First Name"><Input value={userForm.firstName} onChange={e => setUserForm(f => ({ ...f, firstName: e.target.value }))} required /></Field>
+                  <Field label="Last Name"><Input value={userForm.lastName} onChange={e => setUserForm(f => ({ ...f, lastName: e.target.value }))} required /></Field>
+                  <Field label="Role">
+                    <Select value={userForm.role} onChange={e => setUserForm(f => ({ ...f, role: e.target.value }))}>
+                      <option value="User">User</option>
+                      <option value="Admin">Admin</option>
+                    </Select>
+                  </Field>
+                  <div className={`${styles.actions} ${styles.fullWidth}`}>
+                    <Button type="submit" loading={busy === 'save-user'}>Save User</Button>
+                    <Button variant="ghost" type="button" onClick={resetUserForm}>Clear</Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle>Users List</CardTitle><CardDescription>Manage user accounts and permissions.</CardDescription></CardHeader>
+              <CardContent>
+                <div className={styles.searchBar}>
+                  <Search size={15} />
+                  <Input placeholder="Search users by name or email…" value={userSearch} onChange={e => setUserSearch(e.target.value)} />
+                </div>
+                <TableWrap>
+                  <Table>
+                    <thead><tr><TH>ID</TH><TH>Email</TH><TH>Name</TH><TH>Role</TH><TH>Actions</TH></tr></thead>
+                    <tbody>
+                      {userTableLoading ? (
+                        <SkeletonRows cols={5} />
+                      ) : userTable.items.length === 0 ? (
+                        <tr><TD colSpan={5}>No users found.</TD></tr>
+                      ) : userTable.items.map(u => (
+                        <tr key={u.id}>
+                          <TD>{u.id.slice(0, 8)}…</TD>
+                          <TD>{u.email}</TD>
+                          <TD>{u.firstName} {u.lastName}</TD>
+                          <TD><Badge variant={u.role === 'Admin' ? 'default' : 'secondary'}>{u.role}</Badge></TD>
+                          <TD>
+                            <div className={styles.actions}>
+                              <Button size="sm" variant="outline" onClick={() => editUser(u)}>Edit</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-user-${u.id}`} onClick={() => setConfirmDelete({ type: 'user', id: u.id, label: `${u.firstName} ${u.lastName}` })}>Delete</Button>
+                            </div>
+                          </TD>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </TableWrap>
+                <AdminPagination
+                  page={userTablePage}
+                  totalPages={userTable.totalPages}
+                  totalCount={userTable.totalCount}
+                  pageSize={ADMIN_PAGE_SIZE}
+                  onPageChange={setUserTablePage}
                 />
               </CardContent>
             </Card>
