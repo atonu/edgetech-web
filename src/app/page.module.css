@@ -669,12 +669,34 @@
     height: 280px;
   }
   .heroText {
-    width: 88%;
-    max-width: 88%;
-    padding: 14px;
+    position: absolute !important;
+    top: 12px;
+    right: 12px;
+    width: auto;
+    max-width: 160px;
+    padding: 12px 10px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 8px;
   }
-  .heroCtas { flex-direction: column; gap: 12px; }
-  .heroCtas a { text-align: center; justify-content: center; }
+  .heroTitle {
+    font-size: 0.9rem;
+    line-height: 1.15;
+    margin-bottom: 0;
+  }
+  .heroCtas {
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 0;
+  }
+  .heroCtas :global(.btn) {
+    padding: 6px 8px;
+    font-size: 0.65rem;
+    white-space: nowrap;
+  }
   .heroNav {
     left: 16px;
     bottom: 12px;
