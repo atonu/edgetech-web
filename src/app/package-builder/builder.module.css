@@ -426,6 +426,7 @@
 }
 
 .productOptionIcon {
+  position: relative;
   width: 40px;
   height: 40px;
   display: flex;
@@ -433,6 +434,7 @@
   justify-content: center;
   background: var(--color-surface-2);
   border-radius: var(--radius-sm);
+  overflow: hidden;
   color: var(--color-text-subtle);
   flex-shrink: 0;
 }

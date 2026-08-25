@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Camera, HardDrive, Monitor, Cable, Power, Battery, Package, X, Search, Check, ShoppingCart, Save, ArrowRight, Zap, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
@@ -248,7 +249,13 @@ export default function PackageBuilderPage() {
                     return (
                       <button key={product.id} className={`${styles.productOption} ${isSelected ? styles.productSelected : ''}`}
                         onClick={() => selectProduct(product)}>
-                        <div className={styles.productOptionIcon}><Zap size={18} /></div>
+                        <div className={styles.productOptionIcon}>
+                          {product.primaryImageUrl ? (
+                            <Image src={product.primaryImageUrl} alt="" fill style={{ objectFit: 'cover' }} />
+                          ) : (
+                            <Zap size={18} />
+                          )}
+                        </div>
                         <div className={styles.productOptionInfo}>
                           <span className={styles.productOptionName}>{product.name}</span>
                           <span className={styles.productOptionBrand}>{product.brandName}</span>

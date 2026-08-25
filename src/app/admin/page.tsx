@@ -11,6 +11,7 @@ import {
   categoriesApi,
   ordersApi,
   productsApi,
+  productImagesApi,
   CategoryDto,
   BrandDto,
   ProductDto,
@@ -19,6 +20,7 @@ import {
   ServiceItemDto,
   OrderDto,
 } from '@/lib/api';
+import ProductImageManager, { StagedImage } from '@/components/admin/ProductImageManager';
 import {
   Badge,
   Button,
@@ -85,6 +87,10 @@ export default function AdminPage() {
     isFeatured: false,
     isActive: true,
   });
+
+  const [stagedImages, setStagedImages] = useState<StagedImage[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [busyImageId, setBusyImageId] = useState<number | null>(null);
 
   const [categoryForm, setCategoryForm] = useState({ id: 0, name: '', isActive: true });
   const [brandForm, setBrandForm] = useState({ id: 0, name: '', description: '', logoUrl: '', isActive: true });
@@ -157,8 +163,14 @@ export default function AdminPage() {
 
   if (!canAccessAdmin) return null;
 
+  const clearStagedImages = () => {
+    stagedImages.forEach(s => URL.revokeObjectURL(s.previewUrl));
+    setStagedImages([]);
+  };
+
   const resetProductForm = () => {
     setProductDetails(null);
+    clearStagedImages();
     setProductForm({
       id: 0,
       name: '',
@@ -175,7 +187,82 @@ export default function AdminPage() {
     });
   };
 
+  const refreshProductDetails = async (slug: string) => {
+    try {
+      const res = await productsApi.getBySlug(slug);
+      setProductDetails(res.data);
+    } catch {
+      toast.error('Failed to refresh product images.');
+    }
+  };
+
+  const uploadImagesToProduct = async (id: number, files: File[]) => {
+    setUploadingImage(true);
+    try {
+      for (const file of files) {
+        try {
+          const { url } = await productImagesApi.upload(file);
+          await productsApi.addImage(id, url);
+        } catch {
+          toast.error(`Failed to upload ${file.name}.`);
+        }
+      }
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleFilesSelected = async (files: File[]) => {
+    if (productForm.id > 0) {
+      await uploadImagesToProduct(productForm.id, files);
+      if (productDetails) await refreshProductDetails(productDetails.slug);
+      await loadCore();
+    } else {
+      setStagedImages(prev => [...prev, ...files.map(file => ({ file, previewUrl: URL.createObjectURL(file) }))]);
+    }
+  };
+
+  const handleRemoveStaged = (index: number) => {
+    setStagedImages(prev => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleSetPrimaryImage = async (imageId: number) => {
+    if (!productDetails) return;
+    setBusyImageId(imageId);
+    try {
+      await productsApi.setPrimaryImage(productDetails.id, imageId);
+      await refreshProductDetails(productDetails.slug);
+      await loadCore();
+    } catch {
+      toast.error('Failed to set primary image.');
+    } finally {
+      setBusyImageId(null);
+    }
+  };
+
+  const handleDeleteImage = async (imageId: number) => {
+    if (!productDetails) return;
+    setBusyImageId(imageId);
+    try {
+      const image = productDetails.images.find(i => i.id === imageId);
+      await productsApi.deleteImage(productDetails.id, imageId);
+      if (image) await productImagesApi.remove(image.imageUrl);
+      await refreshProductDetails(productDetails.slug);
+      await loadCore();
+      toast.success('Image removed.');
+    } catch {
+      toast.error('Failed to remove image.');
+    } finally {
+      setBusyImageId(null);
+    }
+  };
+
   const editProduct = async (slug: string) => {
+    clearStagedImages();
     try {
       const res = await productsApi.getBySlug(slug);
       const p = res.data;
@@ -222,8 +309,11 @@ export default function AdminPage() {
           await productsApi.update(productForm.id, payload);
           toast.success('Product updated.');
         } else {
-          await productsApi.create(payload);
+          const created = await productsApi.create(payload);
           toast.success('Product created.');
+          if (stagedImages.length > 0) {
+            await uploadImagesToProduct(created.data.id, stagedImages.map(s => s.file));
+          }
         }
 
         resetProductForm();
@@ -485,6 +575,19 @@ export default function AdminPage() {
                     <Label>Description</Label>
                     <Textarea rows={3} value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} />
                   </div>
+                  <div className={styles.fullWidth}>
+                    <Label>Images</Label>
+                    <ProductImageManager
+                      images={productDetails?.images ?? []}
+                      stagedImages={stagedImages}
+                      uploading={uploadingImage}
+                      busyImageId={busyImageId}
+                      onFilesSelected={handleFilesSelected}
+                      onRemoveStaged={handleRemoveStaged}
+                      onSetPrimary={handleSetPrimaryImage}
+                      onDelete={handleDeleteImage}
+                    />
+                  </div>
                   <Field label="Featured">
                     <Select value={String(productForm.isFeatured)} onChange={e => setProductForm(p => ({ ...p, isFeatured: e.target.value === 'true' }))}>
                       <option value="true">Yes</option>
@@ -514,12 +617,20 @@ export default function AdminPage() {
               <CardContent>
                 <TableWrap>
                   <Table>
-                    <thead><tr><TH>ID</TH><TH>Name</TH><TH>Category</TH><TH>Brand</TH><TH>Price</TH><TH>Stock</TH><TH>Actions</TH></tr></thead>
+                    <thead><tr><TH>Image</TH><TH>ID</TH><TH>Name</TH><TH>Category</TH><TH>Brand</TH><TH>Price</TH><TH>Stock</TH><TH>Actions</TH></tr></thead>
                     <tbody>
                       {loading ? (
-                        <SkeletonRows cols={7} />
+                        <SkeletonRows cols={8} />
                       ) : products.map(p => (
                         <tr key={p.id}>
+                          <TD>
+                            {p.primaryImageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- tiny admin table thumbnail, not worth next/image config here
+                              <img src={p.primaryImageUrl} alt="" className={styles.thumbnail} />
+                            ) : (
+                              <div className={styles.thumbnailPlaceholder} />
+                            )}
+                          </TD>
                           <TD>{p.id}</TD><TD>{p.name}</TD><TD>{p.categoryName}</TD><TD>{p.brandName}</TD>
                           <TD>{(p.discountPrice ?? p.price).toLocaleString()}</TD><TD>{p.stock}</TD>
                           <TD>

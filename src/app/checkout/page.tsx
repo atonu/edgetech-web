@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CreditCard, Truck, MapPin, ChevronRight, ShieldCheck, Check, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
@@ -170,7 +171,13 @@ export default function CheckoutPage() {
                   <h4>Items ({count()}):</h4>
                   {items.map(item => (
                     <div key={item.productId} className={styles.reviewItem}>
-                      <div className={styles.reviewItemIcon}><Zap size={16} /></div>
+                      <div className={styles.reviewItemIcon}>
+                        {item.imageUrl ? (
+                          <Image src={item.imageUrl} alt={item.productName} fill style={{ objectFit: 'cover' }} />
+                        ) : (
+                          <Zap size={16} />
+                        )}
+                      </div>
                       <span className={styles.reviewItemName}>{item.productName}</span>
                       <span className={styles.reviewItemQty}>x{item.quantity}</span>
                       <span className={styles.reviewItemPrice}>৳{((item.discountPrice ?? item.price) * item.quantity).toLocaleString()}</span>

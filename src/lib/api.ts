@@ -239,9 +239,39 @@ export const productsApi = {
   update: (id: number, data: unknown) => api.put(`/products/${id}`, data),
   toggleFeatured: (id: number, isFeatured: boolean) => api.patch(`/products/${id}/featured`, { isFeatured }),
   delete: (id: number) => api.delete(`/products/${id}`),
-  uploadImage: (id: number, file: File) => {
-    const fd = new FormData(); fd.append('file', file);
-    return api.post(`/products/${id}/images`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  addImage: (id: number, imageUrl: string) => api.post<ProductImageDto>(`/products/${id}/images`, { imageUrl }),
+  setPrimaryImage: (id: number, imageId: number) => api.patch(`/products/${id}/images/${imageId}/primary`),
+  deleteImage: (id: number, imageId: number) => api.delete(`/products/${id}/images/${imageId}`),
+};
+
+// Uploads image bytes to this Next.js app's own /public folder (see src/app/api/uploads/product-images/route.ts) —
+// a separate hop from `api` above, which only talks to the .NET backend.
+export const productImagesApi = {
+  upload: async (file: File): Promise<{ url: string }> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('et_token') : null;
+    const res = await fetch('/api/uploads/product-images', {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: fd,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || 'Image upload failed');
+    }
+    return res.json();
+  },
+  remove: async (url: string): Promise<void> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('et_token') : null;
+    await fetch('/api/uploads/product-images', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ url }),
+    });
   },
 };
 

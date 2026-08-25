@@ -24,6 +24,7 @@ jobs:
             cd ~/apps/edgetech-web
             git reset --hard HEAD
             git pull origin master
+            mkdir -p "$(pwd)/public/product-images"
             docker build -t edgetech-web:latest .
             docker stop edgetech-web-container || true
             docker rm edgetech-web-container || true
@@ -31,4 +32,5 @@ jobs:
               --name edgetech-web-container \
               --restart unless-stopped \
               -p 3000:3000 \
+              -v "$(pwd)/public/product-images:/app/public/product-images" \
               edgetech-web:latest

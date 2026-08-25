@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# uploaded product images (persisted on the server via a bind-mounted volume, not tracked in git)
+/public/product-images/*
+!/public/product-images/.gitkeep
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -2,6 +2,22 @@
   padding: 1.25rem 0 4rem;
 }
 
+.thumbnail {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+}
+
+.thumbnailPlaceholder {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  border: 1px dashed var(--color-surface-3);
+}
+
 .heroCard {
   margin-bottom: 1rem;
 }
