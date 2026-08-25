@@ -1,8 +1,8 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Boxes, FolderTree, PackageSearch, RefreshCcw, ShoppingBag, Wrench } from 'lucide-react';
+import { Boxes, FolderTree, PackageSearch, RefreshCcw, Search, ShoppingBag, Wrench } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   adminProductGroupsApi,
@@ -21,6 +21,8 @@ import {
   OrderDto,
 } from '@/lib/api';
 import ProductImageManager, { StagedImage } from '@/components/admin/ProductImageManager';
+import AdminPagination from '@/components/admin/AdminPagination';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import {
   Badge,
   Button,
@@ -42,12 +44,25 @@ import {
   TH,
 } from '@/components/ui/shadcn';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { usePageWithReset } from '@/hooks/usePageWithReset';
 import { useAuthStore } from '@/store/useAuthStore';
 import styles from './admin.module.css';
+
+const ADMIN_PAGE_SIZE = 10;
+
+type DeleteTarget = { type: 'product' | 'category' | 'brand' | 'service' | 'group'; id: number; label: string };
 
 type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups';
 
 const ORDER_STATUSES = ['Placed', 'Verified', 'InProgress', 'Done', 'Cancelled'] as const;
+
+function paginateClient<T>(items: T[], page: number, pageSize: number) {
+  const totalCount = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const clampedPage = Math.min(page, totalPages);
+  const start = (clampedPage - 1) * pageSize;
+  return { pageItems: items.slice(start, start + pageSize), totalCount, totalPages, page: clampedPage };
+}
 
 export default function AdminPage() {
   const router = useRouter();
@@ -70,7 +85,6 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [brands, setBrands] = useState<BrandDto[]>([]);
   const [services, setServices] = useState<ServiceItemDto[]>([]);
-  const [orders, setOrders] = useState<OrderDto[]>([]);
   const [groups, setGroups] = useState<ProductGroupDto[]>([]);
 
   const [productForm, setProductForm] = useState({
@@ -98,6 +112,43 @@ export default function AdminPage() {
   const [groupForm, setGroupForm] = useState({ id: 0, key: 'best-sellers', name: '', isActive: true, productIds: [] as number[] });
   const canAccessAdmin = isAuthenticated && isAdmin();
 
+  const formTopRef = useRef<HTMLDivElement>(null);
+  const scrollToForm = () => formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const [confirmDelete, setConfirmDelete] = useState<DeleteTarget | null>(null);
+
+  // Products table: server-side search + pagination (separate from the unfiltered
+  // `products` list above, which the Groups tab's product picker needs in full).
+  const [productSearch, setProductSearch] = useState('');
+  const [debouncedProductSearch, setDebouncedProductSearch] = useState('');
+  const [productTablePage, setProductTablePage] = usePageWithReset(debouncedProductSearch);
+  const [productTable, setProductTable] = useState<{ items: ProductListDto[]; totalCount: number; totalPages: number }>({ items: [], totalCount: 0, totalPages: 1 });
+  const [productRefreshTick, setProductRefreshTick] = useState(0);
+  const [resolvedProductKey, setResolvedProductKey] = useState<string | null>(null);
+  const productRequestKey = `${debouncedProductSearch}|${productTablePage}|${productRefreshTick}`;
+  const productTableLoading = productRequestKey !== resolvedProductKey;
+
+  // Orders table: server-side search + pagination.
+  const [orderSearch, setOrderSearch] = useState('');
+  const [debouncedOrderSearch, setDebouncedOrderSearch] = useState('');
+  const [orderTablePage, setOrderTablePage] = usePageWithReset(debouncedOrderSearch);
+  const [orderTable, setOrderTable] = useState<{ items: OrderDto[]; totalCount: number; totalPages: number }>({ items: [], totalCount: 0, totalPages: 1 });
+  const [orderRefreshTick, setOrderRefreshTick] = useState(0);
+  const [resolvedOrderKey, setResolvedOrderKey] = useState<string | null>(null);
+  const orderRequestKey = `${debouncedOrderSearch}|${orderTablePage}|${orderRefreshTick}`;
+  const orderTableLoading = orderRequestKey !== resolvedOrderKey;
+
+  // Categories/Brands/Services/Groups: small, curated lists — client-side search + pagination
+  // over the already-fully-loaded arrays instead of round-tripping to the server.
+  const [categorySearch, setCategorySearch] = useState('');
+  const [categoryTablePage, setCategoryTablePage] = usePageWithReset(categorySearch);
+  const [brandSearch, setBrandSearch] = useState('');
+  const [brandTablePage, setBrandTablePage] = usePageWithReset(brandSearch);
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [serviceTablePage, setServiceTablePage] = usePageWithReset(serviceSearch);
+  const [groupSearch, setGroupSearch] = useState('');
+  const [groupTablePage, setGroupTablePage] = usePageWithReset(groupSearch);
+
   const flatCategories = useMemo(() => {
     const out: CategoryDto[] = [];
     const walk = (arr: CategoryDto[]) => {
@@ -113,12 +164,11 @@ export default function AdminPage() {
   const loadCore = async () => {
     setLoading(true);
     try {
-      const [pRes, cRes, bRes, sRes, oRes, gRes] = await Promise.allSettled([
+      const [pRes, cRes, bRes, sRes, gRes] = await Promise.allSettled([
         productsApi.getAll({ page: 1, pageSize: 100 }),
         categoriesApi.getAllAdmin(),
         brandsApi.getAllAdmin(),
         adminServicesApi.getAll(),
-        ordersApi.getAllOrders({ page: 1, pageSize: 100 }),
         adminProductGroupsApi.getAll(),
       ]);
 
@@ -126,16 +176,18 @@ export default function AdminPage() {
       setCategories(cRes.status === 'fulfilled' ? (cRes.value.data ?? []) : []);
       setBrands(bRes.status === 'fulfilled' ? (bRes.value.data ?? []) : []);
       setServices(sRes.status === 'fulfilled' ? (sRes.value.data ?? []) : []);
-      setOrders(oRes.status === 'fulfilled' ? (oRes.value.data.items ?? []) : []);
       setGroups(gRes.status === 'fulfilled' ? (gRes.value.data ?? []) : []);
 
-      const failed = [pRes, cRes, bRes, sRes, oRes, gRes].filter(r => r.status === 'rejected').length;
+      const failed = [pRes, cRes, bRes, sRes, gRes].filter(r => r.status === 'rejected').length;
       if (failed > 0) toast.error(`Some admin data failed to load (${failed}). Showing available data.`);
     } catch {
       toast.error('Failed to load admin data.');
     } finally {
       setLoading(false);
     }
+
+    setProductRefreshTick(t => t + 1);
+    setOrderRefreshTick(t => t + 1);
   };
 
   useEffect(() => {
@@ -160,6 +212,92 @@ export default function AdminPage() {
       setProductForm(prev => ({ ...prev, brandId: brands[0].id }));
     }
   }, [flatCategories, brands, productForm.categoryId, productForm.brandId]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedProductSearch(productSearch), 350);
+    return () => clearTimeout(timer);
+  }, [productSearch]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedOrderSearch(orderSearch), 350);
+    return () => clearTimeout(timer);
+  }, [orderSearch]);
+
+  useEffect(() => {
+    let active = true;
+    productsApi.getAll({ search: debouncedProductSearch || undefined, page: productTablePage, pageSize: ADMIN_PAGE_SIZE })
+      .then(res => {
+        if (!active) return;
+        setProductTable({ items: res.data.items ?? [], totalCount: res.data.totalCount, totalPages: res.data.totalPages || 1 });
+      })
+      .catch(() => {
+        if (active) setProductTable({ items: [], totalCount: 0, totalPages: 1 });
+      })
+      .finally(() => {
+        if (active) setResolvedProductKey(productRequestKey);
+      });
+    return () => { active = false; };
+    // productRequestKey already encodes search, page, and the manual refresh tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productRequestKey]);
+
+  useEffect(() => {
+    let active = true;
+    ordersApi.getAllOrders({ search: debouncedOrderSearch || undefined, page: orderTablePage, pageSize: ADMIN_PAGE_SIZE })
+      .then(res => {
+        if (!active) return;
+        setOrderTable({ items: res.data.items ?? [], totalCount: res.data.totalCount, totalPages: res.data.totalPages || 1 });
+      })
+      .catch(() => {
+        if (active) setOrderTable({ items: [], totalCount: 0, totalPages: 1 });
+      })
+      .finally(() => {
+        if (active) setResolvedOrderKey(orderRequestKey);
+      });
+    return () => { active = false; };
+    // orderRequestKey already encodes search, page, and the manual refresh tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderRequestKey]);
+
+  const categoryTableResult = useMemo(
+    () => paginateClient(
+      categorySearch.trim()
+        ? flatCategories.filter(c => c.name.toLowerCase().includes(categorySearch.trim().toLowerCase()))
+        : flatCategories,
+      categoryTablePage, ADMIN_PAGE_SIZE
+    ),
+    [flatCategories, categorySearch, categoryTablePage]
+  );
+
+  const brandTableResult = useMemo(
+    () => paginateClient(
+      brandSearch.trim()
+        ? brands.filter(b => b.name.toLowerCase().includes(brandSearch.trim().toLowerCase()))
+        : brands,
+      brandTablePage, ADMIN_PAGE_SIZE
+    ),
+    [brands, brandSearch, brandTablePage]
+  );
+
+  const serviceTableResult = useMemo(
+    () => paginateClient(
+      serviceSearch.trim()
+        ? services.filter(s => s.name.toLowerCase().includes(serviceSearch.trim().toLowerCase()) || (s.description ?? '').toLowerCase().includes(serviceSearch.trim().toLowerCase()))
+        : services,
+      serviceTablePage, ADMIN_PAGE_SIZE
+    ),
+    [services, serviceSearch, serviceTablePage]
+  );
+
+  const groupTableResult = useMemo(
+    () => paginateClient(
+      groupSearch.trim()
+        ? groups.filter(g => g.name.toLowerCase().includes(groupSearch.trim().toLowerCase()) || g.key.toLowerCase().includes(groupSearch.trim().toLowerCase()))
+        : groups,
+      groupTablePage, ADMIN_PAGE_SIZE
+    ),
+    [groups, groupSearch, groupTablePage]
+  );
 
   if (!canAccessAdmin) return null;
 
@@ -282,6 +420,7 @@ export default function AdminPage() {
         isActive: p.isActive,
       });
       setTab('products');
+      scrollToForm();
     } catch {
       toast.error('Failed to load product details.');
     }
@@ -501,6 +640,46 @@ export default function AdminPage() {
     });
   };
 
+  const editCategory = (c: CategoryDto) => {
+    setCategoryForm({ id: c.id, name: c.name, isActive: c.isActive });
+    setTab('categories');
+    scrollToForm();
+  };
+
+  const editBrand = (b: BrandDto) => {
+    setBrandForm({ id: b.id, name: b.name, description: b.description ?? '', logoUrl: b.logoUrl ?? '', isActive: b.isActive });
+    setTab('brands');
+    scrollToForm();
+  };
+
+  const editService = (s: ServiceItemDto) => {
+    setServiceForm({ id: s.id, name: s.name, description: s.description ?? '', isActive: s.isActive });
+    setTab('services');
+    scrollToForm();
+  };
+
+  const editGroup = (g: ProductGroupDto) => {
+    setGroupForm({ id: g.id, key: g.key, name: g.name, isActive: g.isActive, productIds: g.productIds });
+    setTab('groups');
+    scrollToForm();
+  };
+
+  const confirmDeleteLabel = (target: DeleteTarget) =>
+    `Delete ${target.type === 'group' ? 'homepage group' : target.type} "${target.label}"? This action cannot be undone.`;
+
+  const handleConfirmDelete = () => {
+    const target = confirmDelete;
+    setConfirmDelete(null);
+    if (!target) return;
+    switch (target.type) {
+      case 'product': return void removeProduct(target.id);
+      case 'category': return void removeCategory(target.id);
+      case 'brand': return void removeBrand(target.id);
+      case 'service': return void removeService(target.id);
+      case 'group': return void removeGroup(target.id);
+    }
+  };
+
   return (
     <div className={styles.adminPage}>
       <div className="container">
@@ -520,10 +699,10 @@ export default function AdminPage() {
         </Card>
 
         <div className={styles.metrics}>
-          <Metric icon={<Boxes size={16} />} label="Products" value={products.length} />
+          <Metric icon={<Boxes size={16} />} label="Products" value={productTable.totalCount} />
           <Metric icon={<FolderTree size={16} />} label="Categories" value={flatCategories.length} />
           <Metric icon={<Wrench size={16} />} label="Services" value={services.length} />
-          <Metric icon={<ShoppingBag size={16} />} label="Orders" value={orders.length} />
+          <Metric icon={<ShoppingBag size={16} />} label="Orders" value={orderTable.totalCount} />
           <Metric icon={<PackageSearch size={16} />} label="Groups" value={groups.length} />
         </div>
 
@@ -547,6 +726,7 @@ export default function AdminPage() {
         {tab === 'products' && (
           <div className={styles.panelGrid}>
             <Card>
+              <div ref={formTopRef} />
               <CardHeader>
                 <CardTitle>{productForm.id ? `Edit Product #${productForm.id}` : 'Create Product'}</CardTitle>
                 <CardDescription>Every product must have a valid category and brand.</CardDescription>
@@ -615,13 +795,19 @@ export default function AdminPage() {
                 <CardDescription>Quick edit, verify stock and remove items.</CardDescription>
               </CardHeader>
               <CardContent>
+                <div className={styles.searchBar}>
+                  <Search size={15} />
+                  <Input placeholder="Search products by name or description…" value={productSearch} onChange={e => setProductSearch(e.target.value)} />
+                </div>
                 <TableWrap>
                   <Table>
                     <thead><tr><TH>Image</TH><TH>ID</TH><TH>Name</TH><TH>Category</TH><TH>Brand</TH><TH>Price</TH><TH>Stock</TH><TH>Actions</TH></tr></thead>
                     <tbody>
-                      {loading ? (
+                      {productTableLoading ? (
                         <SkeletonRows cols={8} />
-                      ) : products.map(p => (
+                      ) : productTable.items.length === 0 ? (
+                        <tr><TD colSpan={8}>No products found.</TD></tr>
+                      ) : productTable.items.map(p => (
                         <tr key={p.id}>
                           <TD>
                             {p.primaryImageUrl ? (
@@ -636,7 +822,7 @@ export default function AdminPage() {
                           <TD>
                             <div className={styles.actions}>
                               <Button size="sm" variant="outline" onClick={() => editProduct(p.slug)}>Edit</Button>
-                              <Button size="sm" variant="destructive" loading={busy === `delete-product-${p.id}`} onClick={() => removeProduct(p.id)}>Delete</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-product-${p.id}`} onClick={() => setConfirmDelete({ type: 'product', id: p.id, label: p.name })}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -644,6 +830,13 @@ export default function AdminPage() {
                     </tbody>
                   </Table>
                 </TableWrap>
+                <AdminPagination
+                  page={productTablePage}
+                  totalPages={productTable.totalPages}
+                  totalCount={productTable.totalCount}
+                  pageSize={ADMIN_PAGE_SIZE}
+                  onPageChange={setProductTablePage}
+                />
               </CardContent>
             </Card>
           </div>
@@ -652,6 +845,7 @@ export default function AdminPage() {
         {tab === 'categories' && (
           <div className={styles.panelGrid}>
             <Card>
+              <div ref={formTopRef} />
               <CardHeader><CardTitle>Category Form</CardTitle><CardDescription>Category schema: name + active only.</CardDescription></CardHeader>
               <CardContent>
                 <form onSubmit={saveCategory} className={styles.grid2}>
@@ -673,19 +867,25 @@ export default function AdminPage() {
             <Card>
               <CardHeader><CardTitle>Category List</CardTitle><CardDescription>Browse and maintain existing categories.</CardDescription></CardHeader>
               <CardContent>
+                <div className={styles.searchBar}>
+                  <Search size={15} />
+                  <Input placeholder="Search categories by name…" value={categorySearch} onChange={e => setCategorySearch(e.target.value)} />
+                </div>
                 <TableWrap>
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Name</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
                     <tbody>
                       {loading ? (
                         <SkeletonRows cols={4} />
-                      ) : flatCategories.map(c => (
+                      ) : categoryTableResult.pageItems.length === 0 ? (
+                        <tr><TD colSpan={4}>No categories found.</TD></tr>
+                      ) : categoryTableResult.pageItems.map(c => (
                         <tr key={c.id}>
                           <TD>{c.id}</TD><TD>{c.name}</TD><TD><Badge variant={c.isActive ? 'success' : 'secondary'}>{c.isActive ? 'Active' : 'Inactive'}</Badge></TD>
                           <TD>
                             <div className={styles.actions}>
-                              <Button size="sm" variant="outline" onClick={() => setCategoryForm({ id: c.id, name: c.name, isActive: c.isActive })}>Edit</Button>
-                              <Button size="sm" variant="destructive" loading={busy === `delete-category-${c.id}`} onClick={() => removeCategory(c.id)}>Delete</Button>
+                              <Button size="sm" variant="outline" onClick={() => editCategory(c)}>Edit</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-category-${c.id}`} onClick={() => setConfirmDelete({ type: 'category', id: c.id, label: c.name })}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -693,6 +893,13 @@ export default function AdminPage() {
                     </tbody>
                   </Table>
                 </TableWrap>
+                <AdminPagination
+                  page={categoryTableResult.page}
+                  totalPages={categoryTableResult.totalPages}
+                  totalCount={categoryTableResult.totalCount}
+                  pageSize={ADMIN_PAGE_SIZE}
+                  onPageChange={setCategoryTablePage}
+                />
               </CardContent>
             </Card>
           </div>
@@ -701,6 +908,7 @@ export default function AdminPage() {
         {tab === 'brands' && (
           <div className={styles.panelGrid}>
             <Card>
+              <div ref={formTopRef} />
               <CardHeader><CardTitle>Brand Form</CardTitle><CardDescription>Create and update brands used by products.</CardDescription></CardHeader>
               <CardContent>
                 <form onSubmit={saveBrand} className={styles.grid2}>
@@ -724,21 +932,27 @@ export default function AdminPage() {
             <Card>
               <CardHeader><CardTitle>Brand List</CardTitle><CardDescription>Existing brands from database.</CardDescription></CardHeader>
               <CardContent>
+                <div className={styles.searchBar}>
+                  <Search size={15} />
+                  <Input placeholder="Search brands by name…" value={brandSearch} onChange={e => setBrandSearch(e.target.value)} />
+                </div>
                 <TableWrap>
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Name</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
                     <tbody>
                       {loading ? (
                         <SkeletonRows cols={4} />
-                      ) : brands.map(b => (
+                      ) : brandTableResult.pageItems.length === 0 ? (
+                        <tr><TD colSpan={4}>No brands found.</TD></tr>
+                      ) : brandTableResult.pageItems.map(b => (
                         <tr key={b.id}>
                           <TD>{b.id}</TD>
                           <TD>{b.name}</TD>
                           <TD><Badge variant={b.isActive ? 'success' : 'secondary'}>{b.isActive ? 'Active' : 'Inactive'}</Badge></TD>
                           <TD>
                             <div className={styles.actions}>
-                              <Button size="sm" variant="outline" onClick={() => setBrandForm({ id: b.id, name: b.name, description: b.description ?? '', logoUrl: b.logoUrl ?? '', isActive: b.isActive })}>Edit</Button>
-                              <Button size="sm" variant="destructive" loading={busy === `delete-brand-${b.id}`} onClick={() => removeBrand(b.id)}>Delete</Button>
+                              <Button size="sm" variant="outline" onClick={() => editBrand(b)}>Edit</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-brand-${b.id}`} onClick={() => setConfirmDelete({ type: 'brand', id: b.id, label: b.name })}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -746,6 +960,13 @@ export default function AdminPage() {
                     </tbody>
                   </Table>
                 </TableWrap>
+                <AdminPagination
+                  page={brandTableResult.page}
+                  totalPages={brandTableResult.totalPages}
+                  totalCount={brandTableResult.totalCount}
+                  pageSize={ADMIN_PAGE_SIZE}
+                  onPageChange={setBrandTablePage}
+                />
               </CardContent>
             </Card>
           </div>
@@ -754,6 +975,7 @@ export default function AdminPage() {
         {tab === 'services' && (
           <div className={styles.panelGrid}>
             <Card>
+              <div ref={formTopRef} />
               <CardHeader><CardTitle>Service Form</CardTitle><CardDescription>Define service offerings shown in the platform.</CardDescription></CardHeader>
               <CardContent>
                 <form onSubmit={saveService} className={styles.grid2}>
@@ -776,20 +998,26 @@ export default function AdminPage() {
             <Card>
               <CardHeader><CardTitle>Services List</CardTitle><CardDescription>Manage active and inactive services.</CardDescription></CardHeader>
               <CardContent>
+                <div className={styles.searchBar}>
+                  <Search size={15} />
+                  <Input placeholder="Search services by name or description…" value={serviceSearch} onChange={e => setServiceSearch(e.target.value)} />
+                </div>
                 <TableWrap>
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Name</TH><TH>Description</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
                     <tbody>
                       {loading ? (
                         <SkeletonRows cols={5} />
-                      ) : services.map(s => (
+                      ) : serviceTableResult.pageItems.length === 0 ? (
+                        <tr><TD colSpan={5}>No services found.</TD></tr>
+                      ) : serviceTableResult.pageItems.map(s => (
                         <tr key={s.id}>
                           <TD>{s.id}</TD><TD>{s.name}</TD><TD>{s.description}</TD>
                           <TD><Badge variant={s.isActive ? 'success' : 'secondary'}>{s.isActive ? 'Active' : 'Inactive'}</Badge></TD>
                           <TD>
                             <div className={styles.actions}>
-                              <Button size="sm" variant="outline" onClick={() => setServiceForm({ id: s.id, name: s.name, description: s.description ?? '', isActive: s.isActive })}>Edit</Button>
-                              <Button size="sm" variant="destructive" loading={busy === `delete-service-${s.id}`} onClick={() => removeService(s.id)}>Delete</Button>
+                              <Button size="sm" variant="outline" onClick={() => editService(s)}>Edit</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-service-${s.id}`} onClick={() => setConfirmDelete({ type: 'service', id: s.id, label: s.name })}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -797,6 +1025,13 @@ export default function AdminPage() {
                     </tbody>
                   </Table>
                 </TableWrap>
+                <AdminPagination
+                  page={serviceTableResult.page}
+                  totalPages={serviceTableResult.totalPages}
+                  totalCount={serviceTableResult.totalCount}
+                  pageSize={ADMIN_PAGE_SIZE}
+                  onPageChange={setServiceTablePage}
+                />
               </CardContent>
             </Card>
           </div>
@@ -805,6 +1040,7 @@ export default function AdminPage() {
         {tab === 'groups' && (
           <div className={styles.panelGrid}>
             <Card>
+              <div ref={formTopRef} />
               <CardHeader><CardTitle>Homepage Group Form</CardTitle><CardDescription>Control homepage spotlight sections.</CardDescription></CardHeader>
               <CardContent>
                 <form onSubmit={saveGroup} className={styles.grid2}>
@@ -855,19 +1091,25 @@ export default function AdminPage() {
             <Card>
               <CardHeader><CardTitle>Group List</CardTitle><CardDescription>Manage homepage group membership.</CardDescription></CardHeader>
               <CardContent>
+                <div className={styles.searchBar}>
+                  <Search size={15} />
+                  <Input placeholder="Search groups by name or key…" value={groupSearch} onChange={e => setGroupSearch(e.target.value)} />
+                </div>
                 <TableWrap>
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Key</TH><TH>Name</TH><TH>Products</TH><TH>Actions</TH></tr></thead>
                     <tbody>
                       {loading ? (
                         <SkeletonRows cols={5} />
-                      ) : groups.map(g => (
+                      ) : groupTableResult.pageItems.length === 0 ? (
+                        <tr><TD colSpan={5}>No groups found.</TD></tr>
+                      ) : groupTableResult.pageItems.map(g => (
                         <tr key={g.id}>
                           <TD>{g.id}</TD><TD><Badge variant="secondary">{g.key}</Badge></TD><TD>{g.name}</TD><TD>{g.productIds.join(', ')}</TD>
                           <TD>
                             <div className={styles.actions}>
-                              <Button size="sm" variant="outline" onClick={() => setGroupForm({ id: g.id, key: g.key, name: g.name, isActive: g.isActive, productIds: g.productIds })}>Edit</Button>
-                              <Button size="sm" variant="destructive" loading={busy === `delete-group-${g.id}`} onClick={() => removeGroup(g.id)}>Delete</Button>
+                              <Button size="sm" variant="outline" onClick={() => editGroup(g)}>Edit</Button>
+                              <Button size="sm" variant="destructive" loading={busy === `delete-group-${g.id}`} onClick={() => setConfirmDelete({ type: 'group', id: g.id, label: g.name })}>Delete</Button>
                             </div>
                           </TD>
                         </tr>
@@ -875,6 +1117,13 @@ export default function AdminPage() {
                     </tbody>
                   </Table>
                 </TableWrap>
+                <AdminPagination
+                  page={groupTableResult.page}
+                  totalPages={groupTableResult.totalPages}
+                  totalCount={groupTableResult.totalCount}
+                  pageSize={ADMIN_PAGE_SIZE}
+                  onPageChange={setGroupTablePage}
+                />
               </CardContent>
             </Card>
           </div>
@@ -885,23 +1134,46 @@ export default function AdminPage() {
             <Card>
               <CardHeader><CardTitle>Orders</CardTitle><CardDescription>Update status and admin notes for incoming orders.</CardDescription></CardHeader>
               <CardContent>
+                <div className={styles.searchBar}>
+                  <Search size={15} />
+                  <Input placeholder="Search orders by ID, customer name, email, or phone…" value={orderSearch} onChange={e => setOrderSearch(e.target.value)} />
+                </div>
                 <TableWrap>
                   <Table>
                     <thead><tr><TH>ID</TH><TH>Customer</TH><TH>Total</TH><TH>Status</TH><TH>Notes</TH><TH>Actions</TH></tr></thead>
                     <tbody>
-                      {loading ? (
+                      {orderTableLoading ? (
                         <SkeletonRows cols={6} />
-                      ) : orders.map(o => (
+                      ) : orderTable.items.length === 0 ? (
+                        <tr><TD colSpan={6}>No orders found.</TD></tr>
+                      ) : orderTable.items.map(o => (
                         <OrderRow key={o.id} order={o} saving={busy === `save-order-${o.id}`} onSave={updateOrder} />
                       ))}
                     </tbody>
                   </Table>
                 </TableWrap>
+                <AdminPagination
+                  page={orderTablePage}
+                  totalPages={orderTable.totalPages}
+                  totalCount={orderTable.totalCount}
+                  pageSize={ADMIN_PAGE_SIZE}
+                  onPageChange={setOrderTablePage}
+                />
               </CardContent>
             </Card>
           </div>
         )}
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Confirm deletion"
+          message={confirmDeleteLabel(confirmDelete)}
+          loading={busy === `delete-${confirmDelete.type}-${confirmDelete.id}`}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }

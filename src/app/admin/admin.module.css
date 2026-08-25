@@ -18,6 +18,28 @@
   border: 1px dashed var(--color-surface-3);
 }
 
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-surface-3);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  margin-bottom: 16px;
+  color: var(--color-text-subtle);
+}
+
+.searchBar input {
+  border: none;
+  background: transparent;
+  padding-left: 4px;
+}
+
+.searchBar input:focus {
+  outline: none;
+}
+
 .heroCard {
   margin-bottom: 1rem;
 }
