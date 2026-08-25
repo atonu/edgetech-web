@@ -46,12 +46,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Image must be 8MB or smaller' }, { status: 400 });
   }
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  const filename = `${crypto.randomUUID()}${extension}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(UPLOAD_DIR, filename), bytes);
-
-  return NextResponse.json({ url: `/product-images/${filename}` });
+  try {
+    await mkdir(UPLOAD_DIR, { recursive: true });
+    const filename = `${crypto.randomUUID()}${extension}`;
+    const filepath = path.join(UPLOAD_DIR, filename);
+    const bytes = Buffer.from(await file.arrayBuffer());
+    await writeFile(filepath, bytes);
+    console.log(`[Upload] Saved: ${filepath} (${bytes.length} bytes)`);
+    return NextResponse.json({ url: `/product-images/${filename}` });
+  } catch (error) {
+    console.error(`[Upload] Error:`, error);
+    return NextResponse.json({ message: 'Upload failed', error: String(error) }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: NextRequest) {
