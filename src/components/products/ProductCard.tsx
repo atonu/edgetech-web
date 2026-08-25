@@ -56,7 +56,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
                 src={product.primaryImageUrl}
                 alt={product.name}
                 fill
-                style={{ objectFit: 'contain' }}
+                style={{ objectFit: 'cover' }}
                 className={styles.image}
               />
             ) : (

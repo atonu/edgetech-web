@@ -49,7 +49,7 @@ export default function CartPage() {
                   transition={{ delay: idx * 0.05 }}>
                   <div className={styles.itemImage}>
                     {item.imageUrl ? (
-                      <Image src={item.imageUrl} alt={item.productName} fill style={{ objectFit: 'contain' }} />
+                      <Image src={item.imageUrl} alt={item.productName} fill style={{ objectFit: 'cover' }} />
                     ) : (
                       <div className={styles.imagePlaceholder}><Zap size={24} /></div>
                     )}

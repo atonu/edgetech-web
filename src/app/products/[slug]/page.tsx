@@ -40,6 +40,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     ? Math.round((1 - product.discountPrice / product.price) * 100)
     : null;
   const effectivePrice = product ? (product.discountPrice ?? product.price) : 0;
+  const mainImageUrl = product?.images[selectedImageIdx]?.imageUrl ?? product?.primaryImageUrl;
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -107,8 +108,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           {/* Gallery */}
           <motion.div className={styles.gallery} initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }}>
             <div className={styles.mainImage}>
-              {product.primaryImageUrl ? (
-                <Image src={product.primaryImageUrl} alt={product.name} fill style={{ objectFit: 'contain' }} />
+              {mainImageUrl ? (
+                <Image src={mainImageUrl} alt={product.name} fill style={{ objectFit: 'cover' }} />
               ) : (
                 <div className={styles.imagePlaceholder}>
                   <Zap size={64} />
