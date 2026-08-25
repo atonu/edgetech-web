@@ -62,7 +62,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('[Image] Route error:', error);
+    console.error('[Product Image Route] Error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

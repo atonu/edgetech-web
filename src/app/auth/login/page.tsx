@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
@@ -10,7 +10,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import toast from 'react-hot-toast';
 import styles from './auth.module.css';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
@@ -36,6 +36,38 @@ export default function LoginPage() {
   };
 
   return (
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <div className={styles.formGroup}>
+        <label>Email Address</label>
+        <div className={styles.inputWrap}>
+          <Mail size={16} />
+          <input type="email" className="input" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+        </div>
+      </div>
+
+      <div className={styles.formGroup}>
+        <div className={styles.labelRow}>
+          <label>Password</label>
+          <Link href="#" className={styles.forgotLink}>Forgot Password?</Link>
+        </div>
+        <div className={styles.inputWrap}>
+          <Lock size={16} />
+          <input type={showPassword ? 'text' : 'password'} className="input" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required />
+          <button type="button" className={styles.eyeBtn} onClick={() => setShowPassword(!showPassword)}>
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" className="btn btn-primary btn-lg w-full" style={{ justifyContent: 'center' }} disabled={isLoading}>
+        {isLoading ? <><Spinner size={16} /> Signing in...</> : <><LogIn size={18} /> Sign In</>}
+      </button>
+    </form>
+  );
+}
+
+export default function LoginPage() {
+  return (
     <div className={styles.authPage}>
       <div className={styles.authBg} />
       <motion.div className={styles.authCard} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}>
@@ -47,33 +79,9 @@ export default function LoginPage() {
           <p className="text-muted">Sign in to your EdgeTech account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label>Email Address</label>
-            <div className={styles.inputWrap}>
-              <Mail size={16} />
-              <input type="email" className="input" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <div className={styles.labelRow}>
-              <label>Password</label>
-              <Link href="#" className={styles.forgotLink}>Forgot Password?</Link>
-            </div>
-            <div className={styles.inputWrap}>
-              <Lock size={16} />
-              <input type={showPassword ? 'text' : 'password'} className="input" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required />
-              <button type="button" className={styles.eyeBtn} onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" className="btn btn-primary btn-lg w-full" style={{ justifyContent: 'center' }} disabled={isLoading}>
-            {isLoading ? <><Spinner size={16} /> Signing in...</> : <><LogIn size={18} /> Sign In</>}
-          </button>
-        </form>
+        <Suspense fallback={<div className="flex justify-center p-8"><Spinner size={24} /></div>}>
+          <LoginForm />
+        </Suspense>
 
         <p className={styles.switchText}>
           Don&apos;t have an account? <Link href="/auth/register">Create one</Link>

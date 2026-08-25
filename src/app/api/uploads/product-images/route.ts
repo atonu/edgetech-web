@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir, unlink } from 'fs/promises';
+import { existsSync } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5217';
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'product-images');
+
+function getProductImageDir(): string {
+  const directPath = path.resolve(process.cwd(), 'public', 'product-images');
+  if (existsSync(directPath)) {
+    return directPath;
+  }
+  const nestedPath = path.resolve(process.cwd(), 'edgetech-web', 'public', 'product-images');
+  if (existsSync(nestedPath)) {
+    return nestedPath;
+  }
+  return directPath;
+}
+
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
 const ALLOWED_TYPES: Record<string, string> = {
   'image/jpeg': '.jpg',
@@ -47,9 +60,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await mkdir(UPLOAD_DIR, { recursive: true });
+    const uploadDir = getProductImageDir();
+    await mkdir(uploadDir, { recursive: true });
     const filename = `${crypto.randomUUID()}${extension}`;
-    const filepath = path.join(UPLOAD_DIR, filename);
+    const filepath = path.join(uploadDir, filename);
     const bytes = Buffer.from(await file.arrayBuffer());
     await writeFile(filepath, bytes);
     console.log(`[Upload] Saved: ${filepath} (${bytes.length} bytes)`);
@@ -77,7 +91,8 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await unlink(path.join(UPLOAD_DIR, filename));
+    const uploadDir = getProductImageDir();
+    await unlink(path.join(uploadDir, filename));
   } catch {
     // already gone — nothing to clean up
   }
