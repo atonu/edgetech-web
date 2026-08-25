@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ordersApi } from '@/lib/api';
+import { getImageUrl } from '@/lib/imageUrl';
 import { Spinner } from '@/components/ui/Spinner';
 import toast from 'react-hot-toast';
 import styles from './checkout.module.css';
@@ -173,7 +174,7 @@ export default function CheckoutPage() {
                     <div key={item.productId} className={styles.reviewItem}>
                       <div className={styles.reviewItemIcon}>
                         {item.imageUrl ? (
-                          <Image src={item.imageUrl} alt={item.productName} fill style={{ objectFit: 'cover' }} />
+                          <Image src={getImageUrl(item.imageUrl)!} alt={item.productName} fill style={{ objectFit: 'cover' }} />
                         ) : (
                           <Zap size={16} />
                         )}

@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { ProductDto, ProductListDto, productsApi } from '@/lib/api';
 import ProductCard from '@/components/products/ProductCard';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { getImageUrl } from '@/lib/imageUrl';
 import toast from 'react-hot-toast';
 import styles from './detail.module.css';
 
@@ -109,7 +110,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           <motion.div className={styles.gallery} initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }}>
             <div className={styles.mainImage}>
               {mainImageUrl ? (
-                <Image src={mainImageUrl} alt={product.name} fill style={{ objectFit: 'cover' }} />
+                <Image src={getImageUrl(mainImageUrl)!} alt={product.name} fill style={{ objectFit: 'cover' }} />
               ) : (
                 <div className={styles.imagePlaceholder}>
                   <Zap size={64} />
@@ -123,7 +124,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 {product.images.map((img, i) => (
                   <button key={img.id} className={`${styles.thumbnail} ${i === selectedImageIdx ? styles.thumbActive : ''}`}
                     onClick={() => setSelectedImageIdx(i)}>
-                    <Image src={img.imageUrl} alt="" fill style={{ objectFit: 'cover' }} />
+                    <Image src={getImageUrl(img.imageUrl)!} alt="" fill style={{ objectFit: 'cover' }} />
                   </button>
                 ))}
               </div>
@@ -186,7 +187,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 <ShoppingCart size={18} /> Add to Cart — ৳{(effectivePrice * quantity).toLocaleString()}
               </button>
               <button className={`${styles.wishBtn} ${wishlisted ? styles.wishlisted : ''}`} onClick={() => setWishlisted(!wishlisted)}>
-                <Heart size={20} fill={wishlisted ? 'currentColor' : 'none'} />
+                <Heart size={20} fill="none" stroke="currentColor" strokeWidth={2} />
               </button>
             </div>
 

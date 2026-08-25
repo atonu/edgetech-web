@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { ProductListDto } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { getImageUrl } from '@/lib/imageUrl';
 import styles from './ProductCard.module.css';
 
 interface Props { product: ProductListDto; index?: number; }
@@ -53,7 +54,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           <div className={styles.imageWrap}>
             {product.primaryImageUrl ? (
               <Image
-                src={product.primaryImageUrl}
+                src={getImageUrl(product.primaryImageUrl)!}
                 alt={product.name}
                 fill
                 style={{ objectFit: 'cover' }}
@@ -77,7 +78,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
               className={`${styles.wishlistBtn} ${wishlisted ? styles.wishlisted : ''}`}
               onClick={(e) => { e.preventDefault(); setWishlisted(!wishlisted); }}
             >
-              <Heart size={16} fill={wishlisted ? 'currentColor' : 'none'} />
+              <Heart size={16} fill="none" stroke="currentColor" strokeWidth={2} />
             </button>
 
             {/* Quick Add */}

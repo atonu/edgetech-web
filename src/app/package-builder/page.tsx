@@ -6,6 +6,7 @@ import { Camera, HardDrive, Monitor, Cable, Power, Battery, Package, X, Search, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { ProductListDto, packageBuilderApi } from '@/lib/api';
+import { getImageUrl } from '@/lib/imageUrl';
 import { Skeleton } from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 import styles from './builder.module.css';
@@ -251,7 +252,7 @@ export default function PackageBuilderPage() {
                         onClick={() => selectProduct(product)}>
                         <div className={styles.productOptionIcon}>
                           {product.primaryImageUrl ? (
-                            <Image src={product.primaryImageUrl} alt="" fill style={{ objectFit: 'cover' }} />
+                            <Image src={getImageUrl(product.primaryImageUrl)!} alt="" fill style={{ objectFit: 'cover' }} />
                           ) : (
                             <Zap size={18} />
                           )}

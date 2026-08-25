@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Zap, ShieldCheck, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
+import { getImageUrl } from '@/lib/imageUrl';
 import styles from './cart.module.css';
 
 export default function CartPage() {
@@ -49,7 +50,7 @@ export default function CartPage() {
                   transition={{ delay: idx * 0.05 }}>
                   <div className={styles.itemImage}>
                     {item.imageUrl ? (
-                      <Image src={item.imageUrl} alt={item.productName} fill style={{ objectFit: 'cover' }} />
+                      <Image src={getImageUrl(item.imageUrl)!} alt={item.productName} fill style={{ objectFit: 'cover' }} />
                     ) : (
                       <div className={styles.imagePlaceholder}><Zap size={24} /></div>
                     )}
