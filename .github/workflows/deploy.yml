@@ -31,6 +31,6 @@ jobs:
             docker run -d \
               --name edgetech-web-container \
               --restart unless-stopped \
-              -p 3000:3000 \
+              -p 443:3000 \
               -v "$(pwd)/public/product-images:/app/public/product-images" \
               edgetech-web:latest
