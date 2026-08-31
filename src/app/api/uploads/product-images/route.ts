@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5217';
+const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
 function getProductImageDir(): string {
   const candidates = [

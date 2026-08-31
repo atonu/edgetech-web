@@ -25,13 +25,13 @@ jobs:
             git reset --hard HEAD
             git pull origin master
             mkdir -p "$(pwd)/public/product-images"
-            docker build --build-arg NEXT_PUBLIC_API_URL=https://api.edgetech.com.bd -t edgetech-web:latest .
+            docker build --build-arg NEXT_PUBLIC_API_URL="" -t edgetech-web:latest .
             docker stop edgetech-web-container || true
             docker rm edgetech-web-container || true
             docker run -d \
               --name edgetech-web-container \
               --restart unless-stopped \
               -p 3000:3000 \
-              -e NEXT_PUBLIC_API_URL=https://api.edgetech.com.bd \
+              -e NEXT_PUBLIC_API_URL="" \
               -v "$(pwd)/public/product-images:/app/public/product-images" \
               edgetech-web:latest
