@@ -126,7 +126,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           <motion.div className={styles.gallery} initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }}>
             <div className={styles.mainImage}>
               {mainImageUrl ? (
-                <Image src={getImageUrl(mainImageUrl)!} alt={product.name} fill style={{ objectFit: 'cover' }} />
+                <Image src={getImageUrl(mainImageUrl)!} alt={product.name} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               ) : (
                 <div className={styles.imagePlaceholder}>
                   <Zap size={64} />
@@ -147,7 +147,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 {product.images.map((img, i) => (
                   <button key={img.id} className={`${styles.thumbnail} ${i === selectedImageIdx ? styles.thumbActive : ''}`}
                     onClick={() => setSelectedImageIdx(i)}>
-                    <Image src={getImageUrl(img.imageUrl)!} alt="" fill style={{ objectFit: 'cover' }} />
+                    <Image src={getImageUrl(img.imageUrl)!} alt="" fill sizes="70px" style={{ objectFit: 'cover' }} />
                   </button>
                 ))}
               </div>

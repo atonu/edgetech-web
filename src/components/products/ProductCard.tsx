@@ -70,6 +70,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
                 src={getImageUrl(product.primaryImageUrl)!}
                 alt={product.name}
                 fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 style={{ objectFit: 'cover' }}
                 className={styles.image}
               />

@@ -270,12 +270,55 @@ export const productsApi = {
   deleteImage: (id: number, imageId: number) => api.delete(`/products/${id}/images/${imageId}`),
 };
 
-// Uploads image bytes to this Next.js app's own /public folder (see src/app/api/uploads/product-images/route.ts) —
-// a separate hop from `api` above, which only talks to the .NET backend.
+export async function convertFileToWebp(file: File, quality = 0.85): Promise<File> {
+  if (file.type === 'image/webp') return file;
+  if (typeof window === 'undefined') return file;
+
+  return new Promise((resolve) => {
+    try {
+      const img = document.createElement('img');
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return resolve(file);
+        }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return resolve(file);
+            const baseName = file.name.replace(/\.[^/.]+$/, '');
+            const webpFile = new File([blob], `${baseName}.webp`, {
+              type: 'image/webp',
+              lastModified: Date.now(),
+            });
+            resolve(webpFile);
+          },
+          'image/webp',
+          quality
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      };
+      img.src = url;
+    } catch {
+      resolve(file);
+    }
+  });
+}
+
+// Uploads image bytes to this Next.js app's own /public folder (see src/app/api/uploads/product-images/route.ts)
 export const productImagesApi = {
   upload: async (file: File): Promise<{ url: string }> => {
+    const webpFile = await convertFileToWebp(file);
     const fd = new FormData();
-    fd.append('file', file);
+    fd.append('file', webpFile);
     const token = typeof window !== 'undefined' ? localStorage.getItem('et_token') : null;
     const res = await fetch('/api/uploads/product-images', {
       method: 'POST',

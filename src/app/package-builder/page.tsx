@@ -252,7 +252,7 @@ export default function PackageBuilderPage() {
                         onClick={() => selectProduct(product)}>
                         <div className={styles.productOptionIcon}>
                           {product.primaryImageUrl ? (
-                            <Image src={getImageUrl(product.primaryImageUrl)!} alt="" fill style={{ objectFit: 'cover' }} />
+                            <Image src={getImageUrl(product.primaryImageUrl)!} alt="" fill sizes="48px" style={{ objectFit: 'cover' }} />
                           ) : (
                             <Zap size={18} />
                           )}

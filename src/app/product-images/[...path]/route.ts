@@ -67,8 +67,18 @@ export async function GET(
       if (foundPath) break;
     }
 
+    const FALLBACK_SVG = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" fill="none"><rect width="400" height="400" fill="#0f172a"/><rect x="10" y="10" width="380" height="380" rx="12" fill="#1e293b" stroke="#334155" stroke-width="2"/><circle cx="200" cy="180" r="48" fill="#38bdf8" opacity="0.15"/><path d="M185 165l30 30-15 15" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><text x="200" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#94a3b8" text-anchor="middle">EdgeTech Product</text></svg>`
+    );
+
     if (!foundPath) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 });
+      return new NextResponse(FALLBACK_SVG, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      });
     }
 
     const buffer = await readFile(foundPath);

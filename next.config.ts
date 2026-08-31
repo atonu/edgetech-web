@@ -1,5 +1,7 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  serverExternalPackages: ['sharp'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.blob.core.windows.net' },

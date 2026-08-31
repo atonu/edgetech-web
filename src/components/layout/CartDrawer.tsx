@@ -38,7 +38,7 @@ export default function CartDrawer() {
                 <div key={item.productId} className={styles.item}>
                   <div className={styles.imgWrap}>
                     {item.imageUrl ? (
-                      <Image src={item.imageUrl} alt={item.productName} fill style={{ objectFit: 'cover' }} />
+                      <Image src={item.imageUrl} alt={item.productName} fill sizes="60px" style={{ objectFit: 'cover' }} />
                     ) : (
                       <div className={styles.imgPlaceholder}><ShoppingBag size={20} /></div>
                     )}

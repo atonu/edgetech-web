@@ -188,7 +188,7 @@ export default function CheckoutPage() {
                     <div key={item.productId} className={styles.reviewItem}>
                       <div className={styles.reviewItemIcon}>
                         {item.imageUrl ? (
-                          <Image src={getImageUrl(item.imageUrl)!} alt={item.productName} fill style={{ objectFit: 'cover' }} />
+                          <Image src={getImageUrl(item.imageUrl)!} alt={item.productName} fill sizes="50px" style={{ objectFit: 'cover' }} />
                         ) : (
                           <Zap size={16} />
                         )}

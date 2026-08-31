@@ -65,7 +65,19 @@ async function isAdminRequest(request: NextRequest): Promise<boolean> {
   return false;
 }
 
-import sharp from 'sharp';
+async function convertToWebP(rawBuffer: Buffer): Promise<{ buffer: Buffer; isWebp: boolean }> {
+  try {
+    const sharpModule = await import('sharp');
+    const sharp = sharpModule.default || sharpModule;
+    const webpBuffer = await sharp(rawBuffer)
+      .webp({ quality: 85, effort: 4 })
+      .toBuffer();
+    return { buffer: webpBuffer, isWebp: true };
+  } catch (err) {
+    console.warn('[Upload WebP] Server sharp conversion skipped/unsupported on current runtime:', err);
+    return { buffer: rawBuffer, isWebp: false };
+  }
+}
 
 export async function POST(request: NextRequest) {
   if (!(await isAdminRequest(request))) {
@@ -78,10 +90,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'No file provided' }, { status: 400 });
   }
 
-  const extension = ALLOWED_TYPES[file.type] || path.extname(file.name).toLowerCase();
-  if (!extension || !['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(extension)) {
-    return NextResponse.json({ message: 'Only JPEG, PNG, WEBP, or GIF images are allowed' }, { status: 400 });
-  }
+  const rawExt = path.extname(file.name).toLowerCase() || ALLOWED_TYPES[file.type] || '.jpg';
   if (file.size > MAX_FILE_SIZE) {
     return NextResponse.json({ message: 'Image must be 12MB or smaller' }, { status: 400 });
   }
@@ -93,24 +102,24 @@ export async function POST(request: NextRequest) {
     const uuid = crypto.randomUUID();
     const rawBuffer = Buffer.from(await file.arrayBuffer());
 
-    let finalBuffer = rawBuffer;
-    let filename = `${uuid}.webp`;
+    let finalBuffer: Buffer | Uint8Array = rawBuffer;
+    let filename: string;
 
-    try {
-      finalBuffer = await sharp(rawBuffer)
-        .webp({ quality: 85, effort: 4 })
-        .toBuffer();
+    // If client already converted to WebP
+    if (file.type === 'image/webp' || rawExt === '.webp') {
       filename = `${uuid}.webp`;
-    } catch {
-      const ext = extension.startsWith('.') ? extension : `.${extension}`;
-      filename = `${uuid}${ext}`;
       finalBuffer = rawBuffer;
+    } else {
+      // Attempt server-side WebP conversion
+      const { buffer, isWebp } = await convertToWebP(rawBuffer);
+      finalBuffer = buffer;
+      filename = isWebp ? `${uuid}.webp` : `${uuid}${rawExt}`;
     }
 
     const filepath = path.join(uploadDir, filename);
     await writeFile(filepath, finalBuffer);
 
-    // Also if process.cwd() has another candidate path (e.g. edgetech-web/public vs public), sync it
+    // Sync to alternative directory if exists
     const altDir = uploadDir.includes('edgetech-web')
       ? uploadDir.replace('edgetech-web' + path.sep, '')
       : path.join(process.cwd(), 'public', 'product-images');
@@ -120,6 +129,7 @@ export async function POST(request: NextRequest) {
       } catch {}
     }
 
+    console.log(`[Upload Success] Saved image as ${filename} (${finalBuffer.length} bytes)`);
     return NextResponse.json({ url: `/product-images/${filename}` });
   } catch (error) {
     console.error(`[Upload] Error:`, error);
