@@ -69,30 +69,108 @@
 .wishlistBtn:hover { color: #ff4757; background: rgba(255, 71, 87, 0.15); }
 .wishlisted { color: #ff4757 !important; opacity: 1 !important; }
 
-/* Add to Cart */
-.addToCartBtn {
+/* Out of Stock Image Overlay */
+.outOfStockOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #ef4444;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  z-index: 3;
+}
+
+/* Quick Actions Overlay */
+.cardActions {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-  color: var(--color-bg);
-  font-weight: 600;
-  font-size: 0.82rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 8px;
+  background: linear-gradient(180deg, transparent 0%, rgba(10, 15, 29, 0.9) 100%);
   opacity: 0;
   transform: translateY(8px);
   transition: all var(--transition-base);
-  z-index: 2;
+  z-index: 4;
 }
-.addToCartBtn:disabled { background: var(--color-surface-3); color: var(--color-text-subtle); }
+
+.card:hover .cardActions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.addToCartBtn {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--border);
+}
+.addToCartBtn:hover {
+  background: var(--color-surface-3);
+  color: var(--color-primary);
+}
+
+.orderNowBtn {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: #ffffff;
+}
+.orderNowBtn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.actionBtn:disabled {
+  background: var(--color-surface-3);
+  color: var(--color-text-subtle);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Stock status */
+.stockStatus {
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inStockText {
+  color: #10b981;
+}
+
+.outOfStockText {
+  color: #ef4444;
+}
 
 /* Info */
-.info { padding: 16px; }
+.info { padding: 14px 16px; }
 
 .meta {
   display: flex;

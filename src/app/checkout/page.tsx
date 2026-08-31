@@ -19,6 +19,9 @@ export default function CheckoutPage() {
   const { user } = useAuthStore();
   const [step, setStep] = useState(1);
   const [isPlacing, setIsPlacing] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false); // MANDATORY unchecked by default
+  const [emiTenure, setEmiTenure] = useState(12);
+  const [emiBank, setEmiBank] = useState('City Bank');
 
   const [form, setForm] = useState({
     fullName: user ? `${user.firstName} ${user.lastName}` : '',
@@ -37,9 +40,18 @@ export default function CheckoutPage() {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const isEmi = form.paymentMethod === 'emi';
+  const totalAmount = total();
+  const emiMonthlyAmount = isEmi && emiTenure > 0 ? Math.round(totalAmount / emiTenure) : 0;
+
   const handlePlaceOrder = async () => {
     if (!form.fullName || !form.phone || !form.address || !form.city) {
       toast.error('Please complete required shipping details.');
+      return;
+    }
+
+    if (!agreedToTerms) {
+      toast.error('You must agree to the Terms & Conditions, Privacy Policy, and Return Policy to place an order.');
       return;
     }
 
@@ -57,6 +69,9 @@ export default function CheckoutPage() {
         },
         notes: form.notes,
         paymentMethod: form.paymentMethod,
+        isEmi: isEmi,
+        emiTenureMonths: isEmi ? emiTenure : undefined,
+        emiBank: isEmi ? emiBank : undefined,
         customer: {
           fullName: form.fullName,
           email: form.email,
@@ -78,8 +93,6 @@ export default function CheckoutPage() {
       setIsPlacing(false);
     }
   };
-
-  const totalAmount = total();
 
   if (items.length === 0) {
     return (
@@ -200,23 +213,102 @@ export default function CheckoutPage() {
                 <h3><CreditCard size={18} /> Payment Method</h3>
                 <div className={styles.paymentOptions}>
                   {[
-                    { value: 'cod', label: 'Cash on Delivery', desc: 'Pay when your order arrives' },
-                    { value: 'bkash', label: 'bKash', desc: 'Mobile banking payment' },
-                    { value: 'card', label: 'Credit/Debit Card', desc: 'Visa, Mastercard, AMEX' },
+                    { value: 'cod', label: 'Cash on Delivery', desc: 'Pay with cash when your package arrives' },
+                    { value: 'bkash', label: 'bKash / Mobile Banking', desc: 'Instant bKash, Nagad, Rocket payment' },
+                    { value: 'card', label: 'Credit / Debit Card', desc: 'Visa, Mastercard, AMEX via SSLCommerz' },
+                    { value: 'emi', label: 'Equal Monthly Installment (EMI)', desc: 'Flexible 3 to 36 months zero-cost/low-cost EMI' },
                   ].map(opt => (
                     <label key={opt.value} className={`${styles.paymentOption} ${form.paymentMethod === opt.value ? styles.paymentActive : ''}`}>
                       <input type="radio" name="payment" value={opt.value}
                         checked={form.paymentMethod === opt.value} onChange={e => updateField('paymentMethod', e.target.value)} />
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <strong>{opt.label}</strong>
                         <span>{opt.desc}</span>
                       </div>
                     </label>
                   ))}
                 </div>
+
+                {/* EMI Configuration */}
+                {isEmi && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className={styles.emiDetailsBox}>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text)' }}>Configure EMI Plan</div>
+                    <div className={styles.emiGrid}>
+                      <div className={styles.formGroup}>
+                        <label>Select Bank</label>
+                        <select className="input" value={emiBank} onChange={e => setEmiBank(e.target.value)}>
+                          <option value="City Bank">City Bank (Amex / Visa)</option>
+                          <option value="BRAC Bank">BRAC Bank</option>
+                          <option value="Eastern Bank (EBL)">Eastern Bank (EBL)</option>
+                          <option value="Standard Chartered">Standard Chartered</option>
+                          <option value="Mutual Trust Bank (MTB)">Mutual Trust Bank</option>
+                          <option value="Dhaka Bank">Dhaka Bank</option>
+                          <option value="Prime Bank">Prime Bank</option>
+                          <option value="Dutch-Bangla Bank (DBBL)">Dutch-Bangla Bank</option>
+                        </select>
+                      </div>
+
+                      <div className={styles.formGroup}>
+                        <label>EMI Tenure (Months)</label>
+                        <select className="input" value={emiTenure} onChange={e => setEmiTenure(Number(e.target.value))}>
+                          <option value={3}>3 Months</option>
+                          <option value={6}>6 Months</option>
+                          <option value={9}>9 Months</option>
+                          <option value={12}>12 Months (Recommended)</option>
+                          <option value={18}>18 Months</option>
+                          <option value={24}>24 Months</option>
+                          <option value={36}>36 Months</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className={styles.emiCalculated}>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Estimated Monthly Installment:</div>
+                        <div className={styles.emiAmount}>৳{emiMonthlyAmount.toLocaleString()} / month</div>
+                      </div>
+                      <div style={{ textAlign: 'right', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                        Tenure: <strong>{emiTenure} Months</strong><br />
+                        Bank: <strong>{emiBank}</strong>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Mandatory Compliance 11: Agreement Checkbox */}
+                <div className={styles.agreementBox}>
+                  <input
+                    type="checkbox"
+                    id="checkout-terms-checkbox"
+                    className={styles.agreementCheckbox}
+                    checked={agreedToTerms}
+                    onChange={e => setAgreedToTerms(e.target.checked)}
+                  />
+                  <label htmlFor="checkout-terms-checkbox" className={styles.agreementLabel}>
+                    I have read and agree to EdgeTech&apos;s{' '}
+                    <Link href="/terms" target="_blank" className={styles.agreementLink}>
+                      Terms & Conditions
+                    </Link>
+                    ,{' '}
+                    <Link href="/privacy" target="_blank" className={styles.agreementLink}>
+                      Privacy Policy
+                    </Link>
+                    , and{' '}
+                    <Link href="/refund-policy" target="_blank" className={styles.agreementLink}>
+                      Return & Refund Policy
+                    </Link>
+                    .
+                  </label>
+                </div>
+
                 <div className={styles.stepBtns}>
                   <button className="btn btn-ghost" onClick={() => setStep(2)}>← Back</button>
-                  <button className="btn btn-primary btn-lg" onClick={handlePlaceOrder} disabled={isPlacing}>
+                  <button
+                    className="btn btn-primary btn-lg"
+                    onClick={handlePlaceOrder}
+                    disabled={isPlacing || !agreedToTerms}
+                    style={{ opacity: !agreedToTerms ? 0.6 : 1 }}
+                  >
                     {isPlacing ? <><Spinner size={16} /> Placing Order...</> : `Place Order — ৳${totalAmount.toLocaleString()}`}
                   </button>
                 </div>
@@ -231,8 +323,23 @@ export default function CheckoutPage() {
               <div className="divider" style={{ margin: '14px 0' }} />
               <div className={styles.summaryRow}><span>Subtotal</span><span>৳{totalAmount.toLocaleString()}</span></div>
               <div className={styles.summaryRow}><span>Shipping</span><span className={styles.free}>Free</span></div>
+              {isEmi && (
+                <div className={styles.summaryRow}>
+                  <span>EMI Plan</span>
+                  <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>৳{emiMonthlyAmount.toLocaleString()}/mo ({emiTenure}m)</span>
+                </div>
+              )}
               <div className="divider" style={{ margin: '14px 0' }} />
               <div className={`${styles.summaryRow} ${styles.totalRow}`}><span>Total</span><span>৳{totalAmount.toLocaleString()}</span></div>
+
+              {/* Delivery Timeline Card */}
+              <div className={styles.deliveryTimelineCard}>
+                <div><strong>Standard Delivery Timeline:</strong></div>
+                <div>• Inside Dhaka: <strong>5 working days</strong></div>
+                <div>• Outside Dhaka: <strong>10 working days</strong></div>
+                <div style={{ marginTop: 4 }}>• <strong>7 to 10 Days</strong> Return Guarantee</div>
+              </div>
+
               <div className={styles.trust}><ShieldCheck size={14} /> Secure 256-bit SSL Encryption</div>
             </div>
           </div>

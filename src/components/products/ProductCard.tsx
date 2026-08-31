@@ -1,7 +1,8 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Star, Heart, Zap } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingCart, Star, Heart, Zap, Check, AlertOctagon, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
@@ -13,6 +14,7 @@ import styles from './ProductCard.module.css';
 interface Props { product: ProductListDto; index?: number; }
 
 export default function ProductCard({ product, index = 0 }: Props) {
+  const router = useRouter();
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [wishlisted, setWishlisted] = useState(false);
   const { addItem } = useCartStore();
@@ -27,8 +29,18 @@ export default function ProductCard({ product, index = 0 }: Props) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (product.stock === 0) return;
     addItem(product);
     toast.success(`${product.name} added to cart!`);
+  };
+
+  const handleOrderNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (product.stock === 0) return;
+    addItem(product);
+    router.push('/checkout');
   };
 
   const discount = product.discountPrice
@@ -36,6 +48,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
     : null;
 
   const effectivePrice = product.discountPrice ?? product.price;
+  const isOutOfStock = product.stock === 0;
 
   return (
     <motion.div
@@ -66,30 +79,49 @@ export default function ProductCard({ product, index = 0 }: Props) {
               </div>
             )}
 
+            {/* Out of Stock Overlay on Image */}
+            {isOutOfStock && (
+              <div className={styles.outOfStockOverlay}>
+                <AlertOctagon size={24} />
+                <span>Out of Stock</span>
+              </div>
+            )}
+
             {/* Badges */}
             <div className={styles.badges}>
               {product.isFeatured && <span className="badge badge-primary">Featured</span>}
               {discount && <span className="badge badge-success">-{discount}%</span>}
-              {product.stock === 0 && <span className="badge badge-error">Out of Stock</span>}
+              {isOutOfStock && <span className="badge badge-error">Sold Out</span>}
             </div>
 
             {/* Wishlist */}
             <button
               className={`${styles.wishlistBtn} ${wishlisted ? styles.wishlisted : ''}`}
-              onClick={(e) => { e.preventDefault(); setWishlisted(!wishlisted); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setWishlisted(!wishlisted); }}
+              aria-label="Add to Wishlist"
             >
               <Heart size={16} fill="none" stroke="currentColor" strokeWidth={2} />
             </button>
 
-            {/* Quick Add */}
-            <button
-              className={styles.addToCartBtn}
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-            >
-              <ShoppingCart size={15} />
-              Add to Cart
-            </button>
+            {/* Quick Actions: Add to Cart & Order Now */}
+            <div className={styles.cardActions}>
+              <button
+                className={`${styles.actionBtn} ${styles.addToCartBtn}`}
+                onClick={handleAddToCart}
+                disabled={isOutOfStock}
+              >
+                <ShoppingCart size={13} />
+                Add to Cart
+              </button>
+              <button
+                className={`${styles.actionBtn} ${styles.orderNowBtn}`}
+                onClick={handleOrderNow}
+                disabled={isOutOfStock}
+              >
+                Order Now
+                <ArrowRight size={13} />
+              </button>
+            </div>
           </div>
 
           {/* Info */}
@@ -111,6 +143,15 @@ export default function ProductCard({ product, index = 0 }: Props) {
               <span className={styles.price}>৳{effectivePrice.toLocaleString()}</span>
               {product.discountPrice && (
                 <span className={styles.original}>৳{product.price.toLocaleString()}</span>
+              )}
+            </div>
+
+            {/* Stock Availability */}
+            <div className={styles.stockStatus}>
+              {isOutOfStock ? (
+                <span className={styles.outOfStockText}>● Unavailable / Out of Stock</span>
+              ) : (
+                <span className={styles.inStockText}><Check size={12} /> In Stock ({product.stock} available)</span>
               )}
             </div>
           </div>

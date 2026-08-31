@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/layout/CartDrawer';
 import CursorEffect from '@/components/ui/CursorEffect';
+import WhatsAppButton from '@/components/ui/WhatsAppButton';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.edgetech.com.bd'),
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CartDrawer />
           <main>{children}</main>
           <Footer />
+          <WhatsAppButton />
         </Providers>
       </body>
     </html>

@@ -203,35 +203,94 @@
 .paymentOption strong { font-size: 0.9rem; }
 .paymentOption span { font-size: 0.78rem; color: var(--color-text-muted); }
 
-/* Sidebar */
-.sidebar { position: sticky; top: 100px; }
-
-.summaryCard {
+/* EMI Details */
+.emiDetailsBox {
+  margin-top: 12px;
+  padding: 16px;
   background: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-xl);
-  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.summaryCard h3 { font-size: 1.1rem; }
+.emiGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
 
-.summaryRow {
+.emiCalculated {
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 12px;
   display: flex;
   justify-content: space-between;
-  padding: 4px 0;
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
+  align-items: center;
 }
 
-.totalRow {
+.emiAmount {
+  font-size: 1.15rem;
   font-weight: 700;
-  color: var(--color-text);
-  font-size: 1.1rem;
+  color: var(--color-primary);
 }
 
-.totalRow span:last-child { color: var(--color-primary); }
+/* Agreement Checkbox (Mandatory Compliance) */
+.agreementBox {
+  margin-top: 24px;
+  padding: 16px 18px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
 
-.free { color: var(--color-success); font-weight: 600; }
+.agreementCheckbox {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.agreementLabel {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.agreementLink {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.agreementLink:hover {
+  color: var(--color-primary-dark);
+}
+
+/* Delivery timeline notice in summary */
+.deliveryTimelineCard {
+  margin-top: 14px;
+  padding: 12px;
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.deliveryTimelineCard strong {
+  color: var(--color-text);
+}
 
 .trust {
   display: flex;

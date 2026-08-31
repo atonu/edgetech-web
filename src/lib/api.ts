@@ -129,6 +129,11 @@ export interface OrderDto {
   paymentMethod?: string;
   createdAt: string;
   items: OrderItemDto[];
+  isEmi?: boolean;
+  emiTenureMonths?: number;
+  emiCompletedMonths?: number;
+  emiMonthlyAmount?: number;
+  emiBank?: string;
 }
 
 export interface CustomerInfo {
@@ -167,6 +172,9 @@ export interface PlaceOrderRequest {
   paymentMethod: string;
   customer: CustomerInfo;
   items: PlaceOrderItemRequest[];
+  isEmi?: boolean;
+  emiTenureMonths?: number;
+  emiBank?: string;
 }
 
 export interface UserDto {
@@ -329,7 +337,8 @@ export const ordersApi = {
   getOrder: (id: number) => api.get<OrderDto>(`/orders/${id}`),
   getAllOrders: (params?: Record<string, unknown>) => api.get<PagedResult<OrderDto>>('/orders/all', { params }),
   updateStatus: (id: number, status: string) => api.put(`/orders/${id}/status`, { status }),
-  updateAdmin: (id: number, status: string, notes?: string, adminNotes?: string) => api.put(`/orders/${id}/admin`, { status, notes, adminNotes }),
+  updateAdmin: (id: number, status: string, notes?: string, adminNotes?: string, emiCompletedMonths?: number, emiTenureMonths?: number) =>
+    api.put(`/orders/${id}/admin`, { status, notes, adminNotes, emiCompletedMonths, emiTenureMonths }),
 };
 
 export const recentlyViewedApi = {

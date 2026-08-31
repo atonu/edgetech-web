@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Heart, Star, ChevronRight, Minus, Plus, Zap, Shield, Truck, RefreshCw, Check } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingCart, Heart, Star, ChevronRight, Minus, Plus, Zap, Shield, Truck, RefreshCw, Check, AlertOctagon, ArrowRight, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { ProductDto, ProductListDto, productsApi } from '@/lib/api';
@@ -22,6 +23,7 @@ const mockRelated: ProductListDto[] = Array.from({ length: 4 }).map((_, i) => ({
 }));
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -41,10 +43,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     ? Math.round((1 - product.discountPrice / product.price) * 100)
     : null;
   const effectivePrice = product ? (product.discountPrice ?? product.price) : 0;
+  const isOutOfStock = product ? product.stock === 0 : false;
   const mainImageUrl = product?.images[selectedImageIdx]?.imageUrl ?? product?.primaryImageUrl;
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || isOutOfStock) return;
     const listDto: ProductListDto = {
       id: product.id, name: product.name, slug: product.slug,
       price: product.price, discountPrice: product.discountPrice,
@@ -53,7 +56,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       brandName: product.brandName,
     };
     for (let i = 0; i < quantity; i++) addItem(listDto);
-    toast.success(`${product.name} added to cart!`);
+    toast.success(`${product.name} (x${quantity}) added to cart!`);
+  };
+
+  const handleOrderNow = () => {
+    if (!product || isOutOfStock) return;
+    const listDto: ProductListDto = {
+      id: product.id, name: product.name, slug: product.slug,
+      price: product.price, discountPrice: product.discountPrice,
+      primaryImageUrl: product.primaryImageUrl, stock: product.stock,
+      isFeatured: product.isFeatured, categoryName: product.categoryName,
+      brandName: product.brandName,
+    };
+    for (let i = 0; i < quantity; i++) addItem(listDto);
+    router.push('/checkout');
   };
 
   if (notFound) {
@@ -117,6 +133,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <span>Product Image</span>
                 </div>
               )}
+              {isOutOfStock && (
+                <div className={styles.outOfStockOverlay}>
+                  <AlertOctagon size={36} />
+                  <div>Out of Stock</div>
+                  <span>Currently Unavailable</span>
+                </div>
+              )}
               {discount && <span className={`badge badge-success ${styles.discountBadge}`}>-{discount}%</span>}
             </div>
             {product.images.length > 0 && (
@@ -164,28 +187,41 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               )}
             </div>
 
-            {/* Stock */}
+            {/* Stock Availability */}
             <div className={styles.stockRow}>
               {product.stock > 0 ? (
-                <span className={styles.inStock}><Check size={14} /> In Stock ({product.stock} available)</span>
+                <span className={styles.inStock}><Check size={14} /> In Stock ({product.stock} units available)</span>
               ) : (
-                <span className={styles.outOfStock}>Out of Stock</span>
+                <span className={styles.outOfStock}>● Out of Stock / Unavailable</span>
               )}
               {product.sku && <span className={styles.sku}>SKU: {product.sku}</span>}
             </div>
 
+            {/* Delivery & Compliance Notice */}
+            <div className={styles.deliveryNotice}>
+              <div><Truck size={14} style={{ display: 'inline', marginRight: 4 }} /> <strong>Delivery Time:</strong> Inside Dhaka (5 Days) | Outside Dhaka (10 Days)</div>
+              <div><RefreshCw size={14} style={{ display: 'inline', marginRight: 4 }} /> <strong>Return Policy:</strong> 7 to 10 working days return guarantee</div>
+            </div>
+
             <div className="divider" />
 
-            {/* Quantity + Add to Cart */}
+            {/* Quantity + Add to Cart + Order Now */}
             <div className={styles.actions}>
               <div className={styles.quantityControl}>
-                <button onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus size={16} /></button>
+                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={isOutOfStock}><Minus size={16} /></button>
                 <span>{quantity}</span>
-                <button onClick={() => setQuantity(q => Math.min(product.stock, q + 1))}><Plus size={16} /></button>
+                <button onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} disabled={isOutOfStock}><Plus size={16} /></button>
               </div>
-              <button className="btn btn-primary btn-lg" style={{ flex: 1 }} onClick={handleAddToCart} disabled={product.stock === 0}>
-                <ShoppingCart size={18} /> Add to Cart — ৳{(effectivePrice * quantity).toLocaleString()}
-              </button>
+
+              <div className={styles.btnGroup}>
+                <button className="btn btn-secondary btn-lg" style={{ flex: 1 }} onClick={handleAddToCart} disabled={isOutOfStock}>
+                  <ShoppingCart size={18} /> Add to Cart
+                </button>
+                <button className={styles.orderNowBtn} onClick={handleOrderNow} disabled={isOutOfStock}>
+                  Order Now <ArrowRight size={18} />
+                </button>
+              </div>
+
               <button className={`${styles.wishBtn} ${wishlisted ? styles.wishlisted : ''}`} onClick={() => setWishlisted(!wishlisted)}>
                 <Heart size={20} fill="none" stroke="currentColor" strokeWidth={2} />
               </button>
@@ -193,9 +229,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
             {/* Trust Badges */}
             <div className={styles.trustBadges}>
-              <div className={styles.trustBadge}><Truck size={16} /> Free Delivery</div>
-              <div className={styles.trustBadge}><Shield size={16} /> Warranty</div>
-              <div className={styles.trustBadge}><RefreshCw size={16} /> Easy Returns</div>
+              <div className={styles.trustBadge}><Truck size={16} /> Fast Delivery</div>
+              <div className={styles.trustBadge}><Shield size={16} /> Official Warranty</div>
+              <div className={styles.trustBadge}><RefreshCw size={16} /> 7-10 Days Return</div>
             </div>
           </motion.div>
         </div>

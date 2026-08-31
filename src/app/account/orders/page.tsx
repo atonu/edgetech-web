@@ -47,6 +47,7 @@ export default function AccountOrdersPage() {
                     <th>Order</th>
                     <th>Date</th>
                     <th>Status</th>
+                    <th>Payment / EMI Progress</th>
                     <th>Total</th>
                     <th>Items</th>
                   </tr>
@@ -54,11 +55,12 @@ export default function AccountOrdersPage() {
                 <tbody>
                   {Array.from({ length: 4 }).map((_, i) => (
                     <tr key={`order-skeleton-${i}`}>
-                      <td><Skeleton width="3rem" /></td>
+                      <td><Skeleton width="4rem" /></td>
                       <td><Skeleton width="5rem" /></td>
                       <td><Skeleton width="4rem" /></td>
+                      <td><Skeleton width="8rem" /></td>
+                      <td><Skeleton width="4rem" /></td>
                       <td><Skeleton width="3rem" /></td>
-                      <td><Skeleton width="2rem" /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -79,20 +81,54 @@ export default function AccountOrdersPage() {
                     <th>Order</th>
                     <th>Date</th>
                     <th>Status</th>
+                    <th>Payment / EMI Progress</th>
                     <th>Total</th>
                     <th>Items</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map(order => (
-                    <tr key={order.id}>
-                      <td><strong>{order.orderNumber ? (order.orderNumber.startsWith('#') ? order.orderNumber : `#${order.orderNumber}`) : `#ET-${String(order.id).padStart(6, '0')}`}</strong></td>
-                      <td>{new Date(order.createdAt).toLocaleDateString()}</td>
-                      <td><span className={styles.badge}>{order.status}</span></td>
-                      <td>৳{order.totalAmount.toLocaleString()}</td>
-                      <td>{order.items.length} items</td>
-                    </tr>
-                  ))}
+                  {orders.map(order => {
+                    const isEmi = order.isEmi || order.paymentMethod?.toLowerCase() === 'emi';
+                    const totalTenure = order.emiTenureMonths || 12;
+                    const completed = order.emiCompletedMonths || 0;
+                    const pct = Math.min(100, Math.round((completed / totalTenure) * 100));
+
+                    return (
+                      <tr key={order.id}>
+                        <td>
+                          <strong>
+                            {order.orderNumber
+                              ? (order.orderNumber.startsWith('#') ? order.orderNumber : `#${order.orderNumber}`)
+                              : `#ET-${String(order.id).padStart(6, '0')}`}
+                          </strong>
+                        </td>
+                        <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                        <td><span className={styles.badge}>{order.status}</span></td>
+                        <td>
+                          {isEmi ? (
+                            <div className={styles.emiTracker}>
+                              <div className={styles.emiProgressHeader}>
+                                <span className={styles.emiBadge}>EMI: {completed}/{totalTenure} Paid</span>
+                                <span>{pct}%</span>
+                              </div>
+                              <div className={styles.progressBarTrack}>
+                                <div className={styles.progressBarFill} style={{ width: `${pct}%` }} />
+                              </div>
+                              <div className={styles.emiMonthlyText}>
+                                {order.emiMonthlyAmount ? `৳${order.emiMonthlyAmount.toLocaleString()}/mo` : ''} {order.emiBank ? `• ${order.emiBank}` : ''}
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ textTransform: 'capitalize', fontSize: '0.85rem' }}>
+                              {order.paymentMethod ? (order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod) : 'Standard'}
+                            </span>
+                          )}
+                        </td>
+                        <td><strong>৳{order.totalAmount.toLocaleString()}</strong></td>
+                        <td>{order.items.length} items</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

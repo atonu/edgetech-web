@@ -69,6 +69,55 @@
   font-size: 0.78rem;
 }
 
+.emiBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.emiTracker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+}
+
+.emiProgressHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.progressBarTrack {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #10b981);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.emiMonthlyText {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
 .muted {
   color: var(--text-muted);
 }

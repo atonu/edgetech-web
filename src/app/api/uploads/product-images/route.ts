@@ -40,6 +40,8 @@ async function isAdminRequest(request: NextRequest): Promise<boolean> {
   }
 }
 
+import sharp from 'sharp';
+
 export async function POST(request: NextRequest) {
   if (!(await isAdminRequest(request))) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -62,11 +64,23 @@ export async function POST(request: NextRequest) {
   try {
     const uploadDir = getProductImageDir();
     await mkdir(uploadDir, { recursive: true });
-    const filename = `${crypto.randomUUID()}${extension}`;
+    
+    // Always convert and save as modern WebP
+    const filename = `${crypto.randomUUID()}.webp`;
     const filepath = path.join(uploadDir, filename);
-    const bytes = Buffer.from(await file.arrayBuffer());
-    await writeFile(filepath, bytes);
-    console.log(`[Upload] Saved: ${filepath} (${bytes.length} bytes)`);
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+
+    let webpBuffer: Buffer;
+    try {
+      webpBuffer = await sharp(rawBuffer)
+        .webp({ quality: 85, effort: 4 })
+        .toBuffer();
+    } catch {
+      webpBuffer = rawBuffer;
+    }
+
+    await writeFile(filepath, webpBuffer);
+    console.log(`[Upload] Saved WebP image: ${filepath} (${webpBuffer.length} bytes)`);
     return NextResponse.json({ url: `/product-images/${filename}` });
   } catch (error) {
     console.error(`[Upload] Error:`, error);

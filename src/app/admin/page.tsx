@@ -674,10 +674,10 @@ export default function AdminPage() {
     });
   };
 
-  const updateOrder = async (id: number, status: string, notes?: string, adminNotes?: string) => {
+  const updateOrder = async (id: number, status: string, notes?: string, adminNotes?: string, emiCompletedMonths?: number, emiTenureMonths?: number) => {
     await withBusy(`save-order-${id}`, async () => {
       try {
-        await ordersApi.updateAdmin(id, status, notes, adminNotes);
+        await ordersApi.updateAdmin(id, status, notes, adminNotes, emiCompletedMonths, emiTenureMonths);
         toast.success('Order updated.');
         await loadCore();
       } catch {
@@ -1399,10 +1399,14 @@ function OrderRow({
 }: {
   order: OrderDto;
   saving: boolean;
-  onSave: (id: number, status: string, notes?: string, adminNotes?: string) => Promise<void>;
+  onSave: (id: number, status: string, notes?: string, adminNotes?: string, emiCompletedMonths?: number, emiTenureMonths?: number) => Promise<void>;
 }) {
   const [status, setStatus] = useState(order.status);
   const [adminNotes, setAdminNotes] = useState(order.adminNotes ?? order.notes ?? '');
+  const [emiCompleted, setEmiCompleted] = useState(order.emiCompletedMonths ?? 0);
+  const [emiTenure, setEmiTenure] = useState(order.emiTenureMonths ?? 12);
+
+  const isEmi = order.isEmi || order.paymentMethod?.toLowerCase() === 'emi';
 
   const orderNum = order.orderNumber
     ? (order.orderNumber.startsWith('#') ? order.orderNumber : `#${order.orderNumber}`)
@@ -1449,10 +1453,21 @@ function OrderRow({
         <div style={{ fontWeight: 600 }}>৳{order.totalAmount.toLocaleString()}</div>
         {order.paymentMethod && (
           <div style={{ marginTop: 3 }}>
-            <Badge variant="secondary">{order.paymentMethod.toUpperCase()}</Badge>
+            <Badge variant={isEmi ? 'default' : 'secondary'}>{order.paymentMethod.toUpperCase()}</Badge>
           </div>
         )}
-        <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 2 }}>
+        {isEmi && (
+          <div style={{ marginTop: 6, fontSize: '0.75rem' }}>
+            <div style={{ color: 'var(--primary)', fontWeight: 600 }}>
+              EMI: {emiCompleted}/{emiTenure} Paid
+            </div>
+            {order.emiMonthlyAmount && (
+              <div className={styles.muted}>৳{order.emiMonthlyAmount.toLocaleString()}/mo</div>
+            )}
+            {order.emiBank && <div className={styles.muted}>{order.emiBank}</div>}
+          </div>
+        )}
+        <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 4 }}>
           {order.items?.length ?? 0} item{(order.items?.length ?? 0) === 1 ? '' : 's'}
         </div>
       </TD>
@@ -1460,6 +1475,21 @@ function OrderRow({
         <Select value={status} onChange={e => setStatus(e.target.value)}>
           {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
         </Select>
+        {isEmi && (
+          <div style={{ marginTop: 8 }}>
+            <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+              Paid EMIs:
+            </label>
+            <Input
+              type="number"
+              min={0}
+              max={emiTenure}
+              value={emiCompleted}
+              onChange={e => setEmiCompleted(Number(e.target.value))}
+              style={{ width: '80px', padding: '4px 8px', fontSize: '0.8rem' }}
+            />
+          </div>
+        )}
       </TD>
       <TD>
         <div className={styles.notesContainer}>
@@ -1478,7 +1508,13 @@ function OrderRow({
         </div>
       </TD>
       <TD>
-        <Button size="sm" loading={saving} onClick={() => onSave(order.id, status, order.notes, adminNotes)}>Save</Button>
+        <Button
+          size="sm"
+          loading={saving}
+          onClick={() => onSave(order.id, status, order.notes, adminNotes, isEmi ? emiCompleted : undefined, isEmi ? emiTenure : undefined)}
+        >
+          Save
+        </Button>
       </TD>
     </tr>
   );
