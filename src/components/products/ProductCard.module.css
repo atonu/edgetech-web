@@ -88,19 +88,20 @@
   z-index: 3;
 }
 
-/* Quick Actions Overlay */
+/* Quick Actions Overlay (Anchored to the bottom of the image container) */
 .cardActions {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  top: auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  padding: 8px;
-  background: linear-gradient(180deg, transparent 0%, rgba(10, 15, 29, 0.9) 100%);
+  gap: 6px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.88) 100%);
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(6px);
   transition: all var(--transition-base);
   z-index: 4;
 }

@@ -214,7 +214,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </div>
 
               <div className={styles.btnGroup}>
-                <button className="btn btn-secondary btn-lg" style={{ flex: 1 }} onClick={handleAddToCart} disabled={isOutOfStock}>
+                <button className={styles.addToCartBtn} onClick={handleAddToCart} disabled={isOutOfStock}>
                   <ShoppingCart size={18} /> Add to Cart
                 </button>
                 <button className={styles.orderNowBtn} onClick={handleOrderNow} disabled={isOutOfStock}>

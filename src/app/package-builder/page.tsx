@@ -106,9 +106,33 @@ export default function PackageBuilderPage() {
           </div>
         </div>
 
-        <div className={styles.layout}>
-          {/* Slot Grid grouped by Section */}
-          <div className={styles.sectionsContainer}>
+        {loading ? (
+          <div className={styles.layout}>
+            <div className={styles.sectionsContainer}>
+              {sections.slice(0, 5).map((s) => (
+                <div key={`skel-row-${s.key}`} className={styles.sectionRow}>
+                  <div className={styles.sectionHeaderCol}>
+                    <Skeleton width="90px" height="1.2rem" />
+                  </div>
+                  <div className={styles.sectionCardsCol}>
+                    <Skeleton width="180px" height="110px" radius="var(--radius-md)" />
+                    <Skeleton width="180px" height="110px" radius="var(--radius-md)" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className={styles.sidebar}>
+              <div className={styles.summaryCard}>
+                <Skeleton width="60%" height="1.4rem" style={{ marginBottom: 16 }} />
+                <Skeleton width="100%" height="2.2rem" style={{ marginBottom: 12 }} />
+                <Skeleton width="100%" height="48px" radius="var(--radius-md)" />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.layout}>
+            {/* Slot Grid grouped by Section */}
+            <div className={styles.sectionsContainer}>
             {sections.map((section) => {
               // Find filled products for this section
               const filledProducts = Object.entries(selectedProducts)
@@ -212,7 +236,8 @@ export default function PackageBuilderPage() {
             </div>
           </div>
         </div>
-      </div>
+      )}
+    </div>
 
       {/* Product Selection Modal */}
       <AnimatePresence>

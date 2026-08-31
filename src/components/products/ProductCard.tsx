@@ -104,7 +104,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
               <Heart size={16} fill="none" stroke="currentColor" strokeWidth={2} />
             </button>
 
-            {/* Quick Actions: Add to Cart & Order Now */}
+            {/* Quick Actions: Add to Cart & Order Now - Aligned to bottom of image container */}
             <div className={styles.cardActions}>
               <button
                 className={`${styles.actionBtn} ${styles.addToCartBtn}`}
