@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { MessageCircle } from 'lucide-react';
+import Image from 'next/image';
 import styles from './WhatsAppButton.module.css';
 
 export default function WhatsAppButton() {
@@ -13,14 +13,18 @@ export default function WhatsAppButton() {
       rel="noopener noreferrer"
       className={styles.floatingBtn}
       aria-label="Chat with EdgeTech on WhatsApp"
+      title="Chat on WhatsApp (+880 1329-661250)"
     >
-      <div className={styles.iconWrap}>
-        <div className={styles.pulseRing} />
-        <MessageCircle size={22} />
-      </div>
-      <div className={styles.label}>
-        <span>Chat on WhatsApp</span>
-        <span className={styles.subText}>+880 1329-661250</span>
+      <div className={styles.pulseRing} />
+      <div className={styles.imageWrap}>
+        <Image
+          src="/wa.png"
+          alt="WhatsApp"
+          width={58}
+          height={58}
+          className={styles.waImage}
+          priority
+        />
       </div>
     </a>
   );

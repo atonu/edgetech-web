@@ -22,8 +22,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = `/auth/login?returnTo=${returnTo}`;
+      const pathname = window.location.pathname;
+      const isProtectedPage = pathname.startsWith('/account') || pathname.startsWith('/admin');
+      if (isProtectedPage) {
+        const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/auth/login?returnTo=${returnTo}`;
+      }
     }
     return Promise.reject(error);
   }

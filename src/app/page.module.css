@@ -27,11 +27,13 @@
 
 .heroSlideContent {
   position: absolute;
-  margin: 100px 20px;
   inset: 0;
+  padding: 28px;
+  margin: 0;
   z-index: 2;
   display: flex;
-  align-items: start;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .heroGrid {
@@ -102,45 +104,44 @@
 }
 
 .heroText {
-  max-width: 60%;
-  width: 60%;
-  padding: 32px 20px;
+  max-width: 55%;
+  width: 55%;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: rgba(255, 255, 255, .7);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 16px;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .heroTitle {
-  font-size: clamp(1.38rem, 2.6vw, 2.05rem);
+  font-size: clamp(1.25rem, 2.3vw, 1.85rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.15;
   margin-bottom: 8px;
-  letter-spacing: -0.03em;
-  color: #ffffff;
-  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  letter-spacing: -0.02em;
+  color: #0f172a;
 }
 
 .heroSubtitle {
   font-size: 0.84rem;
-  color: rgba(255, 255,255, 1);
+  color: #334155;
   margin-bottom: 12px;
   line-height: 1.35;
-  /* text-shadow: 0 4px 10px rgba(0, 0, 0, 0.55); */
 }
 
 .heroCtas {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .heroCtas :global(.btn) {
-  padding: 9px 16px;
+  padding: 8px 16px;
   font-size: 0.8rem;
 }
 
@@ -664,49 +665,60 @@
 }
 
 @media (max-width: 600px) {
-  .heroContent { padding-top: 40px; padding-bottom: 40px; }
+  .heroContent { padding-top: 20px; padding-bottom: 24px; }
   .heroBanner {
-    height: 280px;
+    height: 300px;
+    border-radius: 16px;
+  }
+  .heroSlideContent {
+    padding: 12px;
   }
   .heroText {
-    position: absolute !important;
-    top: 12px;
-    right: 12px;
+    position: relative !important;
+    top: 0;
+    left: 0;
+    right: auto;
     width: auto;
-    max-width: 160px;
-    padding: 12px 10px;
-    background: rgba(255, 255, 255, 0.85);
+    max-width: min(290px, 85%);
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(10px);
     border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 6px;
   }
   .heroTitle {
-    font-size: 0.9rem;
-    line-height: 1.15;
+    font-size: 0.95rem;
+    line-height: 1.2;
     margin-bottom: 0;
+    color: #0f172a;
+    font-weight: 800;
   }
   .heroCtas {
-    flex-direction: column;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 6px;
-    margin-top: 0;
+    margin-top: 4px;
   }
   .heroCtas :global(.btn) {
-    padding: 6px 8px;
-    font-size: 0.65rem;
+    padding: 6px 10px;
+    font-size: 0.72rem;
     white-space: nowrap;
   }
   .heroNav {
-    left: 16px;
-    bottom: 12px;
-    gap: 10px;
+    left: 12px;
+    bottom: 10px;
+    gap: 8px;
   }
   .heroArrow {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
   }
-  .heroDotActive { width: 24px; }
+  .heroDotActive { width: 20px; }
   .hotDealsList {
     grid-template-columns: 1fr;
     gap: 12px;

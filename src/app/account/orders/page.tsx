@@ -10,11 +10,13 @@ import styles from '../account.module.css';
 
 export default function AccountOrdersPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isHydrated } = useAuthStore();
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.replace('/auth/login');
       return;
@@ -24,9 +26,9 @@ export default function AccountOrdersPage() {
       .then(res => setOrders(res.data ?? []))
       .catch(() => setOrders([]))
       .finally(() => setLoading(false));
-  }, [isAuthenticated, router]);
+  }, [isHydrated, isAuthenticated, router]);
 
-  if (!isAuthenticated) {
+  if (!isHydrated || !isAuthenticated) {
     return null;
   }
 
