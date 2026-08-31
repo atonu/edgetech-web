@@ -60,7 +60,7 @@ export default function Footer() {
             <ul className={styles.links}>
               {[
                 { href: '/products', label: 'All Products' },
-                { href: '/package-builder', label: 'CCTV Package Builder' },
+                { href: '/package-builder', label: 'Build Your Solution' },
                 { href: '/cart', label: 'Shopping Cart' },
                 { href: '/account/orders', label: 'EMI & Order Tracking' },
                 { href: '/auth/login', label: 'Customer Login' },
@@ -77,7 +77,7 @@ export default function Footer() {
               <li className={styles.contactItem}>
                 <MapPin size={16} />
                 <span>
-                  Suite 402, Level 4, Computer City Centre (Multiplan Center), 69-71 New Elephant Road, Dhaka-1205, Bangladesh
+                  373, South Monipur, Mirpur-2, Dhaka 1216
                 </span>
               </li>
               <li className={styles.contactItem}>

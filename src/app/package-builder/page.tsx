@@ -48,7 +48,7 @@ export default function PackageBuilderPage() {
         }
         setProductsByBase(Object.fromEntries(Object.entries(byBase).map(([k, v]) => [k, [...v.values()]])));
       })
-      .catch(() => toast.error('Failed to load package builder products.'))
+      .catch(() => toast.error('Failed to load solution builder products.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -100,9 +100,9 @@ export default function PackageBuilderPage() {
         {/* Header */}
         <div className={styles.header}>
           <div>
-            <span className="section-label"><Package size={14} /> CCTV Package Builder</span>
-            <h1>Build Your Custom <span className="gradient-text">Security Package</span></h1>
-            <p className="text-muted">Select components for each slot to build your perfect surveillance system.</p>
+            <span className="section-label"><Package size={14} /> Solution Builder</span>
+            <h1><span className="gradient-text">Build Your Solution</span></h1>
+            <p className="text-muted">Select components for each slot to configure your complete security and IT setup.</p>
           </div>
         </div>
 

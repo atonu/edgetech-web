@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
               </li>
               <li className={styles.listItem}>
                 <CheckCircle2 size={16} className={styles.listIcon} />
-                <span><strong>Order Details:</strong> Items purchased, quantity, package builder configurations, and preferred delivery time slots.</span>
+                <span><strong>Order Details:</strong> Items purchased, quantity, Build Your Solution configurations, and preferred delivery time slots.</span>
               </li>
               <li className={styles.listItem}>
                 <CheckCircle2 size={16} className={styles.listIcon} />
@@ -81,7 +81,7 @@ export default function PrivacyPolicyPage() {
               <div className={styles.infoBoxTitle}>EdgeTech Privacy Officer</div>
               <p className={styles.infoBoxText}>
                 <strong>Company:</strong> EdgeTech Solutions (Trade License: TRAD/DNCC/042819/2023)<br />
-                <strong>Address:</strong> Suite 402, Level 4, Computer City Centre (Multiplan Center), 69-71 New Elephant Road, Dhaka-1205, Bangladesh.<br />
+                <strong>Address:</strong> 373, South Monipur, Mirpur-2, Dhaka 1216.<br />
                 <strong>Email:</strong> privacy@edgetech.com.bd | info@edgetech.com.bd<br />
                 <strong>Direct Helpline:</strong> +880 1329-661250
               </p>

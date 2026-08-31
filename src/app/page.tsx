@@ -18,9 +18,9 @@ const heroSlides = [
     image: '/1.png',
   },
   {
-    title: 'Build Your Custom\nCCTV Package',
-    subtitle: 'Configure your perfect security system with our interactive package builder',
-    cta: 'Start Building',
+    title: 'Build Your Custom\nSolution',
+    subtitle: 'Configure your perfect surveillance and IT setup with our interactive solution builder',
+    cta: 'Build Your Solution',
     ctaLink: '/package-builder',
     image: '/2.png',
   },
@@ -395,7 +395,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== PACKAGE BUILDER CTA ===== */}
+      {/* ===== BUILD YOUR SOLUTION CTA ===== */}
       <section className={styles.builderCta}>
         <div className={styles.builderBg} />
         <div className={`container ${styles.builderContent}`}>
@@ -408,8 +408,8 @@ export default function HomePage() {
             <span className="badge badge-primary" style={{ fontSize: '0.85rem', padding: '6px 16px' }}>
               <Package size={14} /> Interactive Tool
             </span>
-            <h2>CCTV Package Builder</h2>
-            <p>Configure your perfect surveillance system. Choose cameras, DVR/NVR, storage, cables, and more — all in one interactive builder.</p>
+            <h2>Build Your Solution</h2>
+            <p>Configure your perfect surveillance and security system. Choose cameras, DVR/NVR, storage, cables, and accessories — all in one interactive builder.</p>
             <div className={styles.builderFeatures}>
               <div className={styles.builderFeature}>
                 <Shield size={16} /> Select Components
@@ -422,7 +422,7 @@ export default function HomePage() {
               </div>
             </div>
             <Link href="/package-builder" className="btn btn-primary btn-lg" style={{ marginTop: 8 }}>
-              Start Building <ArrowRight size={18} />
+              Build Your Solution <ArrowRight size={18} />
             </Link>
           </motion.div>
         </div>

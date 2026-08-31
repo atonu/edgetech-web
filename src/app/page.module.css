@@ -32,7 +32,7 @@
   margin: 0;
   z-index: 2;
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: flex-start;
 }
 
@@ -106,7 +106,7 @@
 .heroText {
   max-width: 55%;
   width: 55%;
-  padding: 24px 20px;
+  padding: 22px 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -118,7 +118,7 @@
 }
 
 .heroTitle {
-  font-size: clamp(1.25rem, 2.3vw, 1.85rem);
+  font-size: clamp(1.2rem, 2.2vw, 1.8rem);
   font-weight: 800;
   line-height: 1.15;
   margin-bottom: 8px;
@@ -147,8 +147,9 @@
 
 .heroNav {
   position: absolute;
-  left: clamp(20px, 3.5vw, 36px);
-  bottom: 16px;
+  right: clamp(20px, 3.5vw, 36px);
+  left: auto;
+  bottom: 24px;
   z-index: 4;
   display: flex;
   align-items: center;
@@ -643,13 +644,19 @@
     height: 340px;
     border-radius: 18px;
   }
-  .heroText {
-    width: 78%;
-    max-width: 78%;
-    padding: 16px;
+  .heroSlideContent {
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 14px;
   }
-  .heroTitle { font-size: clamp(1.25rem, 4vw, 1.7rem); }
-  .heroNav { left: 22px; bottom: 16px; }
+  .heroText {
+    width: auto;
+    max-width: min(300px, 80%);
+    padding: 16px;
+    align-self: flex-start;
+  }
+  .heroTitle { font-size: clamp(1.1rem, 3.5vw, 1.5rem); }
+  .heroNav { left: 16px; right: auto; bottom: 14px; }
   .hotDealsPanel {
     height: auto;
     border-radius: 18px;
@@ -671,15 +678,17 @@
     border-radius: 16px;
   }
   .heroSlideContent {
-    padding: 12px;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 10px 12px;
   }
   .heroText {
     position: relative !important;
     top: 0;
-    left: 0;
-    right: auto;
+    left: auto;
+    right: 0;
     width: auto;
-    max-width: min(290px, 85%);
+    max-width: min(280px, 85%);
     padding: 12px 14px;
     background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(10px);
@@ -711,6 +720,7 @@
   }
   .heroNav {
     left: 12px;
+    right: auto;
     bottom: 10px;
     gap: 8px;
   }

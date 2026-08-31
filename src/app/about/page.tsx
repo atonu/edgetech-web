@@ -34,7 +34,7 @@ export default function AboutUsPage() {
                 <strong>Company Name:</strong> EdgeTech Solutions<br />
                 <strong>Trade License Number:</strong> TRAD/DNCC/042819/2023 (DNCC Registered)<br />
                 <strong>Business Type:</strong> Information Technology, CCTV Surveillance & Electronic Security Equipment<br />
-                <strong>Registered Office:</strong> Suite 402, Level 4, Computer City Centre (Multiplan Center), 69-71 New Elephant Road, Dhaka-1205, Bangladesh.<br />
+                <strong>Registered Office:</strong> 373, South Monipur, Mirpur-2, Dhaka 1216.<br />
                 <strong>Official Hotline:</strong> +880 1329-661250 | <strong>Email:</strong> info@edgetech.com.bd
               </p>
             </div>
@@ -88,7 +88,7 @@ export default function AboutUsPage() {
               </div>
               <div className={styles.infoBox}>
                 <div className={styles.infoBoxTitle}><CheckCircle2 size={16} /> Certified Support</div>
-                <p className={styles.infoBoxText}>Dedicated technical engineers ready to assist with remote diagnostics, on-site setup, and CCTV package builder recommendations.</p>
+                <p className={styles.infoBoxText}>Dedicated technical engineers ready to assist with remote diagnostics, on-site setup, and Build Your Solution recommendations.</p>
               </div>
             </div>
           </section>

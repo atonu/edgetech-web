@@ -78,7 +78,7 @@ export default function Header() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/products', label: 'All Products' },
-    { href: '/package-builder', label: '📦 Package Builder', highlight: true },
+    { href: '/package-builder', label: '🛠️ Build Your Solution', highlight: true },
   ];
 
   const visibleNavLinks = isAdmin

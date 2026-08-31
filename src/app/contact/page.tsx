@@ -29,7 +29,7 @@ export default function ContactUsPage() {
               <p className={styles.highlightBoxText}>
                 <strong>Company Name:</strong> EdgeTech Solutions<br />
                 <strong>Trade License No:</strong> TRAD/DNCC/042819/2023<br />
-                <strong>Registered Office:</strong> Suite 402, Level 4, Computer City Centre (Multiplan Center), 69-71 New Elephant Road, Dhaka-1205, Bangladesh.
+                <strong>Registered Office:</strong> 373, South Monipur, Mirpur-2, Dhaka 1216.
               </p>
             </div>
           </section>

@@ -33,7 +33,7 @@ export default function TermsAndConditionsPage() {
               <p className={styles.highlightBoxText}>
                 <strong>Registered Name:</strong> EdgeTech Solutions<br />
                 <strong>Trade License Number:</strong> TRAD/DNCC/042819/2023 (Dhaka North City Corporation)<br />
-                <strong>Registered Office:</strong> Suite 402, Level 4, Computer City Centre (Multiplan Center), 69-71 New Elephant Road, Dhaka-1205, Bangladesh.<br />
+                <strong>Registered Office:</strong> 373, South Monipur, Mirpur-2, Dhaka 1216.<br />
                 <strong>Direct Contact:</strong> +880 1329-661250 | info@edgetech.com.bd
               </p>
             </div>

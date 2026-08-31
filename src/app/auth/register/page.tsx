@@ -21,16 +21,32 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password !== form.confirmPassword) { toast.error('Passwords do not match'); return; }
-    if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    if (form.password !== form.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    if (form.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
     setIsLoading(true);
     try {
-      const res = await authApi.register({ email: form.email, password: form.password, firstName: form.firstName, lastName: form.lastName });
+      const res = await authApi.register({
+        email: form.email.trim(),
+        password: form.password,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+      });
       setAuth(res.data.user, res.data.token);
       toast.success('Account created successfully!');
       router.push('/');
-    } catch {
-      toast.error('Registration failed. Email may already be in use.');
+    } catch (err: unknown) {
+      const apiErr = err as { response?: { data?: { message?: string; errors?: string[] } } };
+      const errorMsg =
+        apiErr?.response?.data?.message ||
+        apiErr?.response?.data?.errors?.[0] ||
+        'Registration failed. Please try again or use another email.';
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
