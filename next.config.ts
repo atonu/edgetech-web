@@ -1,5 +1,11 @@
 import type { NextConfig } from 'next';
 
+const INTERNAL_API_URL =
+  process.env.INTERNAL_API_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'http://edgetech-api-container:5001'
+    : 'http://localhost:5001');
+
 const nextConfig: NextConfig = {
   serverExternalPackages: ['sharp'],
   images: {
@@ -13,7 +19,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:5001/api/:path*',
+        destination: `${INTERNAL_API_URL}/api/:path*`,
       },
     ];
   },
