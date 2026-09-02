@@ -46,7 +46,7 @@ function ProductsContent() {
   const [brandOptions, setBrandOptions] = useState<FilterOption[]>([]);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const urlQ = searchParams.get('q') || '';
   const [search, setSearch] = useState(urlQ);
@@ -187,6 +187,20 @@ function ProductsContent() {
           </div>
         </div>
 
+        {/* Mobile Search Bar (Outside filter panel, below controls row) */}
+        <div className={styles.mobileSearchContainer}>
+          <div className={styles.searchInput}>
+            <Search size={16} />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && <button onClick={() => setSearch('')}><X size={14} /></button>}
+          </div>
+        </div>
+
         <div className={styles.content}>
           {/* Sidebar Filters */}
           <aside className={`${styles.sidebar} ${showFilters ? styles.sidebarOpen : ''}`}>
@@ -198,8 +212,8 @@ function ProductsContent() {
                 )}
               </div>
 
-              {/* Search */}
-              <div className={styles.filterGroup}>
+              {/* Search (Desktop only) */}
+              <div className={`${styles.filterGroup} ${styles.desktopSearchGroup}`}>
                 <label className={styles.filterLabel}>Search</label>
                 <div className={styles.searchInput}>
                   <Search size={14} />

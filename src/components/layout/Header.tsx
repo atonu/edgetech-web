@@ -25,6 +25,7 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [megaMenuOpen, setMegaMenuOpen] = useState<string | null>(null);
+  const [expandedMobileCategories, setExpandedMobileCategories] = useState<number[]>([]);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { count, toggleCart } = useCartStore();
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -120,6 +121,12 @@ export default function Header() {
       closeTimeoutRef.current = null;
     }
     setMegaMenuOpen(prev => (prev === 'categories' ? null : 'categories'));
+  };
+
+  const toggleMobileCategory = (id: number) => {
+    setExpandedMobileCategories(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
   };
 
   useEffect(() => {
@@ -328,31 +335,52 @@ export default function Header() {
             ))}
             <div className={styles.mobileCategorySection}>
               <span className={styles.mobileCategoryHeader}>Categories</span>
-              {categories.map(cat => (
-                <div key={cat.id} className={styles.mobileCategoryItem}>
-                  <Link
-                    href={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
-                    className={styles.mobileNavLink}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {cat.name}
-                  </Link>
-                  {cat.subCategories && cat.subCategories.length > 0 && (
-                    <div className={styles.mobileSubList}>
-                      {cat.subCategories.map(sub => (
-                        <Link
-                          key={sub.id}
-                          href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
-                          className={styles.mobileSubNavLink}
-                          onClick={() => setMenuOpen(false)}
+              {orderedCategories.map(cat => {
+                const hasSub = Boolean(cat.subCategories && cat.subCategories.length > 0);
+                const isExpanded = expandedMobileCategories.includes(cat.id);
+
+                return (
+                  <div key={cat.id} className={styles.mobileCategoryItem}>
+                    <div className={styles.mobileCategoryRow}>
+                      <Link
+                        href={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
+                        className={styles.mobileCategoryTitleLink}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        {cat.name}
+                      </Link>
+                      {hasSub && (
+                        <button
+                          type="button"
+                          className={styles.mobileCategoryExpandBtn}
+                          onClick={() => toggleMobileCategory(cat.id)}
+                          aria-expanded={isExpanded}
+                          aria-label={`Toggle ${cat.name} subcategories`}
                         >
-                          ↳ {sub.name}
-                        </Link>
-                      ))}
+                          <ChevronDown
+                            size={24}
+                            className={`${styles.mobileChevron} ${isExpanded ? styles.mobileChevronOpen : ''}`}
+                          />
+                        </button>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                    {hasSub && isExpanded && (
+                      <div className={styles.mobileSubList}>
+                        {cat.subCategories!.map(sub => (
+                          <Link
+                            key={sub.id}
+                            href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
+                            className={styles.mobileSubNavLink}
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            ↳ {sub.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             {isAuthenticated ? (
               <>
