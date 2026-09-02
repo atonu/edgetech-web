@@ -100,7 +100,7 @@ export default function HomePage() {
 
   useEffect(() => {
     Promise.allSettled([
-      productsApi.getFeatured(12),
+      productsApi.getFeatured(20),
       productGroupsApi.getHome(),
     ]).then(([featuredResult, groupsResult]) => {
       if (featuredResult.status === 'fulfilled') setProducts(featuredResult.value.data);
@@ -120,10 +120,10 @@ export default function HomePage() {
   }, []);
 
   const fallbackFeatured = products.filter(p => p.isFeatured);
-  const featuredRow1 = homeGroups?.bestSellers?.slice(0, 4) ?? fallbackFeatured.slice(0, 4);
-  const featuredRow2 = homeGroups?.mostPopular?.slice(0, 4) ?? fallbackFeatured.slice(4, 8);
+  const featuredRow1 = homeGroups?.bestSellers?.slice(0, 5) ?? (fallbackFeatured.length >= 5 ? fallbackFeatured.slice(0, 5) : products.slice(0, 5));
+  const featuredRow2 = homeGroups?.mostPopular?.slice(0, 5) ?? (fallbackFeatured.length >= 10 ? fallbackFeatured.slice(5, 10) : products.slice(5, 10));
   const hotDealProducts = (featuredRow2.length >= 2 ? featuredRow2 : products).slice(0, 2);
-  const newArrivals = homeGroups?.newArrivals?.slice(0, 6) ?? products.slice(0, 6);
+  const newArrivals = homeGroups?.newArrivals?.slice(0, 5) ?? products.slice(0, 5);
 
   return (
     <div className={styles.home}>
@@ -306,9 +306,9 @@ export default function HomePage() {
               View All <ChevronRight size={16} />
             </Link>
           </div>
-          <div className="grid-4">
+          <div className="grid-5">
             {productsLoading
-              ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={`row1-skeleton-${i}`} />)
+              ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={`row1-skeleton-${i}`} />)
               : featuredRow1.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </div>
@@ -357,9 +357,9 @@ export default function HomePage() {
               <h2>Most Popular This Week</h2>
             </div>
           </div>
-          <div className="grid-4">
+          <div className="grid-5">
             {productsLoading
-              ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={`row2-skeleton-${i}`} />)
+              ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={`row2-skeleton-${i}`} />)
               : featuredRow2.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </div>
@@ -428,6 +428,30 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ===== MOBILE HOT DEALS (Shown only on phone, just above New Arrivals) ===== */}
+      <section className={styles.mobileHotDealsSection}>
+        <div className="container">
+          <div className="section-header">
+            <div>
+              <span className="section-label"><Clock size={14} /> Limited Time</span>
+              <h2>Hot Deals of the Day</h2>
+            </div>
+            <Link href="/products?sale=true" className="btn btn-ghost btn-sm">
+              View All <ChevronRight size={16} />
+            </Link>
+          </div>
+          <div className="grid-5">
+            {productsLoading ? (
+              Array.from({ length: 2 }).map((_, i) => <ProductCardSkeleton key={`hot-m-skeleton-${i}`} />)
+            ) : (
+              hotDealProducts.map((product, index) => (
+                <ProductCard key={`hot-m-${product.id}`} product={product} index={index} />
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* ===== NEW ARRIVALS ===== */}
       <section className={styles.section}>
         <div className="container">
@@ -440,9 +464,9 @@ export default function HomePage() {
               View All <ChevronRight size={16} />
             </Link>
           </div>
-          <div className="grid-4">
+          <div className="grid-5">
             {productsLoading
-              ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={`new-skeleton-${i}`} />)
+              ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={`new-skeleton-${i}`} />)
               : newArrivals.map((p, i) => <ProductCard key={`new-${p.id}`} product={p} index={i} />)}
           </div>
         </div>

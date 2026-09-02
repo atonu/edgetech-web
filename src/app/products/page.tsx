@@ -84,7 +84,7 @@ function ProductsContent() {
       minPrice: priceRange[0] || undefined,
       maxPrice: priceRange[1] === 100000 ? undefined : priceRange[1],
       page,
-      pageSize: 12,
+      pageSize: 15,
     }).then(res => {
       if (!active) return;
       setProducts(res.data.items);
@@ -210,8 +210,8 @@ function ProductsContent() {
           {/* Product Grid */}
           <div className={styles.productArea}>
             {loading ? (
-              <div className={viewMode === 'grid' ? 'grid-4' : styles.listView}>
-                {Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={`skeleton-${i}`} />)}
+              <div className={viewMode === 'grid' ? 'grid-5' : styles.listView}>
+                {Array.from({ length: 15 }).map((_, i) => <ProductCardSkeleton key={`skeleton-${i}`} />)}
               </div>
             ) : products.length === 0 ? (
               <div className={styles.emptyState}>
@@ -222,7 +222,7 @@ function ProductsContent() {
               </div>
             ) : (
               <>
-                <div className={viewMode === 'grid' ? 'grid-4' : styles.listView}>
+                <div className={viewMode === 'grid' ? 'grid-5' : styles.listView}>
                   {products.map((p, i) => (
                     <ProductCard key={p.id} product={p} index={i} />
                   ))}

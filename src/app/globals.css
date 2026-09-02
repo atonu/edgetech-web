@@ -153,13 +153,17 @@ p { line-height: 1.7; }
 /* ===== LAYOUT ===== */
 .container {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 0 var(--space-xl);
+  padding: 0 var(--space-lg);
 }
 
 @media (max-width: 768px) {
-  .container { padding: 0 var(--space-md); }
+  .container { padding: 0 12px; }
+}
+
+@media (max-width: 480px) {
+  .container { padding: 0 10px; }
 }
 
 /* ===== GLASSMORPHISM ===== */
@@ -416,19 +420,29 @@ p { line-height: 1.7; }
 .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 
 /* ===== GRID SYSTEM ===== */
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-lg); }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-md); }
+.grid-4 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.grid-5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 
-@media (max-width: 1200px) {
-  .grid-4 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1280px) {
+  .grid-5, .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 }
-@media (max-width: 900px) {
-  .grid-3 { grid-template-columns: repeat(2, 1fr); }
-  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 992px) {
+  .grid-5, .grid-4 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 600px) {
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+@media (max-width: 768px) {
+  .grid-5, .grid-4, .grid-3, .grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
+@media (max-width: 480px) {
+  .grid-5, .grid-4, .grid-3, .grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
 }
 
 /* ===== UTILITIES ===== */

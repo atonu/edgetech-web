@@ -9,13 +9,13 @@ export default function ProductCardSkeleton() {
       </div>
       <div className={styles.info}>
         <div className={styles.meta}>
-          <Skeleton width="35%" height="0.72rem" />
-          <Skeleton width="25%" height="1.2rem" radius="var(--radius-full)" />
+          <Skeleton width="35%" height="0.65rem" />
+          <Skeleton width="25%" height="1rem" radius="4px" />
         </div>
-        <Skeleton width="90%" height="0.9rem" style={{ marginBottom: 6 }} />
-        <Skeleton width="60%" height="0.9rem" style={{ marginBottom: 10 }} />
-        <Skeleton width="45%" height="0.8rem" style={{ marginBottom: 10 }} />
-        <Skeleton width="40%" height="1.1rem" />
+        <Skeleton width="90%" height="0.8rem" style={{ marginBottom: 4 }} />
+        <Skeleton width="60%" height="0.8rem" style={{ marginBottom: 6 }} />
+        <Skeleton width="45%" height="0.65rem" style={{ marginBottom: 6 }} />
+        <Skeleton width="40%" height="0.95rem" />
       </div>
     </div>
   );

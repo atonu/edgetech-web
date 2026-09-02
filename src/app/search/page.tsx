@@ -51,8 +51,8 @@ function SearchContent() {
         </div>
 
         {loading ? (
-          <div className="grid-4">
-            {Array.from({ length: 8 }).map((_, i) => (
+          <div className="grid-5">
+            {Array.from({ length: 10 }).map((_, i) => (
               <ProductCardSkeleton key={`search-skel-${i}`} />
             ))}
           </div>
@@ -63,7 +63,7 @@ function SearchContent() {
             <p className="text-muted">{query ? 'Try a different search term or check spelling' : 'Use the search bar to find products'}</p>
           </div>
         ) : (
-          <div className="grid-4">
+          <div className="grid-5">
             {results.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
@@ -84,8 +84,8 @@ export default function SearchPage() {
               <h1>Search Results</h1>
               <p className="text-muted">Loading...</p>
             </div>
-            <div className="grid-4">
-              {Array.from({ length: 8 }).map((_, i) => (
+            <div className="grid-5">
+              {Array.from({ length: 10 }).map((_, i) => (
                 <ProductCardSkeleton key={`fallback-skel-${i}`} />
               ))}
             </div>

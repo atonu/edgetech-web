@@ -646,6 +646,10 @@
 }
 
 /* ===== RESPONSIVE ===== */
+.mobileHotDealsSection {
+  display: none;
+}
+
 @media (max-width: 1200px) {
   .heroMain { grid-template-columns: minmax(0, 1.2fr) minmax(420px, 460px); gap: var(--space-md); }
   .hotDealsPanel { height: 380px; }
@@ -656,6 +660,13 @@
   .heroMain {
     grid-template-columns: 1fr;
     gap: var(--space-lg);
+  }
+  .hotDealsPanel {
+    display: none !important;
+  }
+  .mobileHotDealsSection {
+    display: block;
+    padding-top: var(--space-xl);
   }
   .heroBanner {
     height: 340px;
@@ -674,15 +685,6 @@
   }
   .heroTitle { font-size: clamp(1.1rem, 3.5vw, 1.5rem); }
   .heroNav { left: 16px; right: auto; bottom: 14px; }
-  .hotDealsPanel {
-    height: auto;
-    border-radius: 18px;
-    width: 100%;
-  }
-  .hotDealsHeader {
-    font-size: 1.3rem;
-    padding: 0 0 12px 0;
-  }
   .categoryGrid { grid-template-columns: repeat(3, 1fr); }
   .stats { flex-wrap: wrap; gap: 16px; }
   .stat { flex: 1; min-width: 120px; }

@@ -14,12 +14,12 @@ import { getImageUrl } from '@/lib/imageUrl';
 import toast from 'react-hot-toast';
 import styles from './detail.module.css';
 
-const mockRelated: ProductListDto[] = Array.from({ length: 4 }).map((_, i) => ({
-  id: i + 10, name: ['Dahua 4MP Bullet Cam', 'Hikvision 2MP Turret', 'Uniview 4MP Dome', 'Imou Cruiser SE'][i],
-  slug: `related-${i + 1}`, price: [9500, 7800, 11000, 13500][i],
+const mockRelated: ProductListDto[] = Array.from({ length: 5 }).map((_, i) => ({
+  id: i + 10, name: ['Dahua 4MP Bullet Cam', 'Hikvision 2MP Turret', 'Uniview 4MP Dome', 'Imou Cruiser SE', 'TP-Link VIGI 4MP'][i],
+  slug: `related-${i + 1}`, price: [9500, 7800, 11000, 13500, 8900][i],
   discountPrice: i === 1 ? 6630 : undefined, primaryImageUrl: undefined,
   stock: 15, isFeatured: i < 2,
-  categoryName: 'IP Camera', brandName: ['Dahua', 'Hikvision', 'Uniview', 'Imou'][i],
+  categoryName: 'IP Camera', brandName: ['Dahua', 'Hikvision', 'Uniview', 'Imou', 'TP-Link'][i],
 }));
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -278,7 +278,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <h2>Related Products</h2>
             </div>
           </div>
-          <div className="grid-4">
+          <div className="grid-5">
             {mockRelated.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} />
             ))}
