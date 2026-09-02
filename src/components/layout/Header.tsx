@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { ShoppingCart, Search, Menu, X, User, LogOut, ChevronDown, Package, Shield, Sun, Moon, ArrowRight } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -43,6 +43,24 @@ export default function Header() {
   useEffect(() => {
     categoriesApi.getAll().then(r => setCategories(r.data)).catch(() => { });
   }, []);
+
+  const orderedCategories = useMemo(() => {
+    const slugPriority: Record<string, number> = {
+      'cctv-camera': 1,
+      'cctv-surveillance': 1,
+      'accessories': 2,
+      'storage': 3,
+      'access-control': 4,
+      'networking': 5,
+    };
+
+    return [...categories].sort((a, b) => {
+      const pA = slugPriority[a.slug?.toLowerCase() || ''] ?? (a.displayOrder || 99);
+      const pB = slugPriority[b.slug?.toLowerCase() || ''] ?? (b.displayOrder || 99);
+      if (pA !== pB) return pA - pB;
+      return (a.displayOrder || 0) - (b.displayOrder || 0);
+    });
+  }, [categories]);
 
   useEffect(() => {
     if (searchOpen) searchRef.current?.focus();
@@ -176,31 +194,37 @@ export default function Header() {
               {megaMenuOpen === 'categories' && categories.length > 0 && (
                 <div className={styles.megaMenu}>
                   <div className={styles.megaMenuGrid}>
-                    {categories.map(cat => (
-                      <div key={cat.id} className={styles.megaMenuCategory}>
-                        <Link
-                          href={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
-                          className={styles.megaMenuTitle}
-                          onClick={() => setMegaMenuOpen(null)}
+                    {orderedCategories.map(cat => {
+                      const hasSub = Boolean(cat.subCategories && cat.subCategories.length > 0);
+                      return (
+                        <div
+                          key={cat.id}
+                          className={`${styles.megaMenuCategory} ${!hasSub ? styles.megaMenuCategoryEmpty : ''}`}
                         >
-                          {cat.name}
-                        </Link>
-                        {cat.subCategories && cat.subCategories.length > 0 && (
-                          <div className={styles.megaMenuSubList}>
-                            {cat.subCategories.map(sub => (
-                              <Link
-                                key={sub.id}
-                                href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
-                                className={styles.megaMenuSub}
-                                onClick={() => setMegaMenuOpen(null)}
-                              >
-                                {sub.name}
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          <Link
+                            href={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
+                            className={`${styles.megaMenuTitle} ${!hasSub ? styles.megaMenuTitleEmpty : ''}`}
+                            onClick={() => setMegaMenuOpen(null)}
+                          >
+                            <span>{cat.name}</span>
+                          </Link>
+                          {hasSub && (
+                            <div className={styles.megaMenuSubList}>
+                              {cat.subCategories!.map(sub => (
+                                <Link
+                                  key={sub.id}
+                                  href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
+                                  className={styles.megaMenuSub}
+                                  onClick={() => setMegaMenuOpen(null)}
+                                >
+                                  {sub.name}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className={styles.megaMenuFooter}>
                     <Link
