@@ -1,7 +1,6 @@
 .searchPage {
-  padding-top: 100px;
+  padding: 2rem 0 80px;
   min-height: 100vh;
-  padding-bottom: 80px;
 }
 
 .header {
@@ -25,3 +24,12 @@
 }
 
 .emptyState h3 { color: var(--color-text); }
+
+@media (max-width: 600px) {
+  .searchPage {
+    padding: 1.25rem 0 60px;
+  }
+  .header {
+    margin-bottom: 20px;
+  }
+}

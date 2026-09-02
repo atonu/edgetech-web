@@ -1,8 +1,7 @@
 /* ===== CHECKOUT ===== */
 .checkoutPage {
-  padding-top: 100px;
+  padding: 2rem 0 80px;
   min-height: 100vh;
-  padding-bottom: 80px;
 }
 
 .pageTitle {
@@ -311,6 +310,12 @@
 }
 
 @media (max-width: 600px) {
+  .checkoutPage {
+    padding: 1.25rem 0 60px;
+  }
+  .pageTitle {
+    margin-bottom: 20px;
+  }
   .progress { flex-wrap: wrap; gap: 8px; }
   .stepLine { width: 30px; }
 }

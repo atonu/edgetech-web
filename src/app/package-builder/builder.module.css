@@ -1,8 +1,7 @@
 /* ===== PACKAGE BUILDER ===== */
 .builderPage {
-  padding-top: 100px;
+  padding: 2rem 0 80px;
   min-height: 100vh;
-  padding-bottom: 80px;
 }
 
 .header {
@@ -480,6 +479,12 @@
 }
 
 @media (max-width: 600px) {
+  .builderPage {
+    padding: 1.25rem 0 60px;
+  }
+  .header {
+    margin-bottom: 20px;
+  }
   .slotGrid { grid-template-columns: 1fr; }
   .modal { width: 100%; }
 }

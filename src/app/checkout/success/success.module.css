@@ -1,6 +1,6 @@
 .successPage {
-  padding-top: 100px;
-  min-height: 100vh;
+  padding: 2rem 16px 4rem;
+  min-height: calc(100vh - 72px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,3 +69,12 @@
 }
 
 .actions a { justify-content: center; }
+
+@media (max-width: 600px) {
+  .successPage {
+    padding: 1.25rem 16px 3rem;
+  }
+  .card {
+    padding: 28px 20px;
+  }
+}

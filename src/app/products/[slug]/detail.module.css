@@ -1,6 +1,6 @@
 /* ===== PRODUCT DETAIL ===== */
 .detailPage {
-  padding-top: 100px;
+  padding: 2rem 0 4rem;
   min-height: 100vh;
 }
 
@@ -457,6 +457,12 @@
 }
 
 @media (max-width: 600px) {
+  .detailPage {
+    padding: 1.25rem 0 3rem;
+  }
+  .breadcrumb {
+    margin-bottom: 16px;
+  }
   .actions { flex-wrap: wrap; }
   .actions .btn { order: -1; }
   .specRow { grid-template-columns: 1fr; gap: 4px; }

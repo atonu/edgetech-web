@@ -1,10 +1,10 @@
 /* ===== AUTH PAGES ===== */
 .authPage {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 100px 20px 60px;
+  padding: 2rem 20px 4rem;
   position: relative;
 }
 
@@ -135,6 +135,12 @@
 }
 
 .switchText a:hover { opacity: 0.7; }
+
+@media (max-width: 600px) {
+  .authPage {
+    padding: 1.25rem 16px 3rem;
+  }
+}
 
 @media (max-width: 480px) {
   .authCard { padding: 28px 20px; }

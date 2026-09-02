@@ -1,6 +1,6 @@
 .pageContainer {
   min-height: 80vh;
-  padding: 60px 0 100px;
+  padding: 2rem 0 4rem;
   background: var(--bg-primary);
 }
 
@@ -220,7 +220,7 @@
 
 @media (max-width: 768px) {
   .pageContainer {
-    padding: 36px 0 60px;
+    padding: 1.25rem 0 40px;
   }
   .contentCard {
     padding: 24px 20px;
