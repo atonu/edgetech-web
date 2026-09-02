@@ -109,7 +109,7 @@ export default function AdminPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [busyImageId, setBusyImageId] = useState<number | null>(null);
 
-  const [categoryForm, setCategoryForm] = useState({ id: 0, name: '', isActive: true });
+  const [categoryForm, setCategoryForm] = useState({ id: 0, name: '', parentCategoryId: 0, isActive: true });
   const [brandForm, setBrandForm] = useState({ id: 0, name: '', description: '', logoUrl: '', isActive: true });
   const [serviceForm, setServiceForm] = useState({ id: 0, name: '', description: '', isActive: true });
   const [groupForm, setGroupForm] = useState({ id: 0, key: 'best-sellers', name: '', isActive: true, productIds: [] as number[] });
@@ -528,6 +528,7 @@ export default function AdminPage() {
         const payload = {
           name: categoryForm.name,
           isActive: categoryForm.isActive,
+          parentCategoryId: categoryForm.parentCategoryId ? categoryForm.parentCategoryId : null,
         };
 
         if (categoryForm.id) {
@@ -538,7 +539,7 @@ export default function AdminPage() {
           toast.success('Category created.');
         }
 
-        setCategoryForm({ id: 0, name: '', isActive: true });
+        setCategoryForm({ id: 0, name: '', parentCategoryId: 0, isActive: true });
         await loadCore();
       } catch {
         toast.error('Failed to save category.');
@@ -687,7 +688,7 @@ export default function AdminPage() {
   };
 
   const editCategory = (c: CategoryDto) => {
-    setCategoryForm({ id: c.id, name: c.name, isActive: c.isActive });
+    setCategoryForm({ id: c.id, name: c.name, parentCategoryId: c.parentCategoryId || 0, isActive: c.isActive });
     setTab('categories');
     scrollToForm();
   };
@@ -954,10 +955,21 @@ export default function AdminPage() {
           <div className={styles.panelGrid}>
             <Card>
               <div ref={formTopRef} />
-              <CardHeader><CardTitle>Category Form</CardTitle><CardDescription>Category schema: name + active only.</CardDescription></CardHeader>
+              <CardHeader><CardTitle>Category Form</CardTitle><CardDescription>Create or update categories and subcategory relationships.</CardDescription></CardHeader>
               <CardContent>
                 <form onSubmit={saveCategory} className={styles.grid2}>
                   <Field label="Name"><Input value={categoryForm.name} onChange={e => setCategoryForm(f => ({ ...f, name: e.target.value }))} required /></Field>
+                  <Field label="Parent Category (Optional)">
+                    <Select
+                      value={String(categoryForm.parentCategoryId || 0)}
+                      onChange={e => setCategoryForm(f => ({ ...f, parentCategoryId: Number(e.target.value) }))}
+                    >
+                      <option value="0">None (Top-Level Category)</option>
+                      {categories.filter(c => c.id !== categoryForm.id).map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </Select>
+                  </Field>
                   <Field label="Active">
                     <Select value={String(categoryForm.isActive)} onChange={e => setCategoryForm(f => ({ ...f, isActive: e.target.value === 'true' }))}>
                       <option value="true">Yes</option>
@@ -966,7 +978,7 @@ export default function AdminPage() {
                   </Field>
                   <div className={`${styles.actions} ${styles.fullWidth}`}>
                     <Button type="submit" loading={busy === 'save-category'}>Save Category</Button>
-                    <Button variant="ghost" type="button" onClick={() => setCategoryForm({ id: 0, name: '', isActive: true })}>Clear</Button>
+                    <Button variant="ghost" type="button" onClick={() => setCategoryForm({ id: 0, name: '', parentCategoryId: 0, isActive: true })}>Clear</Button>
                   </div>
                 </form>
               </CardContent>

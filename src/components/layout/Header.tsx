@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Search, Menu, X, User, LogOut, ChevronDown, Package, Shield, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, User, LogOut, ChevronDown, Package, Shield, Sun, Moon, ArrowRight } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { categoriesApi, CategoryDto } from '@/lib/api';
@@ -79,10 +79,22 @@ export default function Header() {
   };
 
   const handleMegaMenuLeave = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
     closeTimeoutRef.current = setTimeout(() => {
       setMegaMenuOpen(null);
-    }, 250);
+      closeTimeoutRef.current = null;
+    }, 350);
   };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const toggleMegaMenu = () => {
     if (closeTimeoutRef.current) {
@@ -162,11 +174,7 @@ export default function Header() {
                 Categories <ChevronDown size={14} className={`${styles.chevron} ${megaMenuOpen === 'categories' ? styles.chevronOpen : ''}`} />
               </button>
               {megaMenuOpen === 'categories' && categories.length > 0 && (
-                <div
-                  className={styles.megaMenu}
-                  onMouseEnter={handleMegaMenuEnter}
-                  onMouseLeave={handleMegaMenuLeave}
-                >
+                <div className={styles.megaMenu}>
                   <div className={styles.megaMenuGrid}>
                     {categories.map(cat => (
                       <div key={cat.id} className={styles.megaMenuCategory}>
@@ -177,18 +185,31 @@ export default function Header() {
                         >
                           {cat.name}
                         </Link>
-                        {cat.subCategories?.map(sub => (
-                          <Link
-                            key={sub.id}
-                            href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
-                            className={styles.megaMenuSub}
-                            onClick={() => setMegaMenuOpen(null)}
-                          >
-                            {sub.name}
-                          </Link>
-                        ))}
+                        {cat.subCategories && cat.subCategories.length > 0 && (
+                          <div className={styles.megaMenuSubList}>
+                            {cat.subCategories.map(sub => (
+                              <Link
+                                key={sub.id}
+                                href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
+                                className={styles.megaMenuSub}
+                                onClick={() => setMegaMenuOpen(null)}
+                              >
+                                {sub.name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
+                  </div>
+                  <div className={styles.megaMenuFooter}>
+                    <Link
+                      href="/products"
+                      className={styles.megaMenuAllLink}
+                      onClick={() => setMegaMenuOpen(null)}
+                    >
+                      Browse All Products <ArrowRight size={14} />
+                    </Link>
                   </div>
                 </div>
               )}
