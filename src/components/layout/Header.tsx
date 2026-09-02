@@ -31,6 +31,8 @@ export default function Header() {
   const isAdmin = user?.role === 'Admin';
   const searchRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const megaMenuRef = useRef<HTMLDivElement>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -56,6 +58,39 @@ export default function Header() {
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [userMenuOpen]);
+
+  useEffect(() => {
+    if (!megaMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (megaMenuRef.current && !megaMenuRef.current.contains(e.target as Node)) {
+        setMegaMenuOpen(null);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [megaMenuOpen]);
+
+  const handleMegaMenuEnter = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setMegaMenuOpen('categories');
+  };
+
+  const handleMegaMenuLeave = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setMegaMenuOpen(null);
+    }, 250);
+  };
+
+  const toggleMegaMenu = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setMegaMenuOpen(prev => (prev === 'categories' ? null : 'categories'));
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -113,23 +148,42 @@ export default function Header() {
 
             {/* Category Mega Menu */}
             <div
+              ref={megaMenuRef}
               className={styles.megaMenuTrigger}
-              onMouseEnter={() => setMegaMenuOpen('categories')}
-              onMouseLeave={() => setMegaMenuOpen(null)}
+              onMouseEnter={handleMegaMenuEnter}
+              onMouseLeave={handleMegaMenuLeave}
             >
-              <span className={styles.navLink}>
-                Categories <ChevronDown size={14} />
-              </span>
+              <button
+                type="button"
+                className={`${styles.navLink} ${styles.megaMenuBtn} ${megaMenuOpen === 'categories' ? styles.active : ''}`}
+                onClick={toggleMegaMenu}
+                aria-expanded={megaMenuOpen === 'categories'}
+              >
+                Categories <ChevronDown size={14} className={`${styles.chevron} ${megaMenuOpen === 'categories' ? styles.chevronOpen : ''}`} />
+              </button>
               {megaMenuOpen === 'categories' && categories.length > 0 && (
-                <div className={styles.megaMenu}>
+                <div
+                  className={styles.megaMenu}
+                  onMouseEnter={handleMegaMenuEnter}
+                  onMouseLeave={handleMegaMenuLeave}
+                >
                   <div className={styles.megaMenuGrid}>
                     {categories.map(cat => (
                       <div key={cat.id} className={styles.megaMenuCategory}>
-                        <Link href={`/category/${cat.slug}`} className={styles.megaMenuTitle}>
+                        <Link
+                          href={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
+                          className={styles.megaMenuTitle}
+                          onClick={() => setMegaMenuOpen(null)}
+                        >
                           {cat.name}
                         </Link>
                         {cat.subCategories?.map(sub => (
-                          <Link key={sub.id} href={`/category/${sub.slug}`} className={styles.megaMenuSub}>
+                          <Link
+                            key={sub.id}
+                            href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
+                            className={styles.megaMenuSub}
+                            onClick={() => setMegaMenuOpen(null)}
+                          >
                             {sub.name}
                           </Link>
                         ))}
@@ -227,11 +281,34 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            {categories.map(cat => (
-              <Link key={cat.id} href={`/category/${cat.slug}`} className={styles.mobileNavLink} onClick={() => setMenuOpen(false)}>
-                {cat.name}
-              </Link>
-            ))}
+            <div className={styles.mobileCategorySection}>
+              <span className={styles.mobileCategoryHeader}>Categories</span>
+              {categories.map(cat => (
+                <div key={cat.id} className={styles.mobileCategoryItem}>
+                  <Link
+                    href={`/products?category=${encodeURIComponent(cat.slug || cat.name)}`}
+                    className={styles.mobileNavLink}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {cat.name}
+                  </Link>
+                  {cat.subCategories && cat.subCategories.length > 0 && (
+                    <div className={styles.mobileSubList}>
+                      {cat.subCategories.map(sub => (
+                        <Link
+                          key={sub.id}
+                          href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
+                          className={styles.mobileSubNavLink}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          ↳ {sub.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
             {isAuthenticated ? (
               <>
                 <Link href="/account" className={styles.mobileNavLink} onClick={() => setMenuOpen(false)}>My Account</Link>

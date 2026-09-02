@@ -85,21 +85,50 @@
 /* Mega Menu */
 .megaMenuTrigger {
   position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.megaMenuBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.chevron {
+  transition: transform var(--transition-fast);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
 }
 
 .megaMenu {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
-  width: 600px;
+  width: 620px;
   background: var(--color-surface);
   border: 1px solid var(--color-glass-border);
   border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), 0 20px 48px rgba(0, 0, 0, 0.5);
   animation: fadeIn 0.2s ease;
   z-index: var(--z-dropdown);
+}
+
+/* Invisible hover bridge to prevent menu disappearing when moving mouse */
+.megaMenu::before {
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: transparent;
 }
 
 .megaMenuGrid {
@@ -280,6 +309,51 @@
   width: 100%;
 }
 .mobileNavLink:hover { color: var(--color-primary); background: var(--color-surface-2); padding-left: 16px; }
+
+.mobileCategorySection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-glass-border);
+}
+
+.mobileCategoryHeader {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+  padding: 4px 12px;
+}
+
+.mobileCategoryItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobileSubList {
+  display: flex;
+  flex-direction: column;
+  padding-left: 14px;
+}
+
+.mobileSubNavLink {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  display: block;
+  text-align: left;
+  width: 100%;
+}
+.mobileSubNavLink:hover {
+  color: var(--color-primary);
+  background: var(--color-surface-2);
+  padding-left: 18px;
+}
 
 @media (max-width: 960px) {
   .header {

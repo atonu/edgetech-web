@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { SlidersHorizontal, Grid3X3, LayoutList, ChevronDown, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
@@ -27,12 +27,19 @@ function flattenCategories(categories: CategoryDto[]): FilterOption[] {
 }
 
 function ProductsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Read current filters directly from URL searchParams
+  const selectedCategory = searchParams.get('category') || '';
+  const selectedBrand = searchParams.get('brand') || '';
+  const sortBy = searchParams.get('sort') || 'newest';
+  const pageParam = parseInt(searchParams.get('page') || '1', 10);
+  const currentPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
 
   const [products, setProducts] = useState<ProductListDto[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
   const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(null);
 
   const [categoryOptions, setCategoryOptions] = useState<FilterOption[]>([]);
@@ -40,12 +47,17 @@ function ProductsContent() {
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(true);
-  const [search, setSearch] = useState(searchParams.get('q') || '');
-  const [debouncedSearch, setDebouncedSearch] = useState(search);
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
-  const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '');
-  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
+
+  const urlQ = searchParams.get('q') || '';
+  const [search, setSearch] = useState(urlQ);
+  const [debouncedSearch, setDebouncedSearch] = useState(urlQ);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
+
+  // Sync search input if URL changes externally
+  useEffect(() => {
+    setSearch(urlQ);
+    setDebouncedSearch(urlQ);
+  }, [urlQ]);
 
   // Load filter option lists once
   useEffect(() => {
@@ -53,24 +65,63 @@ function ProductsContent() {
     brandsApi.getAll().then(res => setBrandOptions(res.data.map(b => ({ name: b.name, slug: b.slug })))).catch(() => setBrandOptions([]));
   }, []);
 
-  // Debounce free-text search
+  // Update URL search parameters helper
+  const updateUrlParams = (updates: Record<string, string | number | null | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, val]) => {
+      if (val === null || val === undefined || val === '') {
+        params.delete(key);
+      } else {
+        params.set(key, String(val));
+      }
+    });
+    // Reset page to 1 unless page is specifically being updated
+    if (!('page' in updates)) {
+      params.delete('page');
+    }
+    const query = params.toString();
+    router.push(query ? `/products?${query}` : '/products', { scroll: false });
+  };
+
+  // Debounce free-text search and update URL
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 350);
+    const timer = setTimeout(() => {
+      const trimmed = search.trim();
+      if (trimmed !== urlQ) {
+        setDebouncedSearch(trimmed);
+        updateUrlParams({ q: trimmed || null });
+      }
+    }, 400);
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Filters identify a page-1 request; changing any of them invalidates the current page.
-  // Adjusted during render (React's documented pattern) rather than in an effect.
-  const filterKey = JSON.stringify([debouncedSearch, selectedCategory, selectedBrand, sortBy, priceRange]);
-  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
-  let page = currentPage;
-  if (filterKey !== lastFilterKey) {
-    setLastFilterKey(filterKey);
-    setCurrentPage(1);
-    page = 1;
-  }
+  const handleCategoryClick = (slug: string) => {
+    const next = selectedCategory === slug ? null : slug;
+    updateUrlParams({ category: next });
+  };
 
-  const requestKey = `${filterKey}|${page}`;
+  const handleBrandClick = (slug: string) => {
+    const next = selectedBrand === slug ? null : slug;
+    updateUrlParams({ brand: next });
+  };
+
+  const handleSortChange = (newSort: string) => {
+    updateUrlParams({ sort: newSort === 'newest' ? null : newSort });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    updateUrlParams({ page: newPage > 1 ? newPage : null });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const clearFilters = () => {
+    setSearch('');
+    setDebouncedSearch('');
+    setPriceRange([0, 100000]);
+    router.push('/products', { scroll: false });
+  };
+
+  const requestKey = `${debouncedSearch}|${selectedCategory}|${selectedBrand}|${sortBy}|${priceRange[0]}|${priceRange[1]}|${currentPage}`;
   const loading = requestKey !== resolvedRequestKey;
 
   // Fetch products from the API whenever filters/page change
@@ -83,7 +134,7 @@ function ProductsContent() {
       sort: sortBy,
       minPrice: priceRange[0] || undefined,
       maxPrice: priceRange[1] === 100000 ? undefined : priceRange[1],
-      page,
+      page: currentPage,
       pageSize: 15,
     }).then(res => {
       if (!active) return;
@@ -99,19 +150,9 @@ function ProductsContent() {
       if (active) setResolvedRequestKey(requestKey);
     });
     return () => { active = false; };
-    // requestKey already encodes every filter plus the page, so it's the only real dependency.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey]);
 
-  const clearFilters = () => {
-    setSearch('');
-    setSelectedCategory('');
-    setSelectedBrand('');
-    setSortBy('newest');
-    setPriceRange([0, 100000]);
-  };
-
-  const activeFilterCount = [search, selectedCategory, selectedBrand].filter(Boolean).length;
+  const activeFilterCount = [debouncedSearch, selectedCategory, selectedBrand].filter(Boolean).length;
 
   return (
     <div className={styles.productsPage}>
@@ -124,7 +165,7 @@ function ProductsContent() {
           </div>
           <div className={styles.headerControls}>
             <div className={styles.sortWrap}>
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)} className={styles.sortSelect}>
+              <select value={sortBy} onChange={e => handleSortChange(e.target.value)} className={styles.sortSelect}>
                 {sortOptions.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -173,7 +214,7 @@ function ProductsContent() {
                 <div className={styles.filterOptions}>
                   {categoryOptions.map(cat => (
                     <button key={cat.slug} className={`${styles.filterOption} ${selectedCategory === cat.slug ? styles.filterOptionActive : ''}`}
-                      onClick={() => setSelectedCategory(selectedCategory === cat.slug ? '' : cat.slug)}>
+                      onClick={() => handleCategoryClick(cat.slug)}>
                       {cat.name}
                     </button>
                   ))}
@@ -186,7 +227,7 @@ function ProductsContent() {
                 <div className={styles.filterOptions}>
                   {brandOptions.map(brand => (
                     <button key={brand.slug} className={`${styles.filterOption} ${selectedBrand === brand.slug ? styles.filterOptionActive : ''}`}
-                      onClick={() => setSelectedBrand(selectedBrand === brand.slug ? '' : brand.slug)}>
+                      onClick={() => handleBrandClick(brand.slug)}>
                       {brand.name}
                     </button>
                   ))}
@@ -233,7 +274,7 @@ function ProductsContent() {
                     <button
                       className="btn btn-ghost btn-sm"
                       disabled={currentPage <= 1}
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      onClick={() => handlePageChange(currentPage - 1)}
                     >
                       <ChevronLeft size={16} /> Prev
                     </button>
@@ -241,7 +282,7 @@ function ProductsContent() {
                     <button
                       className="btn btn-ghost btn-sm"
                       disabled={currentPage >= totalPages}
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      onClick={() => handlePageChange(currentPage + 1)}
                     >
                       Next <ChevronRight size={16} />
                     </button>
