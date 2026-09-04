@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { ShieldCheck, Lock, CreditCard } from 'lucide-react';
 import styles from './PaymentBanner.module.css';
 
@@ -39,6 +40,33 @@ export default function PaymentBanner() {
       <div className={styles.securityNote}>
         <Lock size={12} />
         All online card and mobile banking transactions are encrypted via 256-bit SSL certified payment gateways.
+      </div>
+
+      <div className={styles.gatewayImages}>
+        <Image
+          src="/sslcommerz/SSLCommerz-Pay-With-logo-All-Size-02.png"
+          alt="Accepted payment methods verified by SSLCommerz"
+          width={812}
+          height={3485}
+          className={`${styles.gatewayImage} ${styles.gatewayImageXs}`}
+          sizes="(max-width: 380px) 100vw, 0px"
+        />
+        <Image
+          src="/sslcommerz/SSLCommerz-Pay-With-logo-All-Size-04.png"
+          alt="Accepted payment methods verified by SSLCommerz"
+          width={1058}
+          height={2702}
+          className={`${styles.gatewayImage} ${styles.gatewayImageSm}`}
+          sizes="(min-width: 381px) and (max-width: 600px) 100vw, 0px"
+        />
+        <Image
+          src="/sslcommerz/SSLCommerz-Pay-With-logo-All-Size-01.png"
+          alt="Accepted payment methods verified by SSLCommerz"
+          width={5235}
+          height={586}
+          className={`${styles.gatewayImage} ${styles.gatewayImageLg}`}
+          sizes="(min-width: 601px) 100vw, 0px"
+        />
       </div>
     </div>
   );
