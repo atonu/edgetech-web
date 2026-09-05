@@ -432,3 +432,45 @@ export const adminProductGroupsApi = {
   update: (id: number, data: { name: string; isActive: boolean; productIds: number[] }) => api.put(`/admin/product-groups/${id}`, data),
   delete: (id: number) => api.delete(`/admin/product-groups/${id}`),
 };
+
+export interface PolicySubItemDto {
+  id: string;
+  title: string;
+  text: string;
+  subtitle?: string;
+  tag?: string;
+}
+
+export interface PolicySectionDto {
+  id: string;
+  title: string;
+  body: string;
+  highlightTitle?: string;
+  highlightText?: string;
+  subItems?: PolicySubItemDto[];
+  listItems?: string[];
+  order: number;
+}
+
+export interface PolicyPageDto {
+  id?: string;
+  slug: string;
+  title: string;
+  subtitle: string;
+  badge: string;
+  lastUpdated: string;
+  sections: PolicySectionDto[];
+  updatedAt?: string;
+}
+
+export const policyPagesApi = {
+  getBySlug: (slug: string) => api.get<PolicyPageDto>(`/policy-pages/${slug}`),
+  update: (slug: string, data: PolicyPageDto) => api.put<PolicyPageDto>(`/policy-pages/${slug}`, data),
+  addSection: (slug: string, data: { title: string; body: string; highlightTitle?: string; highlightText?: string }) =>
+    api.post<PolicyPageDto>(`/policy-pages/${slug}/sections`, data),
+  deleteSection: (slug: string, sectionId: string) =>
+    api.delete<PolicyPageDto>(`/policy-pages/${slug}/sections/${sectionId}`),
+  updateField: (slug: string, path: string, value: string) =>
+    api.patch<PolicyPageDto>(`/policy-pages/${slug}/field`, { path, value }),
+};
+
