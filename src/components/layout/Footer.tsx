@@ -48,6 +48,7 @@ export default function Footer() {
                 { href: '/privacy', label: 'Privacy Policy' },
                 { href: '/refund-policy', label: 'Return & Refund Policy' },
                 { href: '/contact', label: 'Contact Us' },
+                { href: '/support', label: 'Support & Feedback' },
               ].map(l => (
                 <li key={l.href}><Link href={l.href} className={styles.link}>{l.label}</Link></li>
               ))}
@@ -61,6 +62,7 @@ export default function Footer() {
               {[
                 { href: '/products', label: 'All Products' },
                 { href: '/package-builder', label: 'Build Your Solution' },
+                { href: '/support', label: 'Help & Feedback' },
                 { href: '/cart', label: 'Shopping Cart' },
                 { href: '/account/orders', label: 'EMI & Order Tracking' },
                 { href: '/auth/login', label: 'Customer Login' },
@@ -126,6 +128,7 @@ export default function Footer() {
             <Link href="/privacy">Privacy Policy</Link>
             <Link href="/refund-policy">Return & Refund Policy</Link>
             <Link href="/contact">Contact Us</Link>
+            <Link href="/support">Support & Feedback</Link>
           </div>
         </div>
       </div>

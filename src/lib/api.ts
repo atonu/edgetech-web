@@ -474,3 +474,44 @@ export const policyPagesApi = {
     api.patch<PolicyPageDto>(`/policy-pages/${slug}/field`, { path, value }),
 };
 
+export interface FeedbackDto {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  category: string;
+  subject: string;
+  message: string;
+  rating?: number;
+  status: string;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateFeedbackRequest {
+  name: string;
+  email: string;
+  phone?: string;
+  category: string;
+  subject: string;
+  message: string;
+  rating?: number;
+}
+
+export interface UpdateFeedbackStatusRequest {
+  status: string;
+  adminNotes?: string;
+}
+
+export const feedbacksApi = {
+  create: (data: CreateFeedbackRequest) => api.post<FeedbackDto>('/feedbacks', data),
+  getAll: (params?: { status?: string; category?: string; search?: string; page?: number; pageSize?: number }) =>
+    api.get<PagedResult<FeedbackDto>>('/feedbacks', { params }),
+  getById: (id: number) => api.get<FeedbackDto>(`/feedbacks/${id}`),
+  updateStatus: (id: number, data: UpdateFeedbackStatusRequest) =>
+    api.patch<FeedbackDto>(`/feedbacks/${id}/status`, data),
+  delete: (id: number) => api.delete(`/feedbacks/${id}`),
+};
+
+
