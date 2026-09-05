@@ -27,7 +27,7 @@ export default function AboutUsPage() {
             <p className={styles.sectionText}>
               Founded in 2015, <strong>EdgeTech Solutions</strong> has grown to become one of Bangladesh&apos;s premier authorized distributors and system integrators for top-tier security and surveillance hardware, including Dahua, Hikvision, Uniview, TP-Link, and Western Digital.
             </p>
-            
+
             <div className={styles.highlightBox}>
               <div className={styles.highlightBoxTitle}>Mandatory Trade License & Registration Details</div>
               <p className={styles.highlightBoxText}>
@@ -49,21 +49,21 @@ export default function AboutUsPage() {
             <div className={styles.managementGrid}>
               <div className={styles.managementCard}>
                 <div className={styles.avatar}>AT</div>
-                <div className={styles.personName}>Ahmed Tariq</div>
+                <div className={styles.personName}>Naimur Rahman Ayon</div>
                 <div className={styles.personRole}>Chief Executive Officer & Founder</div>
                 <p className={styles.personBio}>Oversees overall strategic vision, global vendor partnerships, and nationwide enterprise installations.</p>
               </div>
 
               <div className={styles.managementCard}>
                 <div className={styles.avatar}>SR</div>
-                <div className={styles.personName}>Syed Rahman</div>
+                <div className={styles.personName}>Atonu Ahmed</div>
                 <div className={styles.personRole}>Head of Engineering & Solutions</div>
                 <p className={styles.personBio}>Leads system architecture, CCTV package engineering, firmware quality assurance, and technical support.</p>
               </div>
 
               <div className={styles.managementCard}>
                 <div className={styles.avatar}>NH</div>
-                <div className={styles.personName}>Nusrat Jahan</div>
+                <div className={styles.personName}>Tahmina Haque Luva</div>
                 <div className={styles.personRole}>Director of Operations & Compliance</div>
                 <p className={styles.personBio}>Drives customer experience, logistics fulfillment, warranty servicing, and regulatory compliance.</p>
               </div>
