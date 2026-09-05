@@ -14,12 +14,15 @@ type ThemeMode = 'dark' | 'light';
 export default function Header() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const [theme, setTheme] = useState<ThemeMode>(() => {
-    if (typeof window === 'undefined') return 'light';
+  const [theme, setTheme] = useState<ThemeMode>('light');
+
+  useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as ThemeMode | null;
-    if (savedTheme) return savedTheme;
-    return 'light';
-  });
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +37,12 @@ export default function Header() {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuRef = useRef<HTMLDivElement>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -283,7 +292,7 @@ export default function Header() {
             {/* Cart */}
             <button onClick={toggleCart} className={styles.iconBtn} aria-label="Cart">
               <ShoppingCart size={20} />
-              {count() > 0 && <span className={styles.cartBadge}>{count()}</span>}
+              {mounted && count() > 0 && <span className={styles.cartBadge}>{count()}</span>}
             </button>
 
             {/* Auth */}
