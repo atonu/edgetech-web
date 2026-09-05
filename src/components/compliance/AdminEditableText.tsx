@@ -1,5 +1,6 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Pencil, X, Check, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -89,28 +90,29 @@ export default function AdminEditableText({
         </button>
       </Component>
 
-      {isEditing && (
+      {isEditing && typeof document !== 'undefined' && createPortal(
         <div className={styles.editModalBackdrop} onClick={handleClose}>
           <div className={styles.editModal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.editModalHeader}>
               <span>Edit {label}</span>
               <button
                 type="button"
-                className={styles.btnCancel}
+                className={styles.editModalCloseBtn}
                 onClick={handleClose}
-                style={{ padding: '4px 8px', display: 'inline-flex', alignItems: 'center' }}
+                title="Close"
+                aria-label="Close"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {multiline ? (
                 <textarea
                   className={styles.formTextarea}
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  rows={5}
+                  rows={6}
                   autoFocus
                   placeholder={`Enter ${label.toLowerCase()}...`}
                 />
@@ -143,14 +145,15 @@ export default function AdminEditableText({
                   ) : (
                     <>
                       <Check size={14} style={{ display: 'inline', marginRight: 4 }} />
-                      Save
+                      Save Changes
                     </>
                   )}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
