@@ -474,6 +474,31 @@ export const policyPagesApi = {
     api.patch<PolicyPageDto>(`/policy-pages/${slug}/field`, { path, value }),
 };
 
+export interface HeroSlideDto {
+  id?: string;
+  imageUrl: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  ctaLink: string;
+  order: number;
+}
+
+export interface HeroCarouselDto {
+  id?: string;
+  slides: HeroSlideDto[];
+  autoplayMs: number;
+  updatedAt?: string;
+}
+
+/** The carousel refuses to save below this many slides (enforced on the server too). */
+export const HERO_MIN_SLIDES = 2;
+
+export const heroCarouselApi = {
+  get: () => api.get<HeroCarouselDto>('/hero-carousel'),
+  update: (data: HeroCarouselDto) => api.put<HeroCarouselDto>('/hero-carousel', data),
+};
+
 export interface FeedbackDto {
   id: number;
   name: string;

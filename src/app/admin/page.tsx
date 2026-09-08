@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Boxes, FolderTree, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench, MessageSquare, Star, Eye, X } from 'lucide-react';
+import { Boxes, ChevronDown, ChevronRight, FolderTree, Package, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench, MessageSquare, Star, Eye, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   adminApi,
@@ -1772,6 +1772,7 @@ function OrderRow({
   const [adminNotes, setAdminNotes] = useState(order.adminNotes ?? order.notes ?? '');
   const [emiCompleted, setEmiCompleted] = useState(order.emiCompletedMonths ?? 0);
   const [emiTenure, setEmiTenure] = useState(order.emiTenureMonths ?? 12);
+  const [expanded, setExpanded] = useState(false);
 
   const isEmi = order.isEmi || order.paymentMethod?.toLowerCase() === 'emi';
 
@@ -1781,10 +1782,24 @@ function OrderRow({
 
   const createdDate = order.createdAt ? new Date(order.createdAt) : null;
 
+  const lineItems = order.items ?? [];
+  const unitCount = lineItems.reduce((sum, i) => sum + i.quantity, 0);
+  const itemsSubtotal = lineItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+
   return (
+    <>
     <tr>
       <TD>
-        <div className={styles.orderNumBadge}>{orderNum}</div>
+        <button
+          type="button"
+          className={styles.orderNumToggle}
+          onClick={() => setExpanded(v => !v)}
+          aria-expanded={expanded}
+          title={expanded ? 'Hide order details' : 'Show order details'}
+        >
+          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <span className={styles.orderNumBadge}>{orderNum}</span>
+        </button>
         <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 2 }}>ID: #{order.id}</div>
         {createdDate && (
           <div className={styles.muted} style={{ fontSize: '0.75rem' }}>
@@ -1834,9 +1849,9 @@ function OrderRow({
             {order.emiBank && <div className={styles.muted}>{order.emiBank}</div>}
           </div>
         )}
-        <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 4 }}>
-          {order.items?.length ?? 0} item{(order.items?.length ?? 0) === 1 ? '' : 's'}
-        </div>
+        <button type="button" className={styles.itemCountLink} onClick={() => setExpanded(v => !v)}>
+          {lineItems.length} item{lineItems.length === 1 ? '' : 's'} · {expanded ? 'hide' : 'view'} details
+        </button>
       </TD>
       <TD>
         <Select value={status} onChange={e => setStatus(e.target.value)}>
@@ -1884,5 +1899,152 @@ function OrderRow({
         </Button>
       </TD>
     </tr>
+
+    {expanded && (
+      <tr className={styles.detailRow}>
+        <TD colSpan={7}>
+          <div className={styles.detailPanel}>
+            {/* Ordered products */}
+            <div className={styles.detailMain}>
+              <div className={styles.detailHeading}>
+                Ordered Products
+                <span className={styles.detailCount}>
+                  {lineItems.length} product{lineItems.length === 1 ? '' : 's'} · {unitCount} unit{unitCount === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              {lineItems.length === 0 ? (
+                <div className={styles.detailEmpty}>No line items were recorded for this order.</div>
+              ) : (
+                <table className={styles.itemsTable}>
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th className={styles.numCol}>Unit Price</th>
+                      <th className={styles.numCol}>Qty</th>
+                      <th className={styles.numCol}>Line Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lineItems.map(item => (
+                      <tr key={item.id}>
+                        <td>
+                          <div className={styles.itemCell}>
+                            {item.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- tiny admin table thumbnail, not worth next/image config here
+                              <img src={item.imageUrl} alt="" className={styles.itemThumb} />
+                            ) : (
+                              <div className={styles.itemThumbPlaceholder}><Package size={15} /></div>
+                            )}
+                            <div>
+                              <div className={styles.itemName}>{item.productName}</div>
+                              <div className={styles.itemMeta}>Product ID: {item.productId}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className={styles.numCol}>৳{item.unitPrice.toLocaleString()}</td>
+                        <td className={styles.numCol}>×{item.quantity}</td>
+                        <td className={`${styles.numCol} ${styles.lineTotal}`}>
+                          ৳{(item.unitPrice * item.quantity).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={3} className={styles.numCol}>Items subtotal</td>
+                      <td className={styles.numCol}>৳{itemsSubtotal.toLocaleString()}</td>
+                    </tr>
+                    <tr className={styles.grandTotalRow}>
+                      <td colSpan={3} className={styles.numCol}>Order total</td>
+                      <td className={styles.numCol}>৳{order.totalAmount.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+
+              {lineItems.length > 0 && Math.round(itemsSubtotal) !== Math.round(order.totalAmount) && (
+                <div className={styles.detailWarn}>
+                  Items subtotal does not match the recorded order total. The product price may have
+                  changed after this order was placed.
+                </div>
+              )}
+            </div>
+
+            {/* Everything else about the order */}
+            <aside className={styles.detailSide}>
+              <div className={styles.detailCard}>
+                <div className={styles.detailCardTitle}>Customer</div>
+                <div className={styles.detailKv}><span>Name</span><strong>{order.customer?.fullName || order.shippingAddress?.fullName || '—'}</strong></div>
+                <div className={styles.detailKv}><span>Email</span><strong>{order.customer?.email || '—'}</strong></div>
+                <div className={styles.detailKv}><span>Phone</span><strong>{order.customer?.phone || order.shippingAddress?.phone || '—'}</strong></div>
+              </div>
+
+              <div className={styles.detailCard}>
+                <div className={styles.detailCardTitle}>Delivery Address</div>
+                <div className={styles.detailAddress}>
+                  <div><strong>{order.shippingAddress?.fullName || '—'}</strong></div>
+                  <div>{order.shippingAddress?.address || '—'}</div>
+                  <div>
+                    {[order.shippingAddress?.city, order.shippingAddress?.state, order.shippingAddress?.postalCode]
+                      .filter(Boolean).join(', ') || '—'}
+                  </div>
+                  <div>{order.shippingAddress?.country}</div>
+                </div>
+                <div className={styles.detailKv} style={{ marginTop: 6 }}>
+                  <span>Est. delivery</span>
+                  <strong>
+                    {order.shippingAddress?.city?.toLowerCase().includes('dhaka')
+                      ? 'Inside Dhaka — 5 working days'
+                      : 'Outside Dhaka — 10 working days'}
+                  </strong>
+                </div>
+              </div>
+
+              <div className={styles.detailCard}>
+                <div className={styles.detailCardTitle}>Payment</div>
+                <div className={styles.detailKv}><span>Method</span><strong>{order.paymentMethod ? order.paymentMethod.toUpperCase() : '—'}</strong></div>
+                <div className={styles.detailKv}><span>Status</span><strong>{order.status}</strong></div>
+                {isEmi ? (
+                  <>
+                    <div className={styles.detailKv}><span>EMI bank</span><strong>{order.emiBank || '—'}</strong></div>
+                    <div className={styles.detailKv}><span>Tenure</span><strong>{order.emiTenureMonths ?? emiTenure} months</strong></div>
+                    <div className={styles.detailKv}><span>Monthly</span><strong>৳{(order.emiMonthlyAmount ?? 0).toLocaleString()}</strong></div>
+                    <div className={styles.detailKv}><span>Installments paid</span><strong>{order.emiCompletedMonths ?? 0} of {order.emiTenureMonths ?? emiTenure}</strong></div>
+                    <div className={styles.detailKv}>
+                      <span>Outstanding</span>
+                      <strong>
+                        ৳{Math.max(0, ((order.emiTenureMonths ?? emiTenure) - (order.emiCompletedMonths ?? 0)) * (order.emiMonthlyAmount ?? 0)).toLocaleString()}
+                      </strong>
+                    </div>
+                  </>
+                ) : (
+                  <div className={styles.detailKv}><span>Plan</span><strong>Full payment</strong></div>
+                )}
+              </div>
+
+              <div className={styles.detailCard}>
+                <div className={styles.detailCardTitle}>Notes</div>
+                <div className={styles.detailKv} style={{ display: 'block' }}>
+                  <span style={{ display: 'block', marginBottom: 2 }}>Customer note</span>
+                  <div className={styles.detailNoteText}>{order.notes || 'None provided.'}</div>
+                </div>
+                <div className={styles.detailKv} style={{ display: 'block', marginTop: 8 }}>
+                  <span style={{ display: 'block', marginBottom: 2 }}>Saved admin note</span>
+                  <div className={styles.detailNoteText}>{order.adminNotes || 'None saved yet.'}</div>
+                </div>
+                {createdDate && (
+                  <div className={styles.detailKv} style={{ marginTop: 8 }}>
+                    <span>Placed</span>
+                    <strong>{createdDate.toLocaleString()}</strong>
+                  </div>
+                )}
+              </div>
+            </aside>
+          </div>
+        </TD>
+      </tr>
+    )}
+    </>
   );
 }
