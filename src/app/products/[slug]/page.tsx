@@ -11,6 +11,7 @@ import { ProductDto, ProductListDto, productsApi } from '@/lib/api';
 import ProductCard from '@/components/products/ProductCard';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getImageUrl } from '@/lib/imageUrl';
+import { trackViewItem } from '@/lib/gtm';
 import toast from 'react-hot-toast';
 import styles from './detail.module.css';
 
@@ -36,6 +37,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   useEffect(() => {
     productsApi.getBySlug(resolvedParams.slug).then(res => {
       setProduct(res.data);
+      trackViewItem(res.data);
     }).catch(() => setNotFound(true));
   }, [resolvedParams.slug]);
 
@@ -55,7 +57,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       isFeatured: product.isFeatured, categoryName: product.categoryName,
       brandName: product.brandName,
     };
-    for (let i = 0; i < quantity; i++) addItem(listDto);
+    addItem(listDto, quantity, 'product_detail');
     toast.success(`${product.name} (x${quantity}) added to cart!`);
   };
 
@@ -68,7 +70,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       isFeatured: product.isFeatured, categoryName: product.categoryName,
       brandName: product.brandName,
     };
-    for (let i = 0; i < quantity; i++) addItem(listDto);
+    addItem(listDto, quantity, 'product_detail_order_now');
     router.push('/checkout');
   };
 

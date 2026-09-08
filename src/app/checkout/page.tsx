@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CreditCard, Truck, MapPin, ChevronRight, ShieldCheck, Check, Zap } from 'lucide-react';
@@ -10,14 +10,34 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { ordersApi } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
 import { Spinner } from '@/components/ui/Spinner';
+import {
+  itemFromCartItem,
+  trackAddPaymentInfo,
+  trackAddShippingInfo,
+  trackBeginCheckout,
+  trackCheckoutError,
+  trackPurchase,
+} from '@/lib/gtm';
 import toast from 'react-hot-toast';
 import styles from './checkout.module.css';
 
-export default function CheckoutPage() {
+// Each checkout step gets its own URL so it is countable as a page in GTM/GA4.
+const STEPS = ['shipping', 'review', 'payment'] as const;
+type Step = (typeof STEPS)[number];
+const STEP_LABELS: Record<Step, string> = { shipping: 'Shipping', review: 'Review', payment: 'Payment' };
+
+function CheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { items, total, count, clearCart } = useCartStore();
   const { user } = useAuthStore();
-  const [step, setStep] = useState(1);
+
+  const stepParam = searchParams.get('step') as Step | null;
+  const step: Step = stepParam && STEPS.includes(stepParam) ? stepParam : 'shipping';
+  const stepIndex = STEPS.indexOf(step) + 1;
+  const goToStep = (next: Step) =>
+    router.push(next === 'shipping' ? '/checkout' : `/checkout?step=${next}`, { scroll: false });
+
   const [isPlacing, setIsPlacing] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false); // MANDATORY unchecked by default
   const [emiTenure, setEmiTenure] = useState(12);
@@ -44,16 +64,39 @@ export default function CheckoutPage() {
   const totalAmount = total();
   const emiMonthlyAmount = isEmi && emiTenure > 0 ? Math.round(totalAmount / emiTenure) : 0;
 
+  // Funnel events fire at most once per visit, so a Back-button hop can't inflate the counts.
+  const fired = useRef<Set<string>>(new Set());
+  const fireOnce = (key: string, fn: () => void) => {
+    if (fired.current.has(key)) return;
+    fired.current.add(key);
+    fn();
+  };
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    const ga4Items = items.map(i => itemFromCartItem(i));
+    fireOnce('begin_checkout', () => trackBeginCheckout(ga4Items));
+    if (step === 'review') fireOnce('add_shipping_info', () => trackAddShippingInfo(ga4Items, form.city));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, items.length]);
+
   const handlePlaceOrder = async () => {
     if (!form.fullName || !form.phone || !form.address || !form.city) {
       toast.error('Please complete required shipping details.');
+      trackCheckoutError('missing_shipping_details');
       return;
     }
 
     if (!agreedToTerms) {
       toast.error('You must agree to the Terms & Conditions, Privacy Policy, and Return Policy to place an order.');
+      trackCheckoutError('terms_not_agreed');
       return;
     }
+
+    // Snapshot before clearCart() wipes it.
+    const purchasedItems = items.map(i => itemFromCartItem(i));
+    const purchaseValue = totalAmount;
+    fireOnce('add_payment_info', () => trackAddPaymentInfo(purchasedItems, form.paymentMethod));
 
     try {
       setIsPlacing(true);
@@ -83,12 +126,24 @@ export default function CheckoutPage() {
         })),
       });
 
+      const orderNumber = res.data?.orderNumber;
+      trackPurchase({
+        transactionId: orderNumber || `ET-${res.data?.orderId}`,
+        items: purchasedItems,
+        value: purchaseValue,
+        paymentMethod: form.paymentMethod,
+        isEmi,
+        emiTenureMonths: emiTenure,
+        emiBank,
+        city: form.city,
+      });
+
       clearCart();
       toast.success('Order placed successfully!');
-      const orderNumber = res.data?.orderNumber;
       router.push(orderNumber ? `/checkout/success?orderNumber=${encodeURIComponent(orderNumber)}` : '/checkout/success');
     } catch {
       toast.error('Unable to place order. Please try again.');
+      trackCheckoutError('order_api_failed');
     } finally {
       setIsPlacing(false);
     }
@@ -115,10 +170,10 @@ export default function CheckoutPage() {
 
         {/* Progress Steps */}
         <div className={styles.progress}>
-          {['Shipping', 'Review', 'Payment'].map((label, i) => (
-            <div key={label} className={`${styles.progressStep} ${step >= i + 1 ? styles.stepActive : ''} ${step > i + 1 ? styles.stepDone : ''}`}>
-              <div className={styles.stepCircle}>{step > i + 1 ? <Check size={14} /> : i + 1}</div>
-              <span>{label}</span>
+          {STEPS.map((s, i) => (
+            <div key={s} className={`${styles.progressStep} ${stepIndex >= i + 1 ? styles.stepActive : ''} ${stepIndex > i + 1 ? styles.stepDone : ''}`}>
+              <div className={styles.stepCircle}>{stepIndex > i + 1 ? <Check size={14} /> : i + 1}</div>
+              <span>{STEP_LABELS[s]}</span>
               {i < 2 && <div className={styles.stepLine} />}
             </div>
           ))}
@@ -127,7 +182,7 @@ export default function CheckoutPage() {
         <div className={styles.layout}>
           {/* Form Area */}
           <div className={styles.formArea}>
-            {step === 1 && (
+            {step === 'shipping' && (
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className={styles.formCard}>
                 <h3><MapPin size={18} /> Shipping Address</h3>
                 <div className={styles.formGrid}>
@@ -169,13 +224,13 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 <button className="btn btn-primary btn-lg" style={{ marginTop: 16 }}
-                  onClick={() => setStep(2)} disabled={!form.fullName || !form.phone || !form.address || !form.city}>
+                  onClick={() => goToStep('review')} disabled={!form.fullName || !form.phone || !form.address || !form.city}>
                   Continue to Review <ChevronRight size={18} />
                 </button>
               </motion.div>
             )}
 
-            {step === 2 && (
+            {step === 'review' && (
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className={styles.formCard}>
                 <h3><Truck size={18} /> Order Review</h3>
                 <div className={styles.reviewSection}>
@@ -200,15 +255,15 @@ export default function CheckoutPage() {
                   ))}
                 </div>
                 <div className={styles.stepBtns}>
-                  <button className="btn btn-ghost" onClick={() => setStep(1)}>← Back</button>
-                  <button className="btn btn-primary btn-lg" onClick={() => setStep(3)}>
+                  <button className="btn btn-ghost" onClick={() => goToStep('shipping')}>← Back</button>
+                  <button className="btn btn-primary btn-lg" onClick={() => goToStep('payment')}>
                     Continue to Payment <ChevronRight size={18} />
                   </button>
                 </div>
               </motion.div>
             )}
 
-            {step === 3 && (
+            {step === 'payment' && (
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className={styles.formCard}>
                 <h3><CreditCard size={18} /> Payment Method</h3>
                 <div className={styles.paymentOptions}>
@@ -302,7 +357,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className={styles.stepBtns}>
-                  <button className="btn btn-ghost" onClick={() => setStep(2)}>← Back</button>
+                  <button className="btn btn-ghost" onClick={() => goToStep('review')}>← Back</button>
                   <button
                     className="btn btn-primary btn-lg"
                     onClick={handlePlaceOrder}
@@ -346,5 +401,13 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className={styles.checkoutPage}><div className="container"><h1 className={styles.pageTitle}>Checkout</h1></div></div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

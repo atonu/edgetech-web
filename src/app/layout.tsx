@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import './globals.css';
 import Providers from '@/components/Providers';
+import { GtmScript, GtmNoScript } from '@/components/analytics/GoogleTagManager';
+import RouteTracker from '@/components/analytics/RouteTracker';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/layout/CartDrawer';
@@ -49,6 +52,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-theme="light" data-scroll-behavior="smooth">
       <body>
+        <GtmNoScript />
+        <GtmScript />
+        <Suspense fallback={null}>
+          <RouteTracker />
+        </Suspense>
         <Providers>
           <CursorEffect />
           <Header />

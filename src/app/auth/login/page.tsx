@@ -6,6 +6,7 @@ import { Mail, Lock, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/api';
+import { trackLogin } from '@/lib/gtm';
 import { Spinner } from '@/components/ui/Spinner';
 import toast from 'react-hot-toast';
 import styles from './auth.module.css';
@@ -25,6 +26,7 @@ function LoginForm() {
     try {
       const res = await authApi.login({ email, password });
       setAuth(res.data.user, res.data.token);
+      trackLogin();
       toast.success('Welcome back!');
       const returnTo = searchParams.get('returnTo');
       router.push(returnTo ? decodeURIComponent(returnTo) : '/');

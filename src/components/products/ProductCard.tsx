@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { ProductListDto } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { getImageUrl } from '@/lib/imageUrl';
+import { trackSelectItem } from '@/lib/gtm';
 import styles from './ProductCard.module.css';
 
 interface Props { product: ProductListDto; index?: number; }
@@ -31,7 +32,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
     e.preventDefault();
     e.stopPropagation();
     if (product.stock === 0) return;
-    addItem(product);
+    addItem(product, 1, 'product_card');
     toast.success(`${product.name} added to cart!`);
   };
 
@@ -39,7 +40,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
     e.preventDefault();
     e.stopPropagation();
     if (product.stock === 0) return;
-    addItem(product);
+    addItem(product, 1, 'product_card_order_now');
     router.push('/checkout');
   };
 
@@ -56,7 +57,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06 }}
     >
-      <Link href={`/products/${product.slug}`}>
+      <Link href={`/products/${product.slug}`} onClick={() => trackSelectItem(product, index)}>
         <div
           className={styles.card}
           onMouseMove={handleMouseMove}

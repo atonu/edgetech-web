@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { ProductListDto, packageBuilderApi } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
+import { trackPackageBuild } from '@/lib/gtm';
 import { Skeleton } from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 import styles from './builder.module.css';
@@ -90,7 +91,8 @@ export default function PackageBuilderPage() {
   };
 
   const handleAddAllToCart = () => {
-    Object.values(selectedProducts).forEach(p => addItem(p));
+    Object.values(selectedProducts).forEach(p => addItem(p, 1, 'package_builder'));
+    trackPackageBuild(filledSlots, totalPrice);
     toast.success(`${filledSlots} items added to cart!`);
   };
 

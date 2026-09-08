@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ProductListDto } from '@/lib/api';
+import { itemFromCartItem, itemFromProduct, trackAddToCart, trackRemoveFromCart } from '@/lib/gtm';
 
 export interface CartItem {
   id: number;
@@ -17,7 +18,8 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
-  addItem: (product: ProductListDto, quantity?: number) => void;
+  /** `source` is only for analytics attribution (product_card | product_detail | package_builder). */
+  addItem: (product: ProductListDto, quantity?: number, source?: string) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
@@ -33,7 +35,8 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
-      addItem: (product, quantity = 1) => {
+      addItem: (product, quantity = 1, source = 'unknown') => {
+        trackAddToCart([itemFromProduct(product, quantity)], source);
         const existing = get().items.find(i => i.productId === product.id);
         if (existing) {
           set(s => ({ items: s.items.map(i => i.productId === product.id ? { ...i, quantity: i.quantity + quantity } : i) }));
@@ -48,9 +51,20 @@ export const useCartStore = create<CartState>()(
         }
         set({ isOpen: true });
       },
-      removeItem: (productId) => set(s => ({ items: s.items.filter(i => i.productId !== productId) })),
+      removeItem: (productId) => {
+        const removed = get().items.find(i => i.productId === productId);
+        if (removed) trackRemoveFromCart([itemFromCartItem(removed)]);
+        set(s => ({ items: s.items.filter(i => i.productId !== productId) }));
+      },
       updateQuantity: (productId, quantity) => {
         if (quantity <= 0) { get().removeItem(productId); return; }
+        const current = get().items.find(i => i.productId === productId);
+        // Report the delta, not the new total — GA4 counts quantity added/removed.
+        if (current && quantity !== current.quantity) {
+          const delta = quantity - current.quantity;
+          if (delta > 0) trackAddToCart([itemFromCartItem(current, delta)], 'quantity_stepper');
+          else trackRemoveFromCart([itemFromCartItem(current, -delta)]);
+        }
         set(s => ({ items: s.items.map(i => i.productId === productId ? { ...i, quantity } : i) }));
       },
       clearCart: () => set({ items: [] }),
