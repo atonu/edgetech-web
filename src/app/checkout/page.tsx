@@ -246,7 +246,13 @@ function CheckoutContent() {
                     <h4>Packages ({packages.length}):</h4>
                     {packages.map(pkg => (
                       <div key={`review-pkg-${pkg.packageId}`} className={styles.reviewItem}>
-                        <div className={styles.reviewItemIcon}><Package size={16} /></div>
+                        <div className={styles.reviewItemIcon}>
+                          {pkg.imageUrl ? (
+                            <Image src={getImageUrl(pkg.imageUrl)!} alt={pkg.name} fill sizes="50px" style={{ objectFit: 'cover' }} />
+                          ) : (
+                            <Package size={16} />
+                          )}
+                        </div>
                         <span className={styles.reviewItemName}>{pkg.name} <span className="text-muted" style={{ fontSize: '0.75rem' }}>({pkg.items.length} items)</span></span>
                         <span className={styles.reviewItemQty}>x{pkg.quantity}</span>
                         <span className={styles.reviewItemPrice}>৳{(pkg.packagePrice * pkg.quantity).toLocaleString()}</span>

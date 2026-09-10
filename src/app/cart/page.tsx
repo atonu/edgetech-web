@@ -58,8 +58,15 @@ export default function CartPage() {
                 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}>
                 <div className={styles.packageHeader}>
-                  <span className={styles.packageBadge}><Package size={12} /> Package</span>
+                  <div className={styles.packageThumb}>
+                    {pkg.imageUrl ? (
+                      <Image src={getImageUrl(pkg.imageUrl)!} alt={pkg.name} fill sizes="72px" style={{ objectFit: 'cover' }} />
+                    ) : (
+                      <Package size={24} />
+                    )}
+                  </div>
                   <div className={styles.packageTitleBlock}>
+                    <span className={styles.packageBadge}><Package size={12} /> Package</span>
                     <div className={styles.packageName}>{pkg.name}</div>
                     <div className={styles.packagePricing}>
                       <span className={styles.packagePrice}>৳{pkg.packagePrice.toLocaleString()}</span>

@@ -29,6 +29,7 @@ export interface CartPackage {
   packageId: number;
   name: string;
   description?: string;
+  imageUrl?: string;
   regularPrice: number;
   packagePrice: number;
   quantity: number;
@@ -104,6 +105,7 @@ export const useCartStore = create<CartState>()(
               packageId: pkg.id,
               name: pkg.name,
               description: pkg.description,
+              imageUrl: pkg.imageUrl,
               regularPrice: pkg.regularPrice,
               packagePrice: pkg.packagePrice,
               quantity,

@@ -38,8 +38,17 @@ export default function CartDrawer() {
               {packages.map(pkg => (
                 <div key={`pkg-${pkg.packageId}`} className={styles.packageLine}>
                   <div className={styles.packageTop}>
-                    <span className={styles.packageBadge}><Package size={11} /> Package</span>
-                    <span className={styles.packageLineName}>{pkg.name}</span>
+                    <div className={styles.packageThumb}>
+                      {pkg.imageUrl ? (
+                        <Image src={pkg.imageUrl} alt={pkg.name} fill sizes="40px" style={{ objectFit: 'cover' }} />
+                      ) : (
+                        <Package size={16} />
+                      )}
+                    </div>
+                    <div className={styles.packageTopInfo}>
+                      <span className={styles.packageBadge}><Package size={11} /> Package</span>
+                      <span className={styles.packageLineName}>{pkg.name}</span>
+                    </div>
                     <button onClick={() => removePackage(pkg.packageId)} className={styles.removeBtn}><Trash2 size={15} /></button>
                   </div>
                   <div className={styles.packageComponents}>

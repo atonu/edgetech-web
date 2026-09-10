@@ -366,8 +366,8 @@ export default function HomePage() {
           <div className="container">
             <div className="section-header">
               <div>
-                <span className="section-label"><Package size={14} /> EdgeTech CCTV Packages</span>
-                <h2>Ready-Made Security Bundles</h2>
+                <span className="section-label"><Package size={14} /> Ready-Made Security Bundles</span>
+                <h2>EdgeTech CCTV Packages</h2>
               </div>
               <Link href="/packages" className="btn btn-ghost btn-sm">
                 View All <ChevronRight size={16} />
