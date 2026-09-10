@@ -6,7 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Shield, Wifi, Monitor, HardDrive, Camera, Package, ArrowRight, Zap, Star, Clock } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
-import { HeroCarouselDto, HomeGroupsResponse, ProductListDto, heroCarouselApi, productGroupsApi, productsApi } from '@/lib/api';
+import PackageProductCard from '@/components/products/PackageProductCard';
+import PackageShowcaseCard from '@/components/products/PackageShowcaseCard';
+import { HeroCarouselDto, HomeGroupsResponse, PackageDto, ProductListDto, heroCarouselApi, packagesApi, productGroupsApi, productsApi } from '@/lib/api';
 import HeroCarouselSettings from '@/components/home/HeroCarouselSettings';
 import styles from './page.module.css';
 
@@ -82,6 +84,7 @@ export default function HomePage() {
   const [carousel, setCarousel] = useState<HeroCarouselDto>(fallbackCarousel);
   const [products, setProducts] = useState<ProductListDto[]>([]);
   const [homeGroups, setHomeGroups] = useState<HomeGroupsResponse | null>(null);
+  const [packages, setPackages] = useState<PackageDto[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [countdown, setCountdown] = useState({ hours: 23, minutes: 45, seconds: 12 });
 
@@ -127,9 +130,11 @@ export default function HomePage() {
     Promise.allSettled([
       productsApi.getFeatured(20),
       productGroupsApi.getHome(),
-    ]).then(([featuredResult, groupsResult]) => {
+      packagesApi.getAll(),
+    ]).then(([featuredResult, groupsResult, packagesResult]) => {
       if (featuredResult.status === 'fulfilled') setProducts(featuredResult.value.data);
       if (groupsResult.status === 'fulfilled') setHomeGroups(groupsResult.value.data);
+      if (packagesResult.status === 'fulfilled') setPackages(packagesResult.value.data ?? []);
       setProductsLoading(false);
     });
   }, []);
@@ -153,6 +158,7 @@ export default function HomePage() {
   const featuredRow2 = homeGroups?.mostPopular?.slice(0, 5) ?? (fallbackFeatured.length >= 10 ? fallbackFeatured.slice(5, 10) : products.slice(5, 10));
   const hotDealProducts = (featuredRow2.length >= 2 ? featuredRow2 : products).slice(0, 2);
   const newArrivals = homeGroups?.newArrivals?.slice(0, 5) ?? products.slice(0, 5);
+  const featuredPackages = packages.filter(p => p.isFeatured);
 
   return (
     <div className={styles.home}>
@@ -346,10 +352,35 @@ export default function HomePage() {
           <div className="grid-5">
             {productsLoading
               ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={`row1-skeleton-${i}`} />)
-              : featuredRow1.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              : [
+                  ...featuredPackages.map((pkg, i) => <PackageProductCard key={`bs-pkg-${pkg.id}`} pkg={pkg} index={i} />),
+                  ...featuredRow1.map((p, i) => <ProductCard key={p.id} product={p} index={featuredPackages.length + i} />),
+                ]}
           </div>
         </div>
       </section>
+
+      {/* ===== EDGETECH CCTV PACKAGES ===== */}
+      {(productsLoading || packages.length > 0) && (
+        <section className={styles.section}>
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <span className="section-label"><Package size={14} /> EdgeTech CCTV Packages</span>
+                <h2>Ready-Made Security Bundles</h2>
+              </div>
+              <Link href="/packages" className="btn btn-ghost btn-sm">
+                View All <ChevronRight size={16} />
+              </Link>
+            </div>
+            <div className={styles.packageShowcaseGrid}>
+              {productsLoading
+                ? Array.from({ length: 3 }).map((_, i) => <ProductCardSkeleton key={`pkg-showcase-skeleton-${i}`} />)
+                : packages.slice(0, 6).map((pkg, i) => <PackageShowcaseCard key={`showcase-${pkg.id}`} pkg={pkg} index={i} />)}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ===== HOT DEAL BANNER ===== */}
       <section className={styles.hotDeal}>

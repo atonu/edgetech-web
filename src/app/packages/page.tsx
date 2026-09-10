@@ -1,20 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { Package, ShoppingCart, Zap, Boxes } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Package, Boxes } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { packagesApi, PackageDto } from '@/lib/api';
-import { getImageUrl } from '@/lib/imageUrl';
-import { useCartStore } from '@/store/useCartStore';
 import { Skeleton } from '@/components/ui/Skeleton';
+import PackageShowcaseCard from '@/components/products/PackageShowcaseCard';
 import styles from './packages.module.css';
 
 export default function PackagesPage() {
   const [packages, setPackages] = useState<PackageDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addPackage } = useCartStore();
 
   useEffect(() => {
     packagesApi.getAll()
@@ -22,11 +18,6 @@ export default function PackagesPage() {
       .catch(() => toast.error('Failed to load packages.'))
       .finally(() => setLoading(false));
   }, []);
-
-  const handleAdd = (pkg: PackageDto) => {
-    addPackage(pkg);
-    toast.success(`${pkg.name} added to cart!`);
-  };
 
   return (
     <div className={styles.page}>
@@ -41,9 +32,9 @@ export default function PackagesPage() {
           <div className={styles.grid}>
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={`pkg-skel-${i}`} className={styles.card}>
+                <Skeleton width="100%" height="180px" radius="var(--radius-md)" style={{ marginBottom: 16 }} />
                 <Skeleton width="70%" height="1.4rem" />
                 <Skeleton width="100%" height="3rem" />
-                <Skeleton width="100%" height="6rem" />
                 <Skeleton width="50%" height="1.8rem" />
                 <Skeleton width="100%" height="44px" radius="var(--radius-md)" />
               </div>
@@ -60,49 +51,9 @@ export default function PackagesPage() {
           </div>
         ) : (
           <div className={styles.grid}>
-            {packages.map((pkg, idx) => {
-              const savings = pkg.regularPrice - pkg.packagePrice;
-              const savingsPct = pkg.regularPrice > 0 ? Math.round((savings / pkg.regularPrice) * 100) : 0;
-              return (
-                <motion.div key={pkg.id} className={styles.card}
-                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: idx * 0.05 }}>
-                  <div className={styles.cardHead}>
-                    <span className={styles.cardTitle}>{pkg.name}</span>
-                    {savings > 0 && <span className={styles.saveBadge}>Save {savingsPct}%</span>}
-                  </div>
-
-                  {pkg.description && <p className={styles.description}>{pkg.description}</p>}
-
-                  <div className={styles.items}>
-                    {pkg.items.map((item, i) => (
-                      <div key={`${pkg.id}-${i}`} className={styles.item}>
-                        <div className={styles.itemImg}>
-                          {item.imageUrl ? (
-                            <Image src={getImageUrl(item.imageUrl)!} alt="" fill sizes="34px" style={{ objectFit: 'cover' }} />
-                          ) : (
-                            <Zap size={15} />
-                          )}
-                        </div>
-                        <span className={styles.itemName}>{item.productName}</span>
-                        {item.quantity > 1 && <span className={styles.itemQty}>×{item.quantity}</span>}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className={styles.priceBlock}>
-                    <span className={styles.packagePrice}>৳{pkg.packagePrice.toLocaleString()}</span>
-                    {savings > 0 && <span className={styles.regularPrice}>৳{pkg.regularPrice.toLocaleString()}</span>}
-                  </div>
-
-                  <div className={styles.footer}>
-                    <button className="btn btn-primary btn-lg w-full" style={{ justifyContent: 'center' }} onClick={() => handleAdd(pkg)}>
-                      <ShoppingCart size={18} /> Add Package to Cart
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
+            {packages.map((pkg, idx) => (
+              <PackageShowcaseCard key={pkg.id} pkg={pkg} index={idx} maxItems={6} />
+            ))}
           </div>
         )}
       </div>

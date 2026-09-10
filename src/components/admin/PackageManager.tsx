@@ -1,15 +1,18 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Package as PackageIcon } from 'lucide-react';
+import Image from 'next/image';
+import { Package as PackageIcon, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   adminPackagesApi,
   packageBuilderApi,
+  productImagesApi,
   PackageDto,
   PackageItemDto,
   ProductListDto,
 } from '@/lib/api';
+import { getImageUrl } from '@/lib/imageUrl';
 import {
   Badge,
   Button,
@@ -32,7 +35,7 @@ import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import SolutionBuilder, { buildProductsByBase } from '@/components/builder/SolutionBuilder';
 import styles from './PackageManager.module.css';
 
-const emptyForm = { id: 0, name: '', description: '', isActive: true, regularPrice: 0, packagePrice: 0 };
+const emptyForm = { id: 0, name: '', description: '', imageUrl: '', isActive: true, isFeatured: false, regularPrice: 0, packagePrice: 0 };
 
 // Rebuilds a ProductListDto for a saved package item so it can populate the builder even if
 // the underlying product is no longer surfaced by the slot endpoint (inactive / re-categorized).
@@ -62,6 +65,7 @@ export default function PackageManager() {
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<PackageDto | null>(null);
   const [search, setSearch] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const formTopRef = useRef<HTMLDivElement>(null);
   // Tracks whether the admin manually edited the regular price, so item changes stop auto-filling it.
@@ -118,13 +122,28 @@ export default function PackageManager() {
     setSelected({});
   };
 
+  const handleImageSelected = async (file: File | undefined) => {
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const { url } = await productImagesApi.upload(file);
+      setForm(f => ({ ...f, imageUrl: url }));
+    } catch {
+      toast.error('Failed to upload package image.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const editPackage = (pkg: PackageDto) => {
     regularDirty.current = true; // preserve the saved regular price rather than re-summing.
     setForm({
       id: pkg.id,
       name: pkg.name,
       description: pkg.description ?? '',
+      imageUrl: pkg.imageUrl ?? '',
       isActive: pkg.isActive,
+      isFeatured: pkg.isFeatured,
       regularPrice: pkg.regularPrice,
       packagePrice: pkg.packagePrice,
     });
@@ -167,7 +186,9 @@ export default function PackageManager() {
     const payload = {
       name: form.name.trim(),
       description: form.description.trim() || undefined,
+      imageUrl: form.imageUrl || undefined,
       isActive: form.isActive,
+      isFeatured: form.isFeatured,
       regularPrice: form.regularPrice,
       packagePrice: form.packagePrice,
       items,
@@ -237,6 +258,31 @@ export default function PackageManager() {
                   <option value="true">Yes</option>
                   <option value="false">No</option>
                 </Select>
+              </div>
+              <div>
+                <Label>Show in Best Sellers</Label>
+                <Select value={String(form.isFeatured)} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.value === 'true' }))}>
+                  <option value="false">No</option>
+                  <option value="true">Yes — feature on home page</option>
+                </Select>
+              </div>
+              <div>
+                <Label>Package Image</Label>
+                <div className={styles.imageUploadRow}>
+                  {form.imageUrl ? (
+                    <div className={styles.imagePreview}>
+                      <Image src={getImageUrl(form.imageUrl)!} alt="Package" fill sizes="96px" style={{ objectFit: 'cover' }} />
+                      <button type="button" className={styles.imageRemove} onClick={() => setForm(f => ({ ...f, imageUrl: '' }))} aria-label="Remove image">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className={styles.imageDrop}>
+                      <input type="file" accept="image/*" hidden onChange={e => handleImageSelected(e.target.files?.[0])} />
+                      {uploadingImage ? 'Uploading…' : (<><Upload size={15} /> Upload image</>)}
+                    </label>
+                  )}
+                </div>
               </div>
               <div className={styles.fullWidth}>
                 <Label>Description</Label>
@@ -357,8 +403,17 @@ export default function PackageManager() {
                   <tr key={pkg.id}>
                     <TD>{pkg.id}</TD>
                     <TD>
-                      <strong>{pkg.name}</strong>
-                      {pkg.description && <div className={styles.itemsCell}>{pkg.description}</div>}
+                      <div className={styles.nameCell}>
+                        {pkg.imageUrl ? (
+                          <Image src={getImageUrl(pkg.imageUrl)!} alt="" width={40} height={40} className={styles.nameThumb} />
+                        ) : (
+                          <div className={styles.nameThumbPlaceholder}><PackageIcon size={16} /></div>
+                        )}
+                        <div>
+                          <strong>{pkg.name}</strong>
+                          {pkg.description && <div className={styles.itemsCell}>{pkg.description}</div>}
+                        </div>
+                      </div>
                     </TD>
                     <TD>
                       <div className={styles.itemsCell}>{pkg.items.map(i => i.productName).join(', ')}</div>
@@ -372,7 +427,10 @@ export default function PackageManager() {
                       </div>
                     </TD>
                     <TD>
-                      <Badge variant={pkg.isActive ? 'success' : 'secondary'}>{pkg.isActive ? 'Active' : 'Hidden'}</Badge>
+                      <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                        <Badge variant={pkg.isActive ? 'success' : 'secondary'}>{pkg.isActive ? 'Active' : 'Hidden'}</Badge>
+                        {pkg.isFeatured && <Badge variant="default">Best Seller</Badge>}
+                      </div>
                     </TD>
                     <TD>
                       <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>

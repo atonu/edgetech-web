@@ -255,7 +255,9 @@ export interface PackageDto {
   id: number;
   name: string;
   description?: string;
+  imageUrl?: string;
   isActive: boolean;
+  isFeatured: boolean;
   regularPrice: number;
   packagePrice: number;
   items: PackageItemDto[];
@@ -487,7 +489,9 @@ export interface SavePackageItem {
 export interface SavePackagePayload {
   name: string;
   description?: string;
+  imageUrl?: string;
   isActive: boolean;
+  isFeatured: boolean;
   regularPrice: number;
   packagePrice: number;
   items: SavePackageItem[];
