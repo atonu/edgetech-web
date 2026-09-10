@@ -6,39 +6,49 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Shield, Wifi, Monitor, HardDrive, Camera, Package, ArrowRight, Zap, Star, Clock } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
-import { HomeGroupsResponse, ProductListDto, productGroupsApi, productsApi } from '@/lib/api';
+import { HeroCarouselDto, HomeGroupsResponse, ProductListDto, heroCarouselApi, productGroupsApi, productsApi } from '@/lib/api';
+import HeroCarouselSettings from '@/components/home/HeroCarouselSettings';
 import styles from './page.module.css';
 
-const heroSlides = [
-  {
-    title: 'Secure Your World\nWith Smart Surveillance',
-    subtitle: 'Professional-grade CCTV systems trusted by thousands across Bangladesh',
-    cta: 'Shop CCTV Cameras',
-    ctaLink: '/products?category=analog-cameras',
-    image: '/1.png',
-  },
-  {
-    title: 'Build Your Custom\nSolution',
-    subtitle: 'Configure your perfect surveillance and IT setup with our interactive solution builder',
-    cta: 'Build Your Solution',
-    ctaLink: '/package-builder',
-    image: '/2.png',
-  },
-  {
+// Shown until the carousel settings load (and if the API is unreachable), so the
+// hero never renders empty. Admins manage the live slides from the settings modal.
+const fallbackCarousel: HeroCarouselDto = {
+  autoplayMs: 6000,
+  slides: [
+    {
+      title: 'Secure Your World\nWith Smart Surveillance',
+      subtitle: 'Professional-grade CCTV systems trusted by thousands across Bangladesh',
+      cta: 'Shop CCTV Cameras',
+      ctaLink: '/products?category=analog-cameras',
+      imageUrl: '/1.png',
+      order: 0,
+    },
+    {
+      title: 'Build Your Custom\nSolution',
+      subtitle: 'Configure your perfect surveillance and IT setup with our interactive solution builder',
+      cta: 'Build Your Solution',
+      ctaLink: '/package-builder',
+      imageUrl: '/2.png',
+      order: 1,
+    },
+    {
     title: 'Enterprise Networking\nSolutions',
     subtitle: 'Switches, routers, and complete networking infrastructure for any scale',
     cta: 'Explore Networking',
     ctaLink: '/products?category=networking',
-    image: '/3.png',
-  },
-  {
+    imageUrl: '/3.png',
+      order: 2,
+    },
+    {
     title: 'Complete Office\nInfrastructure Stack',
     subtitle: 'Servers, network switches, storage, and deployment-ready enterprise equipment',
     cta: 'Shop Infrastructure',
     ctaLink: '/products?category=storage',
-    image: '/4.png',
-  },
-];
+    imageUrl: '/4.png',
+      order: 3,
+    },
+  ],
+};
 
 const heroSlideVariants = {
   enter: (direction: number) => ({ x: `${direction * 100}%` }),
@@ -69,19 +79,34 @@ const brands = [
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideDirection, setSlideDirection] = useState(1);
+  const [carousel, setCarousel] = useState<HeroCarouselDto>(fallbackCarousel);
   const [products, setProducts] = useState<ProductListDto[]>([]);
   const [homeGroups, setHomeGroups] = useState<HomeGroupsResponse | null>(null);
   const [productsLoading, setProductsLoading] = useState(true);
   const [countdown, setCountdown] = useState({ hours: 23, minutes: 45, seconds: 12 });
 
+  // Slide count, indicators and autoplay speed all follow the admin-managed settings.
+  const heroSlides = carousel.slides;
+  const slideCount = heroSlides.length;
+
+  // Load the admin-managed carousel; the fallback stays on screen if this fails.
+  useEffect(() => {
+    heroCarouselApi.get()
+      .then(res => {
+        if (res.data?.slides?.length) setCarousel(res.data);
+      })
+      .catch(() => { /* keep fallback slides */ });
+  }, []);
+
   // Auto-advance hero carousel
   useEffect(() => {
+    if (slideCount < 2) return;
     const timer = setInterval(() => {
       setSlideDirection(1);
-      setCurrentSlide(prev => (prev + 1) % heroSlides.length);
-    }, 6000);
+      setCurrentSlide(prev => (prev + 1) % slideCount);
+    }, carousel.autoplayMs || 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slideCount, carousel.autoplayMs]);
 
   // Countdown timer
   useEffect(() => {
@@ -111,13 +136,17 @@ export default function HomePage() {
 
   const nextSlide = useCallback(() => {
     setSlideDirection(1);
-    setCurrentSlide(p => (p + 1) % heroSlides.length);
-  }, []);
+    setCurrentSlide(p => (p + 1) % slideCount);
+  }, [slideCount]);
 
   const prevSlide = useCallback(() => {
     setSlideDirection(-1);
-    setCurrentSlide(p => (p - 1 + heroSlides.length) % heroSlides.length);
-  }, []);
+    setCurrentSlide(p => (p - 1 + slideCount) % slideCount);
+  }, [slideCount]);
+
+  // An admin removing slides can leave the index past the end.
+  const activeIndex = slideCount > 0 ? Math.min(currentSlide, slideCount - 1) : 0;
+  const activeSlide = heroSlides[activeIndex];
 
   const fallbackFeatured = products.filter(p => p.isFeatured);
   const featuredRow1 = homeGroups?.bestSellers?.slice(0, 5) ?? (fallbackFeatured.length >= 5 ? fallbackFeatured.slice(0, 5) : products.slice(0, 5));
@@ -138,9 +167,10 @@ export default function HomePage() {
         <div className={`container ${styles.heroContent}`}>
           <div className={styles.heroMain}>
             <div className={styles.heroBanner}>
+              <HeroCarouselSettings carousel={carousel} onSaved={setCarousel} />
               <AnimatePresence initial={false} custom={slideDirection}>
                 <motion.div
-                  key={`slide-${currentSlide}`}
+                  key={`slide-${activeIndex}`}
                   className={styles.heroSlide}
                   custom={slideDirection}
                   variants={heroSlideVariants}
@@ -149,31 +179,35 @@ export default function HomePage() {
                   exit="exit"
                   transition={{ duration: 0.6, ease: 'easeInOut' }}
                 >
-                  <Image
-                    src={heroSlides[currentSlide].image}
-                    alt={`Hero slide ${currentSlide + 1}`}
-                    fill
-                    priority={currentSlide === 0}
-                    sizes="(max-width: 900px) 100vw, 70vw"
-                    className={styles.heroSlideImage}
-                  />
+                  {activeSlide?.imageUrl && (
+                    <Image
+                      src={activeSlide.imageUrl}
+                      alt={`Hero slide ${activeIndex + 1}`}
+                      fill
+                      priority={activeIndex === 0}
+                      sizes="(max-width: 900px) 100vw, 70vw"
+                      className={styles.heroSlideImage}
+                    />
+                  )}
                   <div className={styles.heroImageMask} />
 
                   <div className={styles.heroSlideContent}>
                     <div className={styles.heroText}>
                       <h1 className={styles.heroTitle}>
-                        {heroSlides[currentSlide].title.split('\n').map((line, i) => (
+                        {(activeSlide?.title ?? '').split('\n').map((line, i) => (
                           <span key={i}>
                             {i === 1 ? <span className="gradient-text">{line}</span> : line}
                             {i === 0 && <br />}
                           </span>
                         ))}
                       </h1>
-                      {/* <p className={styles.heroSubtitle}>{heroSlides[currentSlide].subtitle}</p> */}
+                      {/* <p className={styles.heroSubtitle}>{activeSlide?.subtitle}</p> */}
                       <div className={styles.heroCtas}>
-                        <Link href={heroSlides[currentSlide].ctaLink} className="btn btn-outline btn-lg">
-                          {heroSlides[currentSlide].cta} <ArrowRight size={18} />
-                        </Link>
+                        {activeSlide?.cta && activeSlide?.ctaLink && (
+                          <Link href={activeSlide.ctaLink} className="btn btn-outline btn-lg">
+                            {activeSlide.cta} <ArrowRight size={18} />
+                          </Link>
+                        )}
                         <Link href="/products" className="btn btn-primary  btn-lg">
                           Browse All Products
                         </Link>
@@ -183,24 +217,27 @@ export default function HomePage() {
                 </motion.div>
               </AnimatePresence>
 
-              {/* Hero Nav */}
-              <div className={styles.heroNav}>
-                <button className={styles.heroArrow} onClick={prevSlide}><ChevronLeft size={20} /></button>
-                <div className={styles.heroDots}>
-                  {heroSlides.map((_, i) => (
-                    <button
-                      key={i}
-                      className={`${styles.heroDot} ${i === currentSlide ? styles.heroDotActive : ''}`}
-                      onClick={() => {
-                        if (i === currentSlide) return;
-                        setSlideDirection(i > currentSlide ? 1 : -1);
-                        setCurrentSlide(i);
-                      }}
-                    />
-                  ))}
+              {/* Hero Nav — one dot per configured slide */}
+              {slideCount > 1 && (
+                <div className={styles.heroNav}>
+                  <button className={styles.heroArrow} onClick={prevSlide} aria-label="Previous slide"><ChevronLeft size={20} /></button>
+                  <div className={styles.heroDots}>
+                    {heroSlides.map((slide, i) => (
+                      <button
+                        key={slide.id ?? i}
+                        className={`${styles.heroDot} ${i === activeIndex ? styles.heroDotActive : ''}`}
+                        aria-label={`Go to slide ${i + 1}`}
+                        onClick={() => {
+                          if (i === activeIndex) return;
+                          setSlideDirection(i > activeIndex ? 1 : -1);
+                          setCurrentSlide(i);
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <button className={styles.heroArrow} onClick={nextSlide} aria-label="Next slide"><ChevronRight size={20} /></button>
                 </div>
-                <button className={styles.heroArrow} onClick={nextSlide}><ChevronRight size={20} /></button>
-              </div>
+              )}
             </div>
 
             <aside className={styles.hotDealsPanel}>

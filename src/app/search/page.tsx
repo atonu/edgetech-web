@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
 import { ProductListDto, productsApi } from '@/lib/api';
+import { itemFromProduct, trackSearch, trackViewItemList } from '@/lib/gtm';
 import styles from './search.module.css';
 
 function SearchContent() {
@@ -26,7 +27,10 @@ function SearchContent() {
     productsApi.getAll({ search: query.trim(), pageSize: 24 })
       .then(res => {
         if (!active) return;
-        setResults(res.data.items || []);
+        const found = res.data.items || [];
+        setResults(found);
+        trackSearch(query, res.data.totalCount ?? found.length);
+        trackViewItemList('search_results', `Search: ${query.trim()}`, found.map((p, i) => itemFromProduct(p, 1, i)));
       })
       .catch(() => {
         if (!active) return;

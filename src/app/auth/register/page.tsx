@@ -6,6 +6,7 @@ import { Mail, Lock, Eye, EyeOff, UserPlus, Shield, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/api';
+import { trackSignUp } from '@/lib/gtm';
 import { Spinner } from '@/components/ui/Spinner';
 import toast from 'react-hot-toast';
 import styles from '../login/auth.module.css';
@@ -38,6 +39,7 @@ export default function RegisterPage() {
         lastName: form.lastName.trim(),
       });
       setAuth(res.data.user, res.data.token);
+      trackSignUp();
       toast.success('Account created successfully!');
       router.push('/');
     } catch (err: unknown) {

@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Package, ShoppingCart } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { ProductListDto, packageBuilderApi } from '@/lib/api';
+import { trackPackageBuild } from '@/lib/gtm';
 import { Skeleton } from '@/components/ui/Skeleton';
 import SolutionBuilder, { sections, buildProductsByBase } from '@/components/builder/SolutionBuilder';
 import toast from 'react-hot-toast';
@@ -40,7 +41,8 @@ export default function PackageBuilderPage() {
   };
 
   const handleAddAllToCart = () => {
-    Object.values(selectedProducts).forEach(p => addItem(p));
+    Object.values(selectedProducts).forEach(p => addItem(p, 1, 'package_builder'));
+    trackPackageBuild(filledSlots, totalPrice);
     toast.success(`${filledSlots} items added to cart!`);
   };
 

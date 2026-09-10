@@ -5,6 +5,7 @@ import { SlidersHorizontal, Grid3X3, LayoutList, ChevronDown, X, Search, Chevron
 import ProductCard from '@/components/products/ProductCard';
 import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
 import { ProductListDto, productsApi, categoriesApi, brandsApi, CategoryDto } from '@/lib/api';
+import { itemFromProduct, trackSearch, trackViewItemList } from '@/lib/gtm';
 import styles from './products.module.css';
 
 const sortOptions = [
@@ -141,6 +142,16 @@ function ProductsContent() {
       setProducts(res.data.items);
       setTotalCount(res.data.totalCount);
       setTotalPages(res.data.totalPages);
+
+      // List identity mirrors the URL, so GA4 shows which filter combination drove the views.
+      const listId = ['products', selectedCategory, selectedBrand, debouncedSearch && 'search']
+        .filter(Boolean).join(':');
+      trackViewItemList(
+        listId,
+        `Products${selectedCategory ? ` · ${selectedCategory}` : ''}${selectedBrand ? ` · ${selectedBrand}` : ''}`,
+        res.data.items.map((p, i) => itemFromProduct(p, 1, (currentPage - 1) * 15 + i))
+      );
+      if (debouncedSearch) trackSearch(debouncedSearch, res.data.totalCount);
     }).catch(() => {
       if (!active) return;
       setProducts([]);

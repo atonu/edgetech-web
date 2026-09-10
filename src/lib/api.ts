@@ -546,3 +546,69 @@ export const policyPagesApi = {
     api.patch<PolicyPageDto>(`/policy-pages/${slug}/field`, { path, value }),
 };
 
+export interface HeroSlideDto {
+  id?: string;
+  imageUrl: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  ctaLink: string;
+  order: number;
+}
+
+export interface HeroCarouselDto {
+  id?: string;
+  slides: HeroSlideDto[];
+  autoplayMs: number;
+  updatedAt?: string;
+}
+
+/** The carousel refuses to save below this many slides (enforced on the server too). */
+export const HERO_MIN_SLIDES = 2;
+
+export const heroCarouselApi = {
+  get: () => api.get<HeroCarouselDto>('/hero-carousel'),
+  update: (data: HeroCarouselDto) => api.put<HeroCarouselDto>('/hero-carousel', data),
+};
+
+export interface FeedbackDto {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  category: string;
+  subject: string;
+  message: string;
+  rating?: number;
+  status: string;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateFeedbackRequest {
+  name: string;
+  email: string;
+  phone?: string;
+  category: string;
+  subject: string;
+  message: string;
+  rating?: number;
+}
+
+export interface UpdateFeedbackStatusRequest {
+  status: string;
+  adminNotes?: string;
+}
+
+export const feedbacksApi = {
+  create: (data: CreateFeedbackRequest) => api.post<FeedbackDto>('/feedbacks', data),
+  getAll: (params?: { status?: string; category?: string; search?: string; page?: number; pageSize?: number }) =>
+    api.get<PagedResult<FeedbackDto>>('/feedbacks', { params }),
+  getById: (id: number) => api.get<FeedbackDto>(`/feedbacks/${id}`),
+  updateStatus: (id: number, data: UpdateFeedbackStatusRequest) =>
+    api.patch<FeedbackDto>(`/feedbacks/${id}/status`, data),
+  delete: (id: number) => api.delete(`/feedbacks/${id}`),
+};
+
+

@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Boxes, FolderTree, Package, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench } from 'lucide-react';
+import { Boxes, ChevronDown, ChevronRight, FolderTree, Package, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench, MessageSquare, Star, Eye, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   adminApi,
@@ -14,6 +14,7 @@ import {
   ordersApi,
   productsApi,
   productImagesApi,
+  feedbacksApi,
   CategoryDto,
   BrandDto,
   ProductDto,
@@ -22,6 +23,7 @@ import {
   ServiceItemDto,
   OrderDto,
   UserDto,
+  FeedbackDto,
 } from '@/lib/api';
 import ProductImageManager, { StagedImage } from '@/components/admin/ProductImageManager';
 import AdminPagination from '@/components/admin/AdminPagination';
@@ -54,11 +56,13 @@ import styles from './admin.module.css';
 
 const ADMIN_PAGE_SIZE = 10;
 
-type DeleteTarget = { type: 'product' | 'category' | 'brand' | 'service' | 'group' | 'user'; id: number | string; label: string };
+type DeleteTarget = { type: 'product' | 'category' | 'brand' | 'service' | 'group' | 'user' | 'feedback'; id: number | string; label: string };
 
-type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'packages' | 'users';
+type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'packages' | 'users' | 'feedbacks';
 
 const ORDER_STATUSES = ['Placed', 'Verified', 'InProgress', 'Done', 'Cancelled'] as const;
+const FEEDBACK_STATUSES = ['New', 'InProgress', 'Resolved', 'Archived'] as const;
+const FEEDBACK_CATEGORIES = ['All', 'General Inquiry', 'Technical Support', 'Product Feedback', 'Order & Delivery Issue', 'Account & Billing', 'Partnership / Business', 'Bug Report', 'Feature Request', 'Other'] as const;
 
 function paginateClient<T>(items: T[], page: number, pageSize: number) {
   const totalCount = items.length;
@@ -174,6 +178,25 @@ export default function AdminPage() {
     role: 'User',
   });
 
+  // Feedbacks table: server-side search + filters + pagination
+  const [feedbackSearch, setFeedbackSearch] = useState('');
+  const [debouncedFeedbackSearch, setDebouncedFeedbackSearch] = useState('');
+  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState('All');
+  const [feedbackCategoryFilter, setFeedbackCategoryFilter] = useState('All');
+  const [feedbackTablePage, setFeedbackTablePage] = usePageWithReset(debouncedFeedbackSearch);
+  const [feedbackTable, setFeedbackTable] = useState<{ items: FeedbackDto[]; totalCount: number; totalPages: number }>({ items: [], totalCount: 0, totalPages: 1 });
+  const [feedbackRefreshTick, setFeedbackRefreshTick] = useState(0);
+  const [resolvedFeedbackKey, setResolvedFeedbackKey] = useState<string | null>(null);
+  const feedbackRequestKey = useMemo(
+    () => `${debouncedFeedbackSearch}|${feedbackStatusFilter}|${feedbackCategoryFilter}|${feedbackTablePage}|${feedbackRefreshTick}`,
+    [debouncedFeedbackSearch, feedbackStatusFilter, feedbackCategoryFilter, feedbackTablePage, feedbackRefreshTick]
+  );
+  const feedbackTableLoading = feedbackRequestKey !== resolvedFeedbackKey;
+
+  const [selectedFeedback, setSelectedFeedback] = useState<FeedbackDto | null>(null);
+  const [feedbackStatusDraft, setFeedbackStatusDraft] = useState({ status: 'New', adminNotes: '' });
+  const [savingFeedback, setSavingFeedback] = useState(false);
+
   const flatCategories = useMemo(() => {
     const out: CategoryDto[] = [];
     const walk = (arr: CategoryDto[]) => {
@@ -216,6 +239,7 @@ export default function AdminPage() {
     setProductRefreshTick(t => t + 1);
     setOrderRefreshTick(t => t + 1);
     setUserRefreshTick(t => t + 1);
+    setFeedbackRefreshTick(t => t + 1);
   };
 
   useEffect(() => {
@@ -255,6 +279,11 @@ export default function AdminPage() {
     const timer = setTimeout(() => setDebouncedUserSearch(userSearch), 350);
     return () => clearTimeout(timer);
   }, [userSearch]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedFeedbackSearch(feedbackSearch), 350);
+    return () => clearTimeout(timer);
+  }, [feedbackSearch]);
 
   useEffect(() => {
     let active = true;
@@ -309,6 +338,30 @@ export default function AdminPage() {
     // userRequestKey already encodes search, page, and the manual refresh tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRequestKey]);
+
+  useEffect(() => {
+    let active = true;
+    feedbacksApi.getAll({
+      search: debouncedFeedbackSearch || undefined,
+      status: feedbackStatusFilter !== 'All' ? feedbackStatusFilter : undefined,
+      category: feedbackCategoryFilter !== 'All' ? feedbackCategoryFilter : undefined,
+      page: feedbackTablePage,
+      pageSize: ADMIN_PAGE_SIZE,
+    })
+      .then(res => {
+        if (!active) return;
+        setFeedbackTable({ items: res.data.items ?? [], totalCount: res.data.totalCount, totalPages: res.data.totalPages || 1 });
+      })
+      .catch(() => {
+        if (active) setFeedbackTable({ items: [], totalCount: 0, totalPages: 1 });
+      })
+      .finally(() => {
+        if (active) setResolvedFeedbackKey(feedbackRequestKey);
+      });
+    return () => { active = false; };
+    // feedbackRequestKey already encodes search, filters, page, and the manual refresh tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedbackRequestKey]);
 
   const categoryTableResult = useMemo(
     () => paginateClient(
@@ -769,6 +822,36 @@ export default function AdminPage() {
     });
   };
 
+  const removeFeedback = async (id: number) => {
+    await withBusy(`delete-feedback-${id}`, async () => {
+      try {
+        await feedbacksApi.delete(id);
+        toast.success('Feedback removed.');
+        setFeedbackRefreshTick(t => t + 1);
+        if (selectedFeedback?.id === id) {
+          setSelectedFeedback(null);
+        }
+      } catch {
+        toast.error('Failed to remove feedback.');
+      }
+    });
+  };
+
+  const handleSaveFeedbackStatus = async () => {
+    if (!selectedFeedback) return;
+    setSavingFeedback(true);
+    try {
+      const res = await feedbacksApi.updateStatus(selectedFeedback.id, feedbackStatusDraft);
+      toast.success('Feedback status updated.');
+      setSelectedFeedback(res.data);
+      setFeedbackRefreshTick(t => t + 1);
+    } catch {
+      toast.error('Failed to update feedback.');
+    } finally {
+      setSavingFeedback(false);
+    }
+  };
+
   const editUser = (u: UserDto) => {
     setUserForm({ id: u.id, email: u.email, password: '', firstName: u.firstName, lastName: u.lastName, role: u.role });
     setTab('users');
@@ -789,6 +872,7 @@ export default function AdminPage() {
       case 'service': return void removeService(target.id as number);
       case 'group': return void removeGroup(target.id as number);
       case 'user': return void removeUser(target.id as string);
+      case 'feedback': return void removeFeedback(target.id as number);
     }
   };
 
@@ -800,7 +884,7 @@ export default function AdminPage() {
             <div>
               <p className="section-label">Control Center</p>
               <h1 className={styles.pageTitle}>Admin Panel</h1>
-              <p className={styles.muted}>Manage products, categories, services, homepage groups, and orders from one dashboard.</p>
+              <p className={styles.muted}>Manage products, categories, services, homepage groups, orders, users, and customer feedback from one dashboard.</p>
             </div>
             <div className={styles.heroActions}>
               <Button variant="secondary" onClick={loadCore} loading={loading}>
@@ -818,6 +902,7 @@ export default function AdminPage() {
           <Metric icon={<PackageSearch size={16} />} label="Groups" value={groups.length} />
           <Metric icon={<Package size={16} />} label="Packages" value={packagesCount} />
           <Metric icon={<Users size={16} />} label="Users" value={userTable.totalCount} />
+          <Metric icon={<MessageSquare size={16} />} label="Feedbacks" value={feedbackTable.totalCount} />
         </div>
 
         <Tabs>
@@ -831,6 +916,7 @@ export default function AdminPage() {
               { key: 'groups', label: 'Groups' },
               { key: 'packages', label: 'Packages' },
               { key: 'users', label: 'Users' },
+              { key: 'feedbacks', label: 'Feedbacks' },
             ].map(t => (
               <TabsTrigger key={t.key} active={tab === t.key} onClick={() => setTab(t.key as TabKey)}>
                 {t.label}
@@ -1361,7 +1447,276 @@ export default function AdminPage() {
             </Card>
           </div>
         )}
+
+        {tab === 'feedbacks' && (
+          <div className={styles.panelGrid}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Feedbacks & Inquiries</CardTitle>
+                <CardDescription>Review messages from users, update resolution status, and track admin notes.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className={styles.feedbackFilterRow}>
+                  <div className={styles.searchBar} style={{ flex: 1 }}>
+                    <Search size={15} />
+                    <Input
+                      placeholder="Search feedback by name, email, subject, or message content…"
+                      value={feedbackSearch}
+                      onChange={e => setFeedbackSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.filterSelectWrap}>
+                    <Label style={{ fontSize: '0.75rem', marginBottom: 2 }}>Status</Label>
+                    <Select value={feedbackStatusFilter} onChange={e => setFeedbackStatusFilter(e.target.value)}>
+                      <option value="All">All Statuses</option>
+                      {FEEDBACK_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </Select>
+                  </div>
+                  <div className={styles.filterSelectWrap}>
+                    <Label style={{ fontSize: '0.75rem', marginBottom: 2 }}>Category</Label>
+                    <Select value={feedbackCategoryFilter} onChange={e => setFeedbackCategoryFilter(e.target.value)}>
+                      {FEEDBACK_CATEGORIES.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
+                    </Select>
+                  </div>
+                </div>
+
+                <TableWrap>
+                  <Table>
+                    <thead>
+                      <tr>
+                        <TH>ID / Date</TH>
+                        <TH>Contact</TH>
+                        <TH>Category</TH>
+                        <TH>Rating</TH>
+                        <TH>Subject & Message</TH>
+                        <TH>Status</TH>
+                        <TH>Actions</TH>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {feedbackTableLoading ? (
+                        <SkeletonRows cols={7} />
+                      ) : feedbackTable.items.length === 0 ? (
+                        <tr><TD colSpan={7}>No feedback or inquiries found.</TD></tr>
+                      ) : feedbackTable.items.map(f => {
+                        const createdDate = f.createdAt ? new Date(f.createdAt) : null;
+                        return (
+                          <tr key={f.id}>
+                            <TD>
+                              <div className={styles.orderNumBadge}>#FB-{String(f.id).padStart(5, '0')}</div>
+                              {createdDate && (
+                                <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 4 }}>
+                                  {createdDate.toLocaleDateString()} {createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                              )}
+                            </TD>
+                            <TD>
+                              <strong>{f.name || 'Anonymous'}</strong>
+                              {f.email && <div className={styles.muted}>{f.email}</div>}
+                              {f.phone && <div className={styles.muted}>{f.phone}</div>}
+                            </TD>
+                            <TD>
+                              <Badge variant="secondary">{f.category || 'General'}</Badge>
+                            </TD>
+                            <TD>
+                              {f.rating ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#eab308', fontWeight: 600, fontSize: '0.85rem' }}>
+                                  <Star size={14} fill="#eab308" color="#eab308" /> {f.rating}/5
+                                </div>
+                              ) : (
+                                <span className={styles.muted} style={{ fontSize: '0.78rem' }}>—</span>
+                              )}
+                            </TD>
+                            <TD>
+                              <div style={{ fontWeight: 600, color: 'var(--foreground)', marginBottom: 2 }}>{f.subject}</div>
+                              <div className={styles.muted} style={{ fontSize: '0.8rem', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {f.message}
+                              </div>
+                            </TD>
+                            <TD>
+                              <Badge
+                                variant={
+                                  f.status === 'Resolved' ? 'default' :
+                                  f.status === 'InProgress' ? 'secondary' :
+                                  f.status === 'New' ? 'default' : 'outline'
+                                }
+                              >
+                                {f.status}
+                              </Badge>
+                            </TD>
+                            <TD>
+                              <div className={styles.actions}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedFeedback(f);
+                                    setFeedbackStatusDraft({ status: f.status, adminNotes: f.adminNotes || '' });
+                                  }}
+                                >
+                                  <Eye size={13} style={{ marginRight: 4 }} /> View
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  loading={busy === `delete-feedback-${f.id}`}
+                                  onClick={() => setConfirmDelete({ type: 'feedback', id: f.id, label: f.subject || `Feedback #${f.id}` })}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </TD>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                </TableWrap>
+                <AdminPagination
+                  page={feedbackTablePage}
+                  totalPages={feedbackTable.totalPages}
+                  totalCount={feedbackTable.totalCount}
+                  pageSize={ADMIN_PAGE_SIZE}
+                  onPageChange={setFeedbackTablePage}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
+
+      {selectedFeedback && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedFeedback(null)}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div>
+                <h3 className={styles.modalTitle}>Feedback #{String(selectedFeedback.id).padStart(5, '0')}</h3>
+                <p className={styles.muted} style={{ fontSize: '0.8rem', margin: 0 }}>
+                  Submitted on {new Date(selectedFeedback.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <button
+                type="button"
+                className={styles.modalClose}
+                onClick={() => setSelectedFeedback(null)}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <div className={styles.detailGrid}>
+                <div className={styles.detailCard}>
+                  <div className={styles.detailLabel}>Sender Name</div>
+                  <div className={styles.detailValue}>{selectedFeedback.name || 'Anonymous User'}</div>
+                </div>
+                <div className={styles.detailCard}>
+                  <div className={styles.detailLabel}>Category</div>
+                  <div className={styles.detailValue}>
+                    <Badge variant="secondary">{selectedFeedback.category || 'General'}</Badge>
+                  </div>
+                </div>
+                <div className={styles.detailCard}>
+                  <div className={styles.detailLabel}>Email Address</div>
+                  <div className={styles.detailValue}>
+                    {selectedFeedback.email ? (
+                      <a href={`mailto:${selectedFeedback.email}`} style={{ color: 'var(--color-primary, #0babcb)', textDecoration: 'underline' }}>
+                        {selectedFeedback.email}
+                      </a>
+                    ) : (
+                      <span className={styles.muted}>Not provided</span>
+                    )}
+                  </div>
+                </div>
+                <div className={styles.detailCard}>
+                  <div className={styles.detailLabel}>Phone Number</div>
+                  <div className={styles.detailValue}>
+                    {selectedFeedback.phone ? (
+                      <a href={`tel:${selectedFeedback.phone}`} style={{ color: 'var(--color-primary, #0babcb)', textDecoration: 'underline' }}>
+                        {selectedFeedback.phone}
+                      </a>
+                    ) : (
+                      <span className={styles.muted}>Not provided</span>
+                    )}
+                  </div>
+                </div>
+                <div className={styles.detailCard}>
+                  <div className={styles.detailLabel}>Rating Score</div>
+                  <div className={styles.detailValue}>
+                    {selectedFeedback.rating ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#eab308', fontWeight: 600 }}>
+                        <Star size={15} fill="#eab308" color="#eab308" /> {selectedFeedback.rating} / 5 Stars
+                      </div>
+                    ) : (
+                      <span className={styles.muted}>No rating given</span>
+                    )}
+                  </div>
+                </div>
+                <div className={styles.detailCard}>
+                  <div className={styles.detailLabel}>Status</div>
+                  <div className={styles.detailValue}>
+                    <Badge
+                      variant={
+                        selectedFeedback.status === 'Resolved' ? 'default' :
+                        selectedFeedback.status === 'InProgress' ? 'secondary' :
+                        selectedFeedback.status === 'New' ? 'default' : 'outline'
+                      }
+                    >
+                      {selectedFeedback.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div className={`${styles.detailCard} ${styles.detailCardFull}`}>
+                  <div className={styles.detailLabel}>Subject</div>
+                  <div className={styles.detailValue} style={{ fontWeight: 600, fontSize: '0.98rem' }}>
+                    {selectedFeedback.subject}
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.messageSection}>
+                <Label style={{ fontWeight: 600, fontSize: '0.85rem' }}>User Message</Label>
+                <div className={styles.messageBox}>
+                  {selectedFeedback.message}
+                </div>
+              </div>
+
+              <div className={styles.formGrid}>
+                <Field label="Update Resolution Status">
+                  <Select
+                    value={feedbackStatusDraft.status}
+                    onChange={e => setFeedbackStatusDraft(prev => ({ ...prev, status: e.target.value }))}
+                  >
+                    {FEEDBACK_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </Select>
+                </Field>
+
+                <div>
+                  <Label style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '6px', display: 'block' }}>
+                    Admin Internal Notes
+                  </Label>
+                  <Textarea
+                    rows={3}
+                    placeholder="Record support resolution notes, communication logs, or internal comments…"
+                    value={feedbackStatusDraft.adminNotes}
+                    onChange={e => setFeedbackStatusDraft(prev => ({ ...prev, adminNotes: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <Button variant="secondary" onClick={() => setSelectedFeedback(null)}>
+                Cancel
+              </Button>
+              <Button loading={savingFeedback} onClick={handleSaveFeedbackStatus}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmDelete && (
         <ConfirmDialog
@@ -1426,6 +1781,7 @@ function OrderRow({
   const [adminNotes, setAdminNotes] = useState(order.adminNotes ?? order.notes ?? '');
   const [emiCompleted, setEmiCompleted] = useState(order.emiCompletedMonths ?? 0);
   const [emiTenure, setEmiTenure] = useState(order.emiTenureMonths ?? 12);
+  const [expanded, setExpanded] = useState(false);
 
   const isEmi = order.isEmi || order.paymentMethod?.toLowerCase() === 'emi';
 
@@ -1435,10 +1791,26 @@ function OrderRow({
 
   const createdDate = order.createdAt ? new Date(order.createdAt) : null;
 
+  const lineItems = order.items ?? [];
+  const unitCount = lineItems.reduce((sum, i) => sum + i.quantity, 0);
+  const itemsSubtotal = lineItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+  const orderPackages = order.packages ?? [];
+  const packagesSubtotal = orderPackages.reduce((sum, p) => sum + p.packagePrice * p.quantity, 0);
+
   return (
+    <>
     <tr>
       <TD>
-        <div className={styles.orderNumBadge}>{orderNum}</div>
+        <button
+          type="button"
+          className={styles.orderNumToggle}
+          onClick={() => setExpanded(v => !v)}
+          aria-expanded={expanded}
+          title={expanded ? 'Hide order details' : 'Show order details'}
+        >
+          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <span className={styles.orderNumBadge}>{orderNum}</span>
+        </button>
         <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 2 }}>ID: #{order.id}</div>
         {createdDate && (
           <div className={styles.muted} style={{ fontSize: '0.75rem' }}>
@@ -1488,9 +1860,9 @@ function OrderRow({
             {order.emiBank && <div className={styles.muted}>{order.emiBank}</div>}
           </div>
         )}
-        <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 4 }}>
-          {order.items?.length ?? 0} item{(order.items?.length ?? 0) === 1 ? '' : 's'}
-        </div>
+        <button type="button" className={styles.itemCountLink} onClick={() => setExpanded(v => !v)}>
+          {lineItems.length} item{lineItems.length === 1 ? '' : 's'} · {expanded ? 'hide' : 'view'} details
+        </button>
         {order.packages && order.packages.length > 0 && (
           <div style={{ fontSize: '0.75rem', marginTop: 2, color: 'var(--primary)', fontWeight: 600 }}>
             {order.packages.map(pkg => `${pkg.name}${pkg.quantity > 1 ? ` ×${pkg.quantity}` : ''}`).join(', ')}
@@ -1543,5 +1915,179 @@ function OrderRow({
         </Button>
       </TD>
     </tr>
+
+    {expanded && (
+      <tr className={styles.detailRow}>
+        <TD colSpan={7}>
+          <div className={styles.detailPanel}>
+            {/* Ordered products */}
+            <div className={styles.detailMain}>
+              <div className={styles.detailHeading}>
+                Ordered Products
+                <span className={styles.detailCount}>
+                  {lineItems.length} product{lineItems.length === 1 ? '' : 's'} · {unitCount} unit{unitCount === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              {lineItems.length === 0 ? (
+                <div className={styles.detailEmpty}>No line items were recorded for this order.</div>
+              ) : (
+                <table className={styles.itemsTable}>
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th className={styles.numCol}>Unit Price</th>
+                      <th className={styles.numCol}>Qty</th>
+                      <th className={styles.numCol}>Line Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lineItems.map(item => (
+                      <tr key={item.id}>
+                        <td>
+                          <div className={styles.itemCell}>
+                            {item.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- tiny admin table thumbnail, not worth next/image config here
+                              <img src={item.imageUrl} alt="" className={styles.itemThumb} />
+                            ) : (
+                              <div className={styles.itemThumbPlaceholder}><Package size={15} /></div>
+                            )}
+                            <div>
+                              <div className={styles.itemName}>{item.productName}</div>
+                              <div className={styles.itemMeta}>Product ID: {item.productId}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className={styles.numCol}>৳{item.unitPrice.toLocaleString()}</td>
+                        <td className={styles.numCol}>×{item.quantity}</td>
+                        <td className={`${styles.numCol} ${styles.lineTotal}`}>
+                          ৳{(item.unitPrice * item.quantity).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={3} className={styles.numCol}>Items subtotal</td>
+                      <td className={styles.numCol}>৳{itemsSubtotal.toLocaleString()}</td>
+                    </tr>
+                    <tr className={styles.grandTotalRow}>
+                      <td colSpan={3} className={styles.numCol}>Order total</td>
+                      <td className={styles.numCol}>৳{order.totalAmount.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+
+              {orderPackages.length > 0 && (
+                <div style={{ marginTop: lineItems.length > 0 ? 20 : 0 }}>
+                  <div className={styles.detailHeading}>
+                    Packages
+                    <span className={styles.detailCount}>{orderPackages.length} bundle{orderPackages.length === 1 ? '' : 's'}</span>
+                  </div>
+                  {orderPackages.map((pkg, pi) => (
+                    <div key={`op-${pi}`} style={{ padding: '10px 0', borderBottom: '1px solid var(--color-glass-border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+                        <strong>{pkg.name}{pkg.quantity > 1 ? ` ×${pkg.quantity}` : ''}</strong>
+                        <span className={styles.lineTotal}>
+                          ৳{(pkg.packagePrice * pkg.quantity).toLocaleString()}
+                          {pkg.regularPrice > pkg.packagePrice && (
+                            <span className={styles.muted} style={{ marginLeft: 6, textDecoration: 'line-through', fontWeight: 400 }}>
+                              ৳{(pkg.regularPrice * pkg.quantity).toLocaleString()}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <div className={styles.itemMeta}>
+                        {pkg.items.map(i => `${i.productName}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join(', ')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(lineItems.length > 0 || orderPackages.length > 0) && Math.round(itemsSubtotal + packagesSubtotal) !== Math.round(order.totalAmount) && (
+                <div className={styles.detailWarn}>
+                  Items subtotal does not match the recorded order total. The product price may have
+                  changed after this order was placed.
+                </div>
+              )}
+            </div>
+
+            {/* Everything else about the order */}
+            <aside className={styles.detailSide}>
+              <div className={styles.detailCard}>
+                <div className={styles.detailCardTitle}>Customer</div>
+                <div className={styles.detailKv}><span>Name</span><strong>{order.customer?.fullName || order.shippingAddress?.fullName || '—'}</strong></div>
+                <div className={styles.detailKv}><span>Email</span><strong>{order.customer?.email || '—'}</strong></div>
+                <div className={styles.detailKv}><span>Phone</span><strong>{order.customer?.phone || order.shippingAddress?.phone || '—'}</strong></div>
+              </div>
+
+              <div className={styles.detailCard}>
+                <div className={styles.detailCardTitle}>Delivery Address</div>
+                <div className={styles.detailAddress}>
+                  <div><strong>{order.shippingAddress?.fullName || '—'}</strong></div>
+                  <div>{order.shippingAddress?.address || '—'}</div>
+                  <div>
+                    {[order.shippingAddress?.city, order.shippingAddress?.state, order.shippingAddress?.postalCode]
+                      .filter(Boolean).join(', ') || '—'}
+                  </div>
+                  <div>{order.shippingAddress?.country}</div>
+                </div>
+                <div className={styles.detailKv} style={{ marginTop: 6 }}>
+                  <span>Est. delivery</span>
+                  <strong>
+                    {order.shippingAddress?.city?.toLowerCase().includes('dhaka')
+                      ? 'Inside Dhaka — 5 working days'
+                      : 'Outside Dhaka — 10 working days'}
+                  </strong>
+                </div>
+              </div>
+
+              <div className={styles.detailCard}>
+                <div className={styles.detailCardTitle}>Payment</div>
+                <div className={styles.detailKv}><span>Method</span><strong>{order.paymentMethod ? order.paymentMethod.toUpperCase() : '—'}</strong></div>
+                <div className={styles.detailKv}><span>Status</span><strong>{order.status}</strong></div>
+                {isEmi ? (
+                  <>
+                    <div className={styles.detailKv}><span>EMI bank</span><strong>{order.emiBank || '—'}</strong></div>
+                    <div className={styles.detailKv}><span>Tenure</span><strong>{order.emiTenureMonths ?? emiTenure} months</strong></div>
+                    <div className={styles.detailKv}><span>Monthly</span><strong>৳{(order.emiMonthlyAmount ?? 0).toLocaleString()}</strong></div>
+                    <div className={styles.detailKv}><span>Installments paid</span><strong>{order.emiCompletedMonths ?? 0} of {order.emiTenureMonths ?? emiTenure}</strong></div>
+                    <div className={styles.detailKv}>
+                      <span>Outstanding</span>
+                      <strong>
+                        ৳{Math.max(0, ((order.emiTenureMonths ?? emiTenure) - (order.emiCompletedMonths ?? 0)) * (order.emiMonthlyAmount ?? 0)).toLocaleString()}
+                      </strong>
+                    </div>
+                  </>
+                ) : (
+                  <div className={styles.detailKv}><span>Plan</span><strong>Full payment</strong></div>
+                )}
+              </div>
+
+              <div className={styles.detailCard}>
+                <div className={styles.detailCardTitle}>Notes</div>
+                <div className={styles.detailKv} style={{ display: 'block' }}>
+                  <span style={{ display: 'block', marginBottom: 2 }}>Customer note</span>
+                  <div className={styles.detailNoteText}>{order.notes || 'None provided.'}</div>
+                </div>
+                <div className={styles.detailKv} style={{ display: 'block', marginTop: 8 }}>
+                  <span style={{ display: 'block', marginBottom: 2 }}>Saved admin note</span>
+                  <div className={styles.detailNoteText}>{order.adminNotes || 'None saved yet.'}</div>
+                </div>
+                {createdDate && (
+                  <div className={styles.detailKv} style={{ marginTop: 8 }}>
+                    <span>Placed</span>
+                    <strong>{createdDate.toLocaleString()}</strong>
+                  </div>
+                )}
+              </div>
+            </aside>
+          </div>
+        </TD>
+      </tr>
+    )}
+    </>
   );
 }

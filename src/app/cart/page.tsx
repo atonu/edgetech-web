@@ -1,14 +1,24 @@
 'use client';
+import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Zap, ShieldCheck, Truck, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { getImageUrl } from '@/lib/imageUrl';
+import { itemFromCartItem, trackViewCart } from '@/lib/gtm';
 import styles from './cart.module.css';
 
 export default function CartPage() {
   const { items, packages, updateQuantity, removeItem, removePackage, updatePackageQuantity, clearCart, total, count } = useCartStore();
+
+  // Once per visit — not on every quantity tweak.
+  const viewed = useRef(false);
+  useEffect(() => {
+    if (viewed.current || items.length === 0) return;
+    viewed.current = true;
+    trackViewCart(items.map(i => itemFromCartItem(i)));
+  }, [items]);
 
   if (items.length === 0 && packages.length === 0) {
     return (
