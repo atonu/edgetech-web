@@ -138,6 +138,7 @@ export interface OrderDto {
   emiCompletedMonths?: number;
   emiMonthlyAmount?: number;
   emiBank?: string;
+  packages?: OrderPackageDto[];
 }
 
 export interface CustomerInfo {
@@ -170,6 +171,11 @@ export interface PlaceOrderItemRequest {
   quantity: number;
 }
 
+export interface PlaceOrderPackageRequest {
+  packageId: number;
+  quantity: number;
+}
+
 export interface PlaceOrderRequest {
   shippingAddress: ShippingAddress;
   notes?: string;
@@ -179,6 +185,7 @@ export interface PlaceOrderRequest {
   isEmi?: boolean;
   emiTenureMonths?: number;
   emiBank?: string;
+  packages?: PlaceOrderPackageRequest[];
 }
 
 export interface UserDto {
@@ -232,6 +239,44 @@ export interface PackageComponentDto {
   imageUrl?: string;
   price: number;
   quantity: number;
+}
+
+export interface PackageItemDto {
+  slotKey: string;
+  productId: number;
+  productName: string;
+  imageUrl?: string;
+  unitPrice: number;
+  quantity: number;
+  stock: number;
+}
+
+export interface PackageDto {
+  id: number;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  regularPrice: number;
+  packagePrice: number;
+  items: PackageItemDto[];
+  updatedAt: string;
+}
+
+export interface OrderPackageItemDto {
+  productId: number;
+  productName: string;
+  imageUrl?: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface OrderPackageDto {
+  packageId: number;
+  name: string;
+  regularPrice: number;
+  packagePrice: number;
+  quantity: number;
+  items: OrderPackageItemDto[];
 }
 
 export interface ServiceItemDto {
@@ -431,6 +476,33 @@ export const adminProductGroupsApi = {
   create: (data: { key: string; name: string; isActive: boolean; productIds: number[] }) => api.post<ProductGroupDto>('/admin/product-groups', data),
   update: (id: number, data: { name: string; isActive: boolean; productIds: number[] }) => api.put(`/admin/product-groups/${id}`, data),
   delete: (id: number) => api.delete(`/admin/product-groups/${id}`),
+};
+
+export interface SavePackageItem {
+  slotKey: string;
+  productId: number;
+  quantity: number;
+}
+
+export interface SavePackagePayload {
+  name: string;
+  description?: string;
+  isActive: boolean;
+  regularPrice: number;
+  packagePrice: number;
+  items: SavePackageItem[];
+}
+
+export const packagesApi = {
+  getAll: () => api.get<PackageDto[]>('/packages'),
+  get: (id: number) => api.get<PackageDto>(`/packages/${id}`),
+};
+
+export const adminPackagesApi = {
+  getAll: () => api.get<PackageDto[]>('/admin/packages'),
+  create: (data: SavePackagePayload) => api.post<PackageDto>('/admin/packages', data),
+  update: (id: number, data: SavePackagePayload) => api.put(`/admin/packages/${id}`, data),
+  delete: (id: number) => api.delete(`/admin/packages/${id}`),
 };
 
 export interface PolicySubItemDto {

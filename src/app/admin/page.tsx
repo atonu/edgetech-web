@@ -2,10 +2,11 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Boxes, FolderTree, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench } from 'lucide-react';
+import { Boxes, FolderTree, Package, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   adminApi,
+  adminPackagesApi,
   adminProductGroupsApi,
   adminServicesApi,
   brandsApi,
@@ -25,6 +26,7 @@ import {
 import ProductImageManager, { StagedImage } from '@/components/admin/ProductImageManager';
 import AdminPagination from '@/components/admin/AdminPagination';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
+import PackageManager from '@/components/admin/PackageManager';
 import {
   Badge,
   Button,
@@ -54,7 +56,7 @@ const ADMIN_PAGE_SIZE = 10;
 
 type DeleteTarget = { type: 'product' | 'category' | 'brand' | 'service' | 'group' | 'user'; id: number | string; label: string };
 
-type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'users';
+type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'packages' | 'users';
 
 const ORDER_STATUSES = ['Placed', 'Verified', 'InProgress', 'Done', 'Cancelled'] as const;
 
@@ -88,6 +90,7 @@ export default function AdminPage() {
   const [brands, setBrands] = useState<BrandDto[]>([]);
   const [services, setServices] = useState<ServiceItemDto[]>([]);
   const [groups, setGroups] = useState<ProductGroupDto[]>([]);
+  const [packagesCount, setPackagesCount] = useState(0);
   const [users, setUsers] = useState<UserDto[]>([]);
 
   const [productForm, setProductForm] = useState({
@@ -186,12 +189,13 @@ export default function AdminPage() {
   const loadCore = async () => {
     setLoading(true);
     try {
-      const [pRes, cRes, bRes, sRes, gRes] = await Promise.allSettled([
+      const [pRes, cRes, bRes, sRes, gRes, pkgRes] = await Promise.allSettled([
         productsApi.getAll({ page: 1, pageSize: 100 }),
         categoriesApi.getAllAdmin(),
         brandsApi.getAllAdmin(),
         adminServicesApi.getAll(),
         adminProductGroupsApi.getAll(),
+        adminPackagesApi.getAll(),
       ]);
 
       setProducts(pRes.status === 'fulfilled' ? (pRes.value.data.items ?? []) : []);
@@ -199,8 +203,9 @@ export default function AdminPage() {
       setBrands(bRes.status === 'fulfilled' ? (bRes.value.data ?? []) : []);
       setServices(sRes.status === 'fulfilled' ? (sRes.value.data ?? []) : []);
       setGroups(gRes.status === 'fulfilled' ? (gRes.value.data ?? []) : []);
+      setPackagesCount(pkgRes.status === 'fulfilled' ? (pkgRes.value.data?.length ?? 0) : 0);
 
-      const failed = [pRes, cRes, bRes, sRes, gRes].filter(r => r.status === 'rejected').length;
+      const failed = [pRes, cRes, bRes, sRes, gRes, pkgRes].filter(r => r.status === 'rejected').length;
       if (failed > 0) toast.error(`Some admin data failed to load (${failed}). Showing available data.`);
     } catch {
       toast.error('Failed to load admin data.');
@@ -811,6 +816,7 @@ export default function AdminPage() {
           <Metric icon={<Wrench size={16} />} label="Services" value={services.length} />
           <Metric icon={<ShoppingBag size={16} />} label="Orders" value={orderTable.totalCount} />
           <Metric icon={<PackageSearch size={16} />} label="Groups" value={groups.length} />
+          <Metric icon={<Package size={16} />} label="Packages" value={packagesCount} />
           <Metric icon={<Users size={16} />} label="Users" value={userTable.totalCount} />
         </div>
 
@@ -823,6 +829,7 @@ export default function AdminPage() {
               { key: 'brands', label: 'Brands' },
               { key: 'services', label: 'Services' },
               { key: 'groups', label: 'Groups' },
+              { key: 'packages', label: 'Packages' },
               { key: 'users', label: 'Users' },
             ].map(t => (
               <TabsTrigger key={t.key} active={tab === t.key} onClick={() => setTab(t.key as TabKey)}>
@@ -1249,6 +1256,8 @@ export default function AdminPage() {
           </div>
         )}
 
+        {tab === 'packages' && <PackageManager />}
+
         {tab === 'users' && (
           <div className={styles.panelGrid}>
             <Card>
@@ -1482,6 +1491,11 @@ function OrderRow({
         <div className={styles.muted} style={{ fontSize: '0.75rem', marginTop: 4 }}>
           {order.items?.length ?? 0} item{(order.items?.length ?? 0) === 1 ? '' : 's'}
         </div>
+        {order.packages && order.packages.length > 0 && (
+          <div style={{ fontSize: '0.75rem', marginTop: 2, color: 'var(--primary)', fontWeight: 600 }}>
+            {order.packages.map(pkg => `${pkg.name}${pkg.quantity > 1 ? ` ×${pkg.quantity}` : ''}`).join(', ')}
+          </div>
+        )}
       </TD>
       <TD>
         <Select value={status} onChange={e => setStatus(e.target.value)}>

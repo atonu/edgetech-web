@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { CreditCard, Truck, MapPin, ChevronRight, ShieldCheck, Check, Zap } from 'lucide-react';
+import { CreditCard, Truck, MapPin, ChevronRight, ShieldCheck, Check, Zap, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -15,7 +15,7 @@ import styles from './checkout.module.css';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, total, count, clearCart } = useCartStore();
+  const { items, packages, total, count, clearCart } = useCartStore();
   const { user } = useAuthStore();
   const [step, setStep] = useState(1);
   const [isPlacing, setIsPlacing] = useState(false);
@@ -81,6 +81,10 @@ export default function CheckoutPage() {
           productId: item.productId,
           quantity: item.quantity,
         })),
+        packages: packages.map(pkg => ({
+          packageId: pkg.packageId,
+          quantity: pkg.quantity,
+        })),
       });
 
       clearCart();
@@ -94,7 +98,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (items.length === 0) {
+  if (items.length === 0 && packages.length === 0) {
     return (
       <div className={styles.checkoutPage}>
         <div className="container">
@@ -182,6 +186,19 @@ export default function CheckoutPage() {
                   <h4>Shipping To:</h4>
                   <p>{form.fullName}<br />{form.address}<br />{form.city}, {form.state} {form.postalCode}<br />{form.phone}</p>
                 </div>
+                {packages.length > 0 && (
+                  <div className={styles.reviewSection}>
+                    <h4>Packages ({packages.length}):</h4>
+                    {packages.map(pkg => (
+                      <div key={`review-pkg-${pkg.packageId}`} className={styles.reviewItem}>
+                        <div className={styles.reviewItemIcon}><Package size={16} /></div>
+                        <span className={styles.reviewItemName}>{pkg.name} <span className="text-muted" style={{ fontSize: '0.75rem' }}>({pkg.items.length} items)</span></span>
+                        <span className={styles.reviewItemQty}>x{pkg.quantity}</span>
+                        <span className={styles.reviewItemPrice}>৳{(pkg.packagePrice * pkg.quantity).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className={styles.reviewSection}>
                   <h4>Items ({count()}):</h4>
                   {items.map(item => (
