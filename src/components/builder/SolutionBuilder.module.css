@@ -1,0 +1,320 @@
+/* ===== SHARED SOLUTION BUILDER (device selection grid + modal) ===== */
+/* Extracted from the storefront package builder so the admin package editor can reuse the
+   exact same device-selection experience. */
+
+.sectionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionRow {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--color-glass-border);
+}
+
+.sectionHeaderCol {
+  display: flex;
+  align-items: center;
+  padding-top: 12px;
+}
+
+.sectionRowLabel {
+  font-family: var(--font-primary);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  position: relative;
+  padding-left: 14px;
+}
+
+.sectionRowLabel::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 3px;
+  background: var(--color-primary);
+  border-radius: 2px;
+}
+
+.sectionCardsCol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .sectionRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px 0;
+  }
+  .sectionHeaderCol {
+    padding-top: 0;
+  }
+}
+
+/* Slot Cards and Add Cards */
+.slotCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-glass-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: all var(--transition-base);
+  width: 260px;
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.slotCard:hover {
+  border-color: var(--color-glass-border);
+}
+
+.slotFilled {
+  border-color: rgba(0, 200, 224, 0.2);
+  background: linear-gradient(135deg, var(--color-surface), rgba(0, 200, 224, 0.03));
+}
+
+.addCard {
+  background: var(--color-surface-2);
+  border: 1.5px dashed var(--color-surface-3);
+  border-radius: var(--radius-lg);
+  width: 260px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-sizing: border-box;
+}
+
+.addCard:hover {
+  background: rgba(0, 200, 224, 0.05);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-glow-sm);
+}
+
+.slotHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0px;
+}
+
+.slotIcon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.slotLabel {
+  font-weight: 600;
+  font-size: 0.85rem;
+  flex: 1;
+}
+
+.clearSlotBtn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--color-text-subtle);
+  transition: all var(--transition-fast);
+}
+
+.clearSlotBtn:hover {
+  color: var(--color-error);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.selectedProduct {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.selectedName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.selectedPrice {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+}
+
+.selectedBrand {
+  font-size: 0.72rem;
+  color: var(--color-text-subtle);
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: var(--z-modal);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal {
+  width: 440px;
+  max-width: 100%;
+  height: 100%;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-glass-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-glass-border);
+}
+
+.modalHeader h3 { font-size: 1.1rem; color: var(--color-text); }
+
+.modalClose {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  transition: all var(--transition-fast);
+}
+
+.modalClose:hover { background: var(--color-surface-2); color: var(--color-text); }
+
+.modalSearch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 24px;
+  padding: 10px 14px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-surface-3);
+  border-radius: var(--radius-md);
+}
+
+.modalSearch input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.modalSearch svg { color: var(--color-text-subtle); }
+
+.modalProducts {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24px 24px;
+}
+
+.productOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  text-align: left;
+  border: 1px solid transparent;
+  margin-bottom: 6px;
+}
+
+.productOption:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-surface-3);
+}
+
+.productSelected {
+  background: rgba(0, 200, 224, 0.08);
+  border-color: rgba(0, 200, 224, 0.2);
+}
+
+.productOptionIcon {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  color: var(--color-text-subtle);
+  flex-shrink: 0;
+}
+
+.productOptionInfo { flex: 1; min-width: 0; }
+
+.productOptionName {
+  display: block;
+  font-weight: 600;
+  font-size: 0.88rem;
+  margin-bottom: 2px;
+  color: var(--color-text);
+}
+
+.productOptionBrand {
+  font-size: 0.75rem;
+  color: var(--color-text-subtle);
+}
+
+.productOptionPrice {
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.checkIcon { color: var(--color-success); }
+
+.noProducts {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-subtle);
+}
+
+@media (max-width: 600px) {
+  .modal { width: 100%; }
+}

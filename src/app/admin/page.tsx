@@ -6,6 +6,7 @@ import { Boxes, ChevronDown, ChevronRight, FolderTree, Package, PackageSearch, R
 import toast from 'react-hot-toast';
 import {
   adminApi,
+  adminPackagesApi,
   adminProductGroupsApi,
   adminServicesApi,
   brandsApi,
@@ -28,6 +29,7 @@ import ProductImageManager, { StagedImage } from '@/components/admin/ProductImag
 import ProductSpecificationManager, { SpecificationItem } from '@/components/admin/ProductSpecificationManager';
 import AdminPagination from '@/components/admin/AdminPagination';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
+import PackageManager from '@/components/admin/PackageManager';
 import {
   Badge,
   Button,
@@ -57,7 +59,7 @@ const ADMIN_PAGE_SIZE = 10;
 
 type DeleteTarget = { type: 'product' | 'category' | 'brand' | 'service' | 'group' | 'user' | 'feedback'; id: number | string; label: string };
 
-type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'users' | 'feedbacks';
+type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'packages' | 'users' | 'feedbacks';
 
 const ORDER_STATUSES = ['Placed', 'Verified', 'InProgress', 'Done', 'Cancelled'] as const;
 const FEEDBACK_STATUSES = ['New', 'InProgress', 'Resolved', 'Archived'] as const;
@@ -93,6 +95,7 @@ export default function AdminPage() {
   const [brands, setBrands] = useState<BrandDto[]>([]);
   const [services, setServices] = useState<ServiceItemDto[]>([]);
   const [groups, setGroups] = useState<ProductGroupDto[]>([]);
+  const [packagesCount, setPackagesCount] = useState(0);
   const [users, setUsers] = useState<UserDto[]>([]);
 
   const [productForm, setProductForm] = useState({
@@ -211,12 +214,13 @@ export default function AdminPage() {
   const loadCore = async () => {
     setLoading(true);
     try {
-      const [pRes, cRes, bRes, sRes, gRes] = await Promise.allSettled([
+      const [pRes, cRes, bRes, sRes, gRes, pkgRes] = await Promise.allSettled([
         productsApi.getAll({ page: 1, pageSize: 100 }),
         categoriesApi.getAllAdmin(),
         brandsApi.getAllAdmin(),
         adminServicesApi.getAll(),
         adminProductGroupsApi.getAll(),
+        adminPackagesApi.getAll(),
       ]);
 
       setProducts(pRes.status === 'fulfilled' ? (pRes.value.data.items ?? []) : []);
@@ -224,8 +228,9 @@ export default function AdminPage() {
       setBrands(bRes.status === 'fulfilled' ? (bRes.value.data ?? []) : []);
       setServices(sRes.status === 'fulfilled' ? (sRes.value.data ?? []) : []);
       setGroups(gRes.status === 'fulfilled' ? (gRes.value.data ?? []) : []);
+      setPackagesCount(pkgRes.status === 'fulfilled' ? (pkgRes.value.data?.length ?? 0) : 0);
 
-      const failed = [pRes, cRes, bRes, sRes, gRes].filter(r => r.status === 'rejected').length;
+      const failed = [pRes, cRes, bRes, sRes, gRes, pkgRes].filter(r => r.status === 'rejected').length;
       if (failed > 0) toast.error(`Some admin data failed to load (${failed}). Showing available data.`);
     } catch {
       toast.error('Failed to load admin data.');
@@ -915,6 +920,7 @@ export default function AdminPage() {
           <Metric icon={<Wrench size={16} />} label="Services" value={services.length} />
           <Metric icon={<ShoppingBag size={16} />} label="Orders" value={orderTable.totalCount} />
           <Metric icon={<PackageSearch size={16} />} label="Groups" value={groups.length} />
+          <Metric icon={<Package size={16} />} label="Packages" value={packagesCount} />
           <Metric icon={<Users size={16} />} label="Users" value={userTable.totalCount} />
           <Metric icon={<MessageSquare size={16} />} label="Feedbacks" value={feedbackTable.totalCount} />
         </div>
@@ -928,6 +934,7 @@ export default function AdminPage() {
               { key: 'brands', label: 'Brands' },
               { key: 'services', label: 'Services' },
               { key: 'groups', label: 'Groups' },
+              { key: 'packages', label: 'Packages' },
               { key: 'users', label: 'Users' },
               { key: 'feedbacks', label: 'Feedbacks' },
             ].map(t => (
@@ -1360,6 +1367,8 @@ export default function AdminPage() {
             </Card>
           </div>
         )}
+
+        {tab === 'packages' && <PackageManager />}
 
         {tab === 'users' && (
           <div className={styles.panelGrid}>
@@ -1811,6 +1820,8 @@ function OrderRow({
   const lineItems = order.items ?? [];
   const unitCount = lineItems.reduce((sum, i) => sum + i.quantity, 0);
   const itemsSubtotal = lineItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+  const orderPackages = order.packages ?? [];
+  const packagesSubtotal = orderPackages.reduce((sum, p) => sum + p.packagePrice * p.quantity, 0);
 
   return (
     <>
@@ -1878,6 +1889,11 @@ function OrderRow({
         <button type="button" className={styles.itemCountLink} onClick={() => setExpanded(v => !v)}>
           {lineItems.length} item{lineItems.length === 1 ? '' : 's'} · {expanded ? 'hide' : 'view'} details
         </button>
+        {order.packages && order.packages.length > 0 && (
+          <div style={{ fontSize: '0.75rem', marginTop: 2, color: 'var(--primary)', fontWeight: 600 }}>
+            {order.packages.map(pkg => `${pkg.name}${pkg.quantity > 1 ? ` ×${pkg.quantity}` : ''}`).join(', ')}
+          </div>
+        )}
       </TD>
       <TD>
         <Select value={status} onChange={e => setStatus(e.target.value)}>
@@ -1989,7 +2005,34 @@ function OrderRow({
                 </table>
               )}
 
-              {lineItems.length > 0 && Math.round(itemsSubtotal) !== Math.round(order.totalAmount) && (
+              {orderPackages.length > 0 && (
+                <div style={{ marginTop: lineItems.length > 0 ? 20 : 0 }}>
+                  <div className={styles.detailHeading}>
+                    Packages
+                    <span className={styles.detailCount}>{orderPackages.length} bundle{orderPackages.length === 1 ? '' : 's'}</span>
+                  </div>
+                  {orderPackages.map((pkg, pi) => (
+                    <div key={`op-${pi}`} style={{ padding: '10px 0', borderBottom: '1px solid var(--color-glass-border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+                        <strong>{pkg.name}{pkg.quantity > 1 ? ` ×${pkg.quantity}` : ''}</strong>
+                        <span className={styles.lineTotal}>
+                          ৳{(pkg.packagePrice * pkg.quantity).toLocaleString()}
+                          {pkg.regularPrice > pkg.packagePrice && (
+                            <span className={styles.muted} style={{ marginLeft: 6, textDecoration: 'line-through', fontWeight: 400 }}>
+                              ৳{(pkg.regularPrice * pkg.quantity).toLocaleString()}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <div className={styles.itemMeta}>
+                        {pkg.items.map(i => `${i.productName}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join(', ')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(lineItems.length > 0 || orderPackages.length > 0) && Math.round(itemsSubtotal + packagesSubtotal) !== Math.round(order.totalAmount) && (
                 <div className={styles.detailWarn}>
                   Items subtotal does not match the recorded order total. The product price may have
                   changed after this order was placed.

@@ -146,6 +146,47 @@
 .qtyBtn:disabled { opacity: 0.3; }
 .qty { font-size: 0.9rem; font-weight: 600; min-width: 20px; text-align: center; }
 
+.packageLine {
+  border: 1px solid rgba(0, 200, 224, 0.25);
+  background: linear-gradient(135deg, var(--color-surface-2), rgba(0, 200, 224, 0.05));
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+.packageTop { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.packageThumb {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+.packageTopInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.packageBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 200, 224, 0.14);
+  color: var(--color-primary);
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.packageLineName { font-size: 0.85rem; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.packageComponents { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.4; margin-bottom: 8px; }
+.packageBottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.packagePriceLine { display: flex; align-items: baseline; gap: 6px; }
+.packageRegularStrike { font-size: 0.72rem; color: var(--color-text-subtle); text-decoration: line-through; }
+
 .itemRight { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
 .subtotal { font-weight: 700; font-size: 0.92rem; }
 .removeBtn { color: var(--color-text-subtle); padding: 4px; border-radius: var(--radius-xs); transition: color var(--transition-fast); }

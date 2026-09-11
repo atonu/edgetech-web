@@ -127,7 +127,12 @@ export default function AccountOrdersPage() {
                           )}
                         </td>
                         <td><strong>৳{order.totalAmount.toLocaleString()}</strong></td>
-                        <td>{order.items.length} items</td>
+                        <td>
+                          {[
+                            order.items.length ? `${order.items.length} item${order.items.length === 1 ? '' : 's'}` : null,
+                            order.packages?.length ? `${order.packages.length} package${order.packages.length === 1 ? '' : 's'}` : null,
+                          ].filter(Boolean).join(', ') || '—'}
+                        </td>
                       </tr>
                     );
                   })}

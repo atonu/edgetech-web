@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Zap, ShieldCheck, Truck } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Zap, ShieldCheck, Truck, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { getImageUrl } from '@/lib/imageUrl';
@@ -10,7 +10,7 @@ import { itemFromCartItem, trackViewCart } from '@/lib/gtm';
 import styles from './cart.module.css';
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, clearCart, total, count } = useCartStore();
+  const { items, packages, updateQuantity, removeItem, removePackage, updatePackageQuantity, clearCart, total, count } = useCartStore();
 
   // Once per visit — not on every quantity tweak.
   const viewed = useRef(false);
@@ -20,7 +20,7 @@ export default function CartPage() {
     trackViewCart(items.map(i => itemFromCartItem(i)));
   }, [items]);
 
-  if (items.length === 0) {
+  if (items.length === 0 && packages.length === 0) {
     return (
       <div className={styles.cartPage}>
         <div className="container">
@@ -52,12 +52,69 @@ export default function CartPage() {
         <div className={styles.layout}>
           {/* Cart Items */}
           <div className={styles.itemsSection}>
+            {/* Package (bundle) lines */}
+            {packages.map((pkg, idx) => (
+              <motion.div key={`pkg-${pkg.packageId}`} className={styles.packageItem}
+                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}>
+                <div className={styles.packageHeader}>
+                  <div className={styles.packageThumb}>
+                    {pkg.imageUrl ? (
+                      <Image src={getImageUrl(pkg.imageUrl)!} alt={pkg.name} fill sizes="72px" style={{ objectFit: 'cover' }} />
+                    ) : (
+                      <Package size={24} />
+                    )}
+                  </div>
+                  <div className={styles.packageTitleBlock}>
+                    <span className={styles.packageBadge}><Package size={12} /> Package</span>
+                    <div className={styles.packageName}>{pkg.name}</div>
+                    <div className={styles.packagePricing}>
+                      <span className={styles.packagePrice}>৳{pkg.packagePrice.toLocaleString()}</span>
+                      {pkg.regularPrice > pkg.packagePrice && (
+                        <span className={styles.packageRegular}>৳{pkg.regularPrice.toLocaleString()}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={styles.quantityControl}>
+                    <button onClick={() => updatePackageQuantity(pkg.packageId, pkg.quantity - 1)}><Minus size={14} /></button>
+                    <span>{pkg.quantity}</span>
+                    <button onClick={() => updatePackageQuantity(pkg.packageId, pkg.quantity + 1)}><Plus size={14} /></button>
+                  </div>
+                  <button className={styles.removeBtn} onClick={() => removePackage(pkg.packageId)}>
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
+                <div className={styles.packageItemsList}>
+                  {pkg.items.map((item, i) => (
+                    <div key={`pkg-${pkg.packageId}-item-${i}`} className={styles.packageComponent}>
+                      <div className={styles.packageComponentImg}>
+                        {item.imageUrl ? (
+                          <Image src={getImageUrl(item.imageUrl)!} alt="" fill sizes="30px" style={{ objectFit: 'cover' }} />
+                        ) : (
+                          <Zap size={14} />
+                        )}
+                      </div>
+                      <span className={styles.packageComponentName}>{item.productName}</span>
+                      {item.quantity > 1 && <span className="text-muted">×{item.quantity}</span>}
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.packageFooter}>
+                  <span className="text-muted" style={{ fontSize: '0.8rem' }}>Bundle price applied at checkout</span>
+                  <span className={styles.packageLineTotal}>৳{(pkg.packagePrice * pkg.quantity).toLocaleString()}</span>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Standalone product lines */}
             {items.map((item, idx) => {
               const effectivePrice = item.discountPrice ?? item.price;
               return (
                 <motion.div key={item.productId} className={styles.cartItem}
                   initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}>
+                  transition={{ delay: (packages.length + idx) * 0.05 }}>
                   <div className={styles.itemImage}>
                     {item.imageUrl ? (
                       <Image src={getImageUrl(item.imageUrl)!} alt={item.productName} fill sizes="80px" style={{ objectFit: 'cover' }} />

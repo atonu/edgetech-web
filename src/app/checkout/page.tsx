@@ -3,7 +3,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { CreditCard, Truck, MapPin, ChevronRight, ShieldCheck, Check, Zap } from 'lucide-react';
+import { CreditCard, Truck, MapPin, ChevronRight, ShieldCheck, Check, Zap, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -29,7 +29,7 @@ const STEP_LABELS: Record<Step, string> = { shipping: 'Shipping', review: 'Revie
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { items, total, count, clearCart } = useCartStore();
+  const { items, packages, total, count, clearCart } = useCartStore();
   const { user } = useAuthStore();
 
   const stepParam = searchParams.get('step') as Step | null;
@@ -124,6 +124,10 @@ function CheckoutContent() {
           productId: item.productId,
           quantity: item.quantity,
         })),
+        packages: packages.map(pkg => ({
+          packageId: pkg.packageId,
+          quantity: pkg.quantity,
+        })),
       });
 
       const orderNumber = res.data?.orderNumber;
@@ -149,7 +153,7 @@ function CheckoutContent() {
     }
   };
 
-  if (items.length === 0) {
+  if (items.length === 0 && packages.length === 0) {
     return (
       <div className={styles.checkoutPage}>
         <div className="container">
@@ -237,6 +241,25 @@ function CheckoutContent() {
                   <h4>Shipping To:</h4>
                   <p>{form.fullName}<br />{form.address}<br />{form.city}, {form.state} {form.postalCode}<br />{form.phone}</p>
                 </div>
+                {packages.length > 0 && (
+                  <div className={styles.reviewSection}>
+                    <h4>Packages ({packages.length}):</h4>
+                    {packages.map(pkg => (
+                      <div key={`review-pkg-${pkg.packageId}`} className={styles.reviewItem}>
+                        <div className={styles.reviewItemIcon}>
+                          {pkg.imageUrl ? (
+                            <Image src={getImageUrl(pkg.imageUrl)!} alt={pkg.name} fill sizes="50px" style={{ objectFit: 'cover' }} />
+                          ) : (
+                            <Package size={16} />
+                          )}
+                        </div>
+                        <span className={styles.reviewItemName}>{pkg.name} <span className="text-muted" style={{ fontSize: '0.75rem' }}>({pkg.items.length} items)</span></span>
+                        <span className={styles.reviewItemQty}>x{pkg.quantity}</span>
+                        <span className={styles.reviewItemPrice}>৳{(pkg.packagePrice * pkg.quantity).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className={styles.reviewSection}>
                   <h4>Items ({count()}):</h4>
                   {items.map(item => (
