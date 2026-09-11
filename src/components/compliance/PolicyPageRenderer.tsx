@@ -136,13 +136,14 @@ export default function PolicyPageRenderer({ slug, defaultBadgeIcon }: PolicyPag
         <div className={styles.contentCard}>
           {page.sections && page.sections.length > 0 ? (
             page.sections.map((sec, idx) => {
+              const secId = sec.id || String(sec.order);
               const isManagementTeam =
                 sec.subItems &&
                 sec.subItems.length > 0 &&
                 sec.subItems.some((si) => si.subtitle || si.tag);
 
               return (
-                <section key={sec.id || idx} className={styles.section}>
+                <section key={secId} className={styles.section}>
                   {/* Section Title & Delete Button */}
                   <div className={styles.sectionHeaderRow}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -152,13 +153,13 @@ export default function PolicyPageRenderer({ slug, defaultBadgeIcon }: PolicyPag
                         className={styles.sectionTitle}
                         style={{ margin: 0 }}
                         value={sec.title}
-                        onSave={(val) => updateField(`sections/${sec.id}/title`, val)}
+                        onSave={(val) => updateField(`sections/${secId}/title`, val)}
                         label="Section Title"
                       />
                     </div>
                     <SectionDeleteButton
                       sectionTitle={sec.title}
-                      onDelete={() => deleteSection(sec.id)}
+                      onDelete={() => deleteSection(secId)}
                     />
                   </div>
 
@@ -171,7 +172,7 @@ export default function PolicyPageRenderer({ slug, defaultBadgeIcon }: PolicyPag
                           as="p"
                           className={styles.sectionText}
                           value={sec.body}
-                          onSave={(val) => updateField(`sections/${sec.id}/body`, val)}
+                          onSave={(val) => updateField(`sections/${secId}/body`, val)}
                           multiline
                           label="Section Body"
                         >
@@ -189,7 +190,7 @@ export default function PolicyPageRenderer({ slug, defaultBadgeIcon }: PolicyPag
                           as="div"
                           className={styles.highlightBoxTitle}
                           value={sec.highlightTitle}
-                          onSave={(val) => updateField(`sections/${sec.id}/highlightTitle`, val)}
+                          onSave={(val) => updateField(`sections/${secId}/highlightTitle`, val)}
                           label="Highlight Box Title"
                         />
                       )}
@@ -199,7 +200,7 @@ export default function PolicyPageRenderer({ slug, defaultBadgeIcon }: PolicyPag
                           className={styles.highlightBoxText}
                           style={{ whiteSpace: 'pre-line' }}
                           value={sec.highlightText}
-                          onSave={(val) => updateField(`sections/${sec.id}/highlightText`, val)}
+                          onSave={(val) => updateField(`sections/${secId}/highlightText`, val)}
                           multiline
                           label="Highlight Box Content"
                         />
@@ -216,7 +217,7 @@ export default function PolicyPageRenderer({ slug, defaultBadgeIcon }: PolicyPag
                           <AdminEditableText
                             as="span"
                             value={item}
-                            onSave={(val) => updateField(`sections/${sec.id}/listItems/${itemIdx}`, val)}
+                            onSave={(val) => updateField(`sections/${secId}/listItems/${itemIdx}`, val)}
                             label={`List Item ${itemIdx + 1}`}
                           />
                         </li>
@@ -230,64 +231,70 @@ export default function PolicyPageRenderer({ slug, defaultBadgeIcon }: PolicyPag
                       {isManagementTeam ? (
                         /* Team Management Grid (About page) */
                         <div className={styles.managementGrid}>
-                          {sec.subItems.map((member) => (
-                            <div key={member.id} className={styles.managementCard}>
-                              <div className={styles.avatar}>
+                          {sec.subItems.map((member, mIdx) => {
+                            const memberId = member.id || String(mIdx);
+                            return (
+                              <div key={memberId} className={styles.managementCard}>
+                                <div className={styles.avatar}>
+                                  <AdminEditableText
+                                    value={member.tag || 'ET'}
+                                    onSave={(val) => updateField(`sections/${secId}/subItems/${memberId}/tag`, val)}
+                                    label="Avatar Initials"
+                                  />
+                                </div>
                                 <AdminEditableText
-                                  value={member.tag || 'ET'}
-                                  onSave={(val) => updateField(`sections/${sec.id}/subItems/${member.id}/tag`, val)}
-                                  label="Avatar Initials"
+                                  as="div"
+                                  className={styles.personName}
+                                  value={member.title}
+                                  onSave={(val) => updateField(`sections/${secId}/subItems/${memberId}/title`, val)}
+                                  label="Person Name"
+                                />
+                                <AdminEditableText
+                                  as="div"
+                                  className={styles.personRole}
+                                  value={member.subtitle || ''}
+                                  onSave={(val) => updateField(`sections/${secId}/subItems/${memberId}/subtitle`, val)}
+                                  label="Job Title / Role"
+                                />
+                                <AdminEditableText
+                                  as="p"
+                                  className={styles.personBio}
+                                  value={member.text}
+                                  onSave={(val) => updateField(`sections/${secId}/subItems/${memberId}/text`, val)}
+                                  multiline
+                                  label="Biography"
                                 />
                               </div>
-                              <AdminEditableText
-                                as="div"
-                                className={styles.personName}
-                                value={member.title}
-                                onSave={(val) => updateField(`sections/${sec.id}/subItems/${member.id}/title`, val)}
-                                label="Person Name"
-                              />
-                              <AdminEditableText
-                                as="div"
-                                className={styles.personRole}
-                                value={member.subtitle || ''}
-                                onSave={(val) => updateField(`sections/${sec.id}/subItems/${member.id}/subtitle`, val)}
-                                label="Job Title / Role"
-                              />
-                              <AdminEditableText
-                                as="p"
-                                className={styles.personBio}
-                                value={member.text}
-                                onSave={(val) => updateField(`sections/${sec.id}/subItems/${member.id}/text`, val)}
-                                multiline
-                                label="Biography"
-                              />
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         /* Standard Two-Column Info Boxes */
                         <div className={styles.gridTwo}>
-                          {sec.subItems.map((box) => (
-                            <div key={box.id} className={styles.infoBox}>
-                              <div className={styles.infoBoxTitle}>
-                                <Clock size={16} />
+                          {sec.subItems.map((box, bIdx) => {
+                            const boxId = box.id || String(bIdx);
+                            return (
+                              <div key={boxId} className={styles.infoBox}>
+                                <div className={styles.infoBoxTitle}>
+                                  <Clock size={16} />
+                                  <AdminEditableText
+                                    value={box.title}
+                                    onSave={(val) => updateField(`sections/${secId}/subItems/${boxId}/title`, val)}
+                                    label="Box Title"
+                                  />
+                                </div>
                                 <AdminEditableText
-                                  value={box.title}
-                                  onSave={(val) => updateField(`sections/${sec.id}/subItems/${box.id}/title`, val)}
-                                  label="Box Title"
+                                  as="p"
+                                  className={styles.infoBoxText}
+                                  style={{ whiteSpace: 'pre-line' }}
+                                  value={box.text}
+                                  onSave={(val) => updateField(`sections/${secId}/subItems/${boxId}/text`, val)}
+                                  multiline
+                                  label="Box Content"
                                 />
                               </div>
-                              <AdminEditableText
-                                as="p"
-                                className={styles.infoBoxText}
-                                style={{ whiteSpace: 'pre-line' }}
-                                value={box.text}
-                                onSave={(val) => updateField(`sections/${sec.id}/subItems/${box.id}/text`, val)}
-                                multiline
-                                label="Box Content"
-                              />
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </>

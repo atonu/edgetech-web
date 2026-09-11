@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Boxes, ChevronDown, ChevronRight, FolderTree, Package, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench, MessageSquare, Star, Eye, X } from 'lucide-react';
+import { Boxes, ChevronDown, ChevronRight, FolderTree, Package, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench, MessageSquare, Star, Eye, X, Megaphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   adminApi,
@@ -30,6 +30,7 @@ import ProductSpecificationManager, { SpecificationItem } from '@/components/adm
 import AdminPagination from '@/components/admin/AdminPagination';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import PackageManager from '@/components/admin/PackageManager';
+import BannersAdminManager from '@/components/admin/BannersAdminManager';
 import {
   Badge,
   Button,
@@ -59,7 +60,7 @@ const ADMIN_PAGE_SIZE = 10;
 
 type DeleteTarget = { type: 'product' | 'category' | 'brand' | 'service' | 'group' | 'user' | 'feedback'; id: number | string; label: string };
 
-type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'packages' | 'users' | 'feedbacks';
+type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'packages' | 'users' | 'feedbacks' | 'banners';
 
 const ORDER_STATUSES = ['Placed', 'Verified', 'InProgress', 'Done', 'Cancelled'] as const;
 const FEEDBACK_STATUSES = ['New', 'InProgress', 'Resolved', 'Archived'] as const;
@@ -111,6 +112,7 @@ export default function AdminPage() {
     brandId: 0,
     isFeatured: false,
     isActive: true,
+    notes: '',
   });
 
   const [productSpecifications, setProductSpecifications] = useState<SpecificationItem[]>([]);
@@ -428,6 +430,7 @@ export default function AdminPage() {
       brandId: brands[0]?.id ?? 0,
       isFeatured: false,
       isActive: true,
+      notes: '',
     });
     setProductSpecifications([]);
   };
@@ -525,6 +528,7 @@ export default function AdminPage() {
         brandId: p.brandId,
         isFeatured: p.isFeatured,
         isActive: p.isActive,
+        notes: p.notes ?? '',
       });
       setProductSpecifications(
         (p.specifications || []).map(s => ({
@@ -565,6 +569,7 @@ export default function AdminPage() {
           brandId: Number(productForm.brandId),
           isFeatured: productForm.isFeatured,
           isActive: productForm.isActive,
+          notes: productForm.notes || undefined,
           specifications: validSpecs,
         };
 
@@ -923,6 +928,7 @@ export default function AdminPage() {
           <Metric icon={<Package size={16} />} label="Packages" value={packagesCount} />
           <Metric icon={<Users size={16} />} label="Users" value={userTable.totalCount} />
           <Metric icon={<MessageSquare size={16} />} label="Feedbacks" value={feedbackTable.totalCount} />
+          <Metric icon={<Megaphone size={16} />} label="Banners" value={2} />
         </div>
 
         <Tabs>
@@ -937,6 +943,7 @@ export default function AdminPage() {
               { key: 'packages', label: 'Packages' },
               { key: 'users', label: 'Users' },
               { key: 'feedbacks', label: 'Feedbacks' },
+              { key: 'banners', label: 'Banners' },
             ].map(t => (
               <TabsTrigger key={t.key} active={tab === t.key} onClick={() => setTab(t.key as TabKey)}>
                 {t.label}
@@ -976,6 +983,15 @@ export default function AdminPage() {
                   <div className={styles.fullWidth}>
                     <Label>Description</Label>
                     <Textarea rows={3} value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} />
+                  </div>
+                  <div className={styles.fullWidth}>
+                    <Label>Product Notes & Dynamic Notice</Label>
+                    <Textarea
+                      rows={2}
+                      placeholder="Special notice, terms, or dynamic instructions shown in the product banner section…"
+                      value={productForm.notes}
+                      onChange={e => setProductForm(p => ({ ...p, notes: e.target.value }))}
+                    />
                   </div>
                   <div className={styles.fullWidth}>
                     <ProductSpecificationManager
@@ -1608,6 +1624,10 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {tab === 'banners' && (
+          <BannersAdminManager />
         )}
       </div>
 

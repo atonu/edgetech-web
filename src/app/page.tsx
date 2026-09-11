@@ -10,6 +10,7 @@ import PackageProductCard from '@/components/products/PackageProductCard';
 import PackageShowcaseCard from '@/components/products/PackageShowcaseCard';
 import { HeroCarouselDto, HomeGroupsResponse, PackageDto, ProductListDto, heroCarouselApi, packagesApi, productGroupsApi, productsApi } from '@/lib/api';
 import HeroCarouselSettings from '@/components/home/HeroCarouselSettings';
+import HomeInfiniteBanner from '@/components/home/HomeInfiniteBanner';
 import styles from './page.module.css';
 
 // Shown until the carousel settings load (and if the API is unreachable), so the
@@ -297,6 +298,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Infinite Continuous Scrolling Announcement Banner */}
+      <HomeInfiniteBanner />
 
       {/* ===== CATEGORIES GRID ===== */}
       <section className={styles.section}>

@@ -10,6 +10,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ProductDto, ProductListDto, ReviewDto, productsApi, reviewsApi } from '@/lib/api';
 import ProductCard from '@/components/products/ProductCard';
+import ProductBannerSection from '@/components/products/ProductBannerSection';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getImageUrl } from '@/lib/imageUrl';
 import { trackViewItem } from '@/lib/gtm';
@@ -287,6 +288,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <div className={styles.trustBadge}><Shield size={16} /> Official Warranty</div>
               <div className={styles.trustBadge}><RefreshCw size={16} /> 7-10 Days Return</div>
             </div>
+
+            {/* Product Banner Section (Editable via Admin > Banners) */}
+            <ProductBannerSection productNotes={product.notes} />
           </motion.div>
         </div>
 

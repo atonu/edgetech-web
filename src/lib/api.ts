@@ -52,6 +52,7 @@ export interface ProductListDto {
 export interface ProductDto extends ProductListDto {
   description?: string;
   shortDescription?: string;
+  notes?: string;
   sku?: string;
   isActive: boolean;
   categoryId: number;
@@ -538,7 +539,7 @@ export const adminPackagesApi = {
 };
 
 export interface PolicySubItemDto {
-  id: string;
+  id?: string;
   title: string;
   text: string;
   subtitle?: string;
@@ -546,7 +547,7 @@ export interface PolicySubItemDto {
 }
 
 export interface PolicySectionDto {
-  id: string;
+  id?: string;
   title: string;
   body: string;
   highlightTitle?: string;
