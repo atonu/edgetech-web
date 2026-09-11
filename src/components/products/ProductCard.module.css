@@ -238,9 +238,10 @@
   min-height: 2.1em;
 }
 
-.stars { display: flex; gap: 2px; margin-bottom: 6px; }
+.stars { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
 .starFilled { color: var(--color-gold); }
 .starEmpty { color: var(--color-text-subtle); }
+.ratingCount { font-size: 0.7rem; color: var(--color-text-muted); margin-left: 4px; font-weight: 500; }
 
 .pricing {
   display: flex;

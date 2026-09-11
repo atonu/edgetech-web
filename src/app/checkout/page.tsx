@@ -142,6 +142,19 @@ function CheckoutContent() {
         city: form.city,
       });
 
+      if (typeof window !== 'undefined') {
+        const orderReviewItems = items.map(i => ({
+          productId: i.productId,
+          name: i.productName,
+          image: i.imageUrl || '',
+        }));
+        if (orderReviewItems.length > 0) {
+          try {
+            sessionStorage.setItem('et_last_order_items', JSON.stringify(orderReviewItems));
+          } catch {}
+        }
+      }
+
       clearCart();
       toast.success('Order placed successfully!');
       router.push(orderNumber ? `/checkout/success?orderNumber=${encodeURIComponent(orderNumber)}` : '/checkout/success');

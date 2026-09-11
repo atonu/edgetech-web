@@ -45,6 +45,8 @@ export interface ProductListDto {
   isFeatured: boolean;
   categoryName: string;
   brandName: string;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 export interface ProductDto extends ProductListDto {
@@ -81,6 +83,20 @@ export interface CreateSpecRequest {
   key: string;
   value: string;
   displayOrder: number;
+}
+
+export interface ReviewDto {
+  id: number;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
+
+export interface CreateReviewRequest {
+  rating: number;
+  comment?: string;
 }
 
 export interface CategoryDto {
@@ -321,6 +337,12 @@ export const productsApi = {
   addImage: (id: number, imageUrl: string) => api.post<ProductImageDto>(`/products/${id}/images`, { imageUrl }),
   setPrimaryImage: (id: number, imageId: number) => api.patch(`/products/${id}/images/${imageId}/primary`),
   deleteImage: (id: number, imageId: number) => api.delete(`/products/${id}/images/${imageId}`),
+};
+
+export const reviewsApi = {
+  getByProduct: (productId: number) => api.get<ReviewDto[]>(`/products/${productId}/reviews`),
+  add: (productId: number, data: CreateReviewRequest) =>
+    api.post<{ review: ReviewDto; averageRating: number; reviewCount: number }>(`/products/${productId}/reviews`, data),
 };
 
 export async function convertFileToWebp(file: File, quality = 0.85): Promise<File> {

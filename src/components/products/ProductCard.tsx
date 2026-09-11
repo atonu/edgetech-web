@@ -136,9 +136,22 @@ export default function ProductCard({ product, index = 0 }: Props) {
             <h3 className={styles.name}>{product.name}</h3>
 
             <div className={styles.stars}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} size={12} className={i < 4 ? styles.starFilled : styles.starEmpty} fill={i < 4 ? 'currentColor' : 'none'} />
-              ))}
+              {Array.from({ length: 5 }).map((_, i) => {
+                const filled = i < Math.round(product.averageRating ?? 0);
+                return (
+                  <Star
+                    key={i}
+                    size={12}
+                    className={filled ? styles.starFilled : styles.starEmpty}
+                    fill={filled ? 'currentColor' : 'none'}
+                  />
+                );
+              })}
+              {(product.reviewCount ?? 0) > 0 && (
+                <span className={styles.ratingCount}>
+                  {(product.averageRating ?? 0).toFixed(1)} ({product.reviewCount})
+                </span>
+              )}
             </div>
 
             <div className={styles.pricing}>

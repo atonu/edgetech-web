@@ -1,9 +1,10 @@
 'use client';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, ArrowRight, Package } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Package, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
+import PostOrderReviewModal, { PurchasedProductItem } from '@/components/reviews/PostOrderReviewModal';
 import styles from './success.module.css';
 
 function SuccessContent() {
@@ -13,32 +14,81 @@ function SuccessContent() {
     ? (orderNumberParam.startsWith('#') ? orderNumberParam : `#${orderNumberParam}`)
     : `#ET-${Date.now().toString().slice(-6)}`;
 
+  const [reviewItems, setReviewItems] = useState<PurchasedProductItem[]>([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('et_last_order_items');
+      if (stored) {
+        const parsed = JSON.parse(stored) as PurchasedProductItem[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setReviewItems(parsed);
+          // Show review modal smoothly after page intro
+          const timer = setTimeout(() => {
+            setShowReviewModal(true);
+          }, 800);
+          return () => clearTimeout(timer);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const handleCloseModal = () => {
+    setShowReviewModal(false);
+    try {
+      sessionStorage.removeItem('et_last_order_items');
+    } catch {}
+  };
+
   return (
-    <div className={styles.card}>
-      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}>
-        <CheckCircle2 size={72} className={styles.icon} />
-      </motion.div>
-      <h1>Order Placed Successfully!</h1>
-      <p className="text-muted">Thank you for your purchase. Your order has been received and is being processed.</p>
-      <div className={styles.orderInfo}>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Order Number</span>
-          <span className={styles.infoValue}>{displayOrderNumber}</span>
+    <>
+      <div className={styles.card}>
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}>
+          <CheckCircle2 size={72} className={styles.icon} />
+        </motion.div>
+        <h1>Order Placed Successfully!</h1>
+        <p className="text-muted">Thank you for your purchase. Your order has been received and is being processed.</p>
+        <div className={styles.orderInfo}>
+          <div className={styles.infoItem}>
+            <span className={styles.infoLabel}>Order Number</span>
+            <span className={styles.infoValue}>{displayOrderNumber}</span>
+          </div>
+          <div className={styles.infoItem}>
+            <span className={styles.infoLabel}>Status</span>
+            <span className="badge badge-warning">Placed</span>
+          </div>
         </div>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Status</span>
-          <span className="badge badge-warning">Placed</span>
+
+        {reviewItems.length > 0 && !showReviewModal && (
+          <div style={{ margin: '8px 0 16px' }}>
+            <button
+              type="button"
+              className="btn btn-outline"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              onClick={() => setShowReviewModal(true)}
+            >
+              <Star size={16} color="var(--color-gold)" /> Rate & Review Ordered Items
+            </button>
+          </div>
+        )}
+
+        <div className={styles.actions}>
+          <Link href="/products" className="btn btn-primary btn-lg">
+            Continue Shopping <ArrowRight size={18} />
+          </Link>
+          <Link href="/" className="btn btn-outline">
+            <Package size={18} /> Go to Homepage
+          </Link>
         </div>
       </div>
-      <div className={styles.actions}>
-        <Link href="/products" className="btn btn-primary btn-lg">
-          Continue Shopping <ArrowRight size={18} />
-        </Link>
-        <Link href="/" className="btn btn-outline">
-          <Package size={18} /> Go to Homepage
-        </Link>
-      </div>
-    </div>
+
+      <PostOrderReviewModal
+        isOpen={showReviewModal}
+        items={reviewItems}
+        onClose={handleCloseModal}
+      />
+    </>
   );
 }
 
