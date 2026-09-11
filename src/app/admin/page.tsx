@@ -25,6 +25,7 @@ import {
   FeedbackDto,
 } from '@/lib/api';
 import ProductImageManager, { StagedImage } from '@/components/admin/ProductImageManager';
+import ProductSpecificationManager, { SpecificationItem } from '@/components/admin/ProductSpecificationManager';
 import AdminPagination from '@/components/admin/AdminPagination';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import {
@@ -109,6 +110,7 @@ export default function AdminPage() {
     isActive: true,
   });
 
+  const [productSpecifications, setProductSpecifications] = useState<SpecificationItem[]>([]);
   const [stagedImages, setStagedImages] = useState<StagedImage[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [busyImageId, setBusyImageId] = useState<number | null>(null);
@@ -422,6 +424,7 @@ export default function AdminPage() {
       isFeatured: false,
       isActive: true,
     });
+    setProductSpecifications([]);
   };
 
   const refreshProductDetails = async (slug: string) => {
@@ -518,6 +521,14 @@ export default function AdminPage() {
         isFeatured: p.isFeatured,
         isActive: p.isActive,
       });
+      setProductSpecifications(
+        (p.specifications || []).map(s => ({
+          id: s.id,
+          key: s.key,
+          value: s.value,
+          displayOrder: s.displayOrder,
+        }))
+      );
       setTab('products');
       scrollToForm();
     } catch {
@@ -529,6 +540,14 @@ export default function AdminPage() {
     e.preventDefault();
     await withBusy('save-product', async () => {
       try {
+        const validSpecs = productSpecifications
+          .filter(s => s.key.trim() !== '' || s.value.trim() !== '')
+          .map((s, index) => ({
+            key: s.key.trim(),
+            value: s.value.trim(),
+            displayOrder: index,
+          }));
+
         const payload = {
           name: productForm.name,
           description: productForm.description,
@@ -541,6 +560,7 @@ export default function AdminPage() {
           brandId: Number(productForm.brandId),
           isFeatured: productForm.isFeatured,
           isActive: productForm.isActive,
+          specifications: validSpecs,
         };
 
         if (productForm.id) {
@@ -949,6 +969,12 @@ export default function AdminPage() {
                   <div className={styles.fullWidth}>
                     <Label>Description</Label>
                     <Textarea rows={3} value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} />
+                  </div>
+                  <div className={styles.fullWidth}>
+                    <ProductSpecificationManager
+                      specifications={productSpecifications}
+                      onChange={setProductSpecifications}
+                    />
                   </div>
                   <div className={styles.fullWidth}>
                     <Label>Images</Label>

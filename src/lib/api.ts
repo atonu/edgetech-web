@@ -77,6 +77,12 @@ export interface ProductSpecDto {
   displayOrder: number;
 }
 
+export interface CreateSpecRequest {
+  key: string;
+  value: string;
+  displayOrder: number;
+}
+
 export interface CategoryDto {
   id: number;
   name: string;

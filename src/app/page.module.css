@@ -697,11 +697,13 @@
   .heroText {
     position: absolute !important;
     top: auto !important;
-    left: auto !important;
-    right: 14px !important;
+    /* Centred horizontally on the banner rather than pinned to the right corner. */
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
     bottom: 14px !important;
     width: auto !important;
-    max-width: 55% !important;
+    max-width: 70% !important;
     padding: 0 !important;
     background: transparent !important;
     border: none !important;
@@ -711,7 +713,7 @@
     -webkit-backdrop-filter: none !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: flex-end !important;
+    align-items: center !important;
     justify-content: flex-end !important;
     pointer-events: auto;
     z-index: 3;
@@ -726,7 +728,7 @@
   .heroCtas {
     display: flex !important;
     flex-direction: column !important;
-    align-items: flex-end !important;
+    align-items: center !important;
     gap: 6px !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -786,11 +788,13 @@
   .heroText {
     position: absolute !important;
     top: auto !important;
-    left: auto !important;
-    right: 10px !important;
+    /* Centred horizontally on the banner rather than pinned to the right corner. */
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
     bottom: 10px !important;
     width: auto !important;
-    max-width: 55% !important;
+    max-width: 70% !important;
     padding: 0 !important;
     background: transparent !important;
     border: none !important;
@@ -800,7 +804,7 @@
     -webkit-backdrop-filter: none !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: flex-end !important;
+    align-items: center !important;
     justify-content: flex-end !important;
     pointer-events: auto;
     z-index: 3;
@@ -815,7 +819,7 @@
   .heroCtas {
     display: flex !important;
     flex-direction: column !important;
-    align-items: flex-end !important;
+    align-items: center !important;
     gap: 5px !important;
     margin: 0 !important;
     padding: 0 !important;

@@ -256,12 +256,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             )}
             {activeTab === 'specs' && (
               <div className={styles.specsTable}>
-                {product.specifications.map(spec => (
-                  <div key={spec.id} className={styles.specRow}>
-                    <span className={styles.specKey}>{spec.key}</span>
-                    <span className={styles.specVal}>{spec.value}</span>
-                  </div>
-                ))}
+                {product.specifications && product.specifications.length > 0 ? (
+                  product.specifications.map(spec => (
+                    <div key={spec.id || `${spec.key}-${spec.value}`} className={styles.specRow}>
+                      <span className={styles.specKey}>{spec.key}</span>
+                      <span className={styles.specVal}>{spec.value}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted" style={{ padding: '20px 0', textAlign: 'center' }}>
+                    No technical specifications provided for this product.
+                  </p>
+                )}
               </div>
             )}
             {activeTab === 'reviews' && (

@@ -1,0 +1,208 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.countBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-surface-3);
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  margin-left: 0.5rem;
+}
+
+.suggestedSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-surface-3);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+}
+
+.suggestedLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.suggestedPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pillBtn {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-3);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.pillBtn:hover {
+  background: rgba(0, 200, 224, 0.12);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.specList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.specRow {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-surface-3);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.65rem;
+  transition: border-color var(--transition-fast);
+}
+
+.specRow:focus-within {
+  border-color: var(--color-primary);
+}
+
+.specIndex {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-subtle);
+  min-width: 18px;
+  text-align: center;
+}
+
+.rowInputs {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.reorderButtons {
+  display: flex;
+  gap: 2px;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.iconBtn:hover:not(:disabled) {
+  background: var(--color-surface-3);
+  color: var(--color-text);
+}
+
+.iconBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.deleteBtn {
+  color: var(--color-text-muted);
+}
+
+.deleteBtn:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.emptyState {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: var(--color-surface-2);
+  border: 1px dashed var(--color-surface-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.emptySubtext {
+  font-size: 0.78rem;
+  color: var(--color-text-subtle);
+  max-width: 360px;
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  border: 1px dashed var(--color-primary);
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: fit-content;
+}
+
+.addBtn:hover {
+  background: rgba(0, 200, 224, 0.12);
+}
+
+@media (max-width: 640px) {
+  .specRow {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+  .rowInputs {
+    grid-template-columns: 1fr;
+  }
+}
