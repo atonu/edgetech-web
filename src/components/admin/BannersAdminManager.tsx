@@ -262,7 +262,7 @@ export default function BannersAdminManager() {
             <CardDescription>
               {activeBannerType === 'home'
                 ? 'These items scroll continuously in an infinite loop directly beneath the Hero section on the homepage.'
-                : 'These guarantee options display directly beneath the "Add to Cart" button and three chips on all product detail pages.'}
+                : 'These guarantee items scroll continuously in an infinite loop directly beneath the delivery time and return policy box on all product detail pages.'}
             </CardDescription>
           </div>
           <Button onClick={handleOpenAdd} className="btn-sm">

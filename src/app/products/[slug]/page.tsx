@@ -258,6 +258,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <div><RefreshCw size={14} style={{ display: 'inline', marginRight: 4 }} /> <strong>Return Policy:</strong> 7 to 10 working days return guarantee</div>
             </div>
 
+            {/* Product Infinite Banner (Editable via Admin > Banners) */}
+            <ProductBannerSection productNotes={product.notes} />
+
             <div className="divider" />
 
             {/* Quantity + Add to Cart + Order Now */}
@@ -288,9 +291,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <div className={styles.trustBadge}><Shield size={16} /> Official Warranty</div>
               <div className={styles.trustBadge}><RefreshCw size={16} /> 7-10 Days Return</div>
             </div>
-
-            {/* Product Banner Section (Editable via Admin > Banners) */}
-            <ProductBannerSection productNotes={product.notes} />
           </motion.div>
         </div>
 

@@ -22,13 +22,19 @@
 /* Product Section */
 .productSection {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 35fr) minmax(0, 65fr);
   gap: 48px;
+  align-items: start;
   margin-bottom: 64px;
+  width: 100%;
 }
 
 /* Gallery */
-.gallery { position: relative; }
+.gallery {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
 
 .mainImage {
   position: relative;
@@ -94,7 +100,12 @@
 }
 
 /* Info */
-.info { display: flex; flex-direction: column; }
+.info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
 
 .metaRow {
   display: flex;
@@ -697,19 +708,217 @@
 
 /* Responsive */
 @media (max-width: 900px) {
-  .productSection { grid-template-columns: 1fr; gap: 32px; }
+  .productSection {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
 }
 
 @media (max-width: 600px) {
   .detailPage {
-    padding: 1.25rem 0 3rem;
+    padding: 1rem 0 2.5rem;
   }
+
   .breadcrumb {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    font-size: 0.75rem;
+    gap: 4px;
   }
-  .actions { flex-wrap: wrap; }
-  .actions .btn { order: -1; }
-  .specRow { grid-template-columns: 1fr; gap: 4px; }
-  .tabHeaders { overflow-x: auto; }
-  .tab { white-space: nowrap; font-size: 0.82rem; padding: 14px 16px; }
+
+  .productSection {
+    gap: 18px;
+    margin-bottom: 36px;
+  }
+
+  /* Compact Product Image for Mobile */
+  .gallery {
+    max-width: 250px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .mainImage {
+    border-radius: var(--radius-lg);
+    aspect-ratio: 1;
+    max-width: 250px;
+    margin: 0 auto;
+  }
+
+  .discountBadge {
+    top: 8px;
+    left: 8px;
+    font-size: 0.72rem !important;
+    padding: 3px 8px !important;
+  }
+
+  .thumbnails {
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .thumbnail {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Compact Details / Typography */
+  .metaRow {
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .metaRow :global(.badge) {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+  }
+
+  .categoryLink {
+    font-size: 0.72rem;
+  }
+
+  .productName {
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+
+  .ratingRow {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .ratingText {
+    font-size: 0.75rem;
+  }
+
+  .shortDesc {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+    line-height: 1.45;
+  }
+
+  /* Pricing */
+  .priceSection {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .currentPrice {
+    font-size: 1.4rem;
+  }
+
+  .originalPrice {
+    font-size: 0.88rem;
+  }
+
+  .saveBadge {
+    font-size: 0.7rem;
+    padding: 2px 7px;
+  }
+
+  /* Stock */
+  .stockRow {
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .inStock,
+  .outOfStock {
+    font-size: 0.75rem;
+  }
+
+  .sku {
+    font-size: 0.7rem;
+  }
+
+  /* Delivery Notice */
+  .deliveryNotice {
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    font-size: 0.72rem;
+    gap: 3px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Actions */
+  .actions {
+    gap: 8px;
+    margin: 4px 0 12px;
+  }
+
+  .quantityControl {
+    height: 38px;
+    border-radius: var(--radius-sm);
+  }
+
+  .quantityControl button {
+    width: 32px;
+    height: 38px;
+  }
+
+  .quantityControl span {
+    width: 30px;
+    font-size: 0.85rem;
+  }
+
+  .btnGroup {
+    min-width: unset;
+    gap: 6px;
+  }
+
+  .addToCartBtn,
+  .orderNowBtn {
+    height: 38px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    gap: 5px;
+    border-radius: var(--radius-sm);
+  }
+
+  .wishBtn {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Trust Badges */
+  .trustBadges {
+    gap: 6px;
+  }
+
+  .trustBadge {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    gap: 5px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Tabs */
+  .tabs {
+    border-radius: var(--radius-md);
+  }
+
+  .tabHeaders {
+    overflow-x: auto;
+  }
+
+  .tab {
+    white-space: nowrap;
+    font-size: 0.78rem;
+    padding: 10px 12px;
+  }
+
+  .description {
+    padding: 14px;
+    font-size: 0.82rem;
+  }
+
+  .specRow {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
 }

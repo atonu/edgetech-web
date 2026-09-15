@@ -8,9 +8,9 @@ interface ProductBannerSectionProps {
 }
 
 const DEFAULT_PRODUCT_BANNER_ITEMS = [
-  { order: 1, title: 'Fast Delivery', body: 'Inside Dhaka 5 Days • Outside Dhaka 10 Days nationwide express shipping.', highlightTitle: 'DELIVERY', highlightText: '🚚' },
-  { order: 2, title: 'Official Warranty', body: '100% Genuine product with authorized brand warranty support.', highlightTitle: 'WARRANTY', highlightText: '🛡️' },
-  { order: 3, title: 'Easy Exchange', body: '7 to 10 working days hassle-free return and exchange guarantee.', highlightTitle: 'EXCHANGE', highlightText: '🔄' },
+  { order: 1, title: 'Express Fast Delivery', body: 'Inside Dhaka 5 Days • Nationwide 10 Days', highlightTitle: 'DELIVERY', highlightText: '🚚' },
+  { order: 2, title: 'Official Brand Warranty', body: '100% Genuine with manufacturer warranty support', highlightTitle: 'WARRANTY', highlightText: '🛡️' },
+  { order: 3, title: '7-10 Days Return & Exchange', body: 'Hassle-free replacement guarantee', highlightTitle: 'EXCHANGE', highlightText: '🔄' },
 ];
 
 export default function ProductBannerSection({ productNotes }: ProductBannerSectionProps) {
@@ -19,22 +19,52 @@ export default function ProductBannerSection({ productNotes }: ProductBannerSect
   const rawSections = page?.sections && page.sections.length > 0 ? page.sections : DEFAULT_PRODUCT_BANNER_ITEMS;
   const items = [...rawSections].sort((a, b) => a.order - b.order);
 
+  // Duplicate items to ensure smooth continuous marquee loop across all widths
+  const renderItems = [...items, ...items, ...items];
+
   return (
-    <div className={styles.bannerContainer}>
-      {/* Product Banner Items (Editable via Admin > Banners > Product Banners) */}
-      <div className={styles.bannerList}>
-        {items.map(item => (
-          <div key={item.order} className={styles.bannerItem}>
-            {item.highlightText && <span className={styles.itemIcon}>{item.highlightText}</span>}
-            <div className={styles.itemContent}>
-              <div className={styles.itemHeader}>
-                <span className={styles.itemTitle}>{item.title}</span>
-                {item.highlightTitle && <span className={styles.itemTag}>{item.highlightTitle}</span>}
+    <div className={styles.sectionContainer}>
+      {/* Infinite Marquee Loop Banner */}
+      <div className={styles.marqueeWrapper} aria-label="Product Guarantees and Services">
+        <div className={styles.marqueeContainer}>
+          {/* Track 1 */}
+          <div className={styles.marqueeTrack}>
+            {renderItems.map((item, idx) => (
+              <div key={`p-track1-${item.order}-${idx}`} className={styles.bannerItem}>
+                {item.highlightText && <span className={styles.itemIcon}>{item.highlightText}</span>}
+                <div className={styles.itemTextGroup}>
+                  {item.highlightTitle && <span className={styles.itemTag}>{item.highlightTitle}</span>}
+                  <span className={styles.itemTitle}>{item.title}</span>
+                  {item.body && (
+                    <>
+                      <span className={styles.itemDot}>•</span>
+                      <span className={styles.itemBody}>{item.body}</span>
+                    </>
+                  )}
+                </div>
               </div>
-              {item.body && <p className={styles.itemBody}>{item.body}</p>}
-            </div>
+            ))}
           </div>
-        ))}
+
+          {/* Track 2 (for seamless continuous loop) */}
+          <div className={styles.marqueeTrack} aria-hidden="true">
+            {renderItems.map((item, idx) => (
+              <div key={`p-track2-${item.order}-${idx}`} className={styles.bannerItem}>
+                {item.highlightText && <span className={styles.itemIcon}>{item.highlightText}</span>}
+                <div className={styles.itemTextGroup}>
+                  {item.highlightTitle && <span className={styles.itemTag}>{item.highlightTitle}</span>}
+                  <span className={styles.itemTitle}>{item.title}</span>
+                  {item.body && (
+                    <>
+                      <span className={styles.itemDot}>•</span>
+                      <span className={styles.itemBody}>{item.body}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Dynamic Product Notice (Powered by Admin Product Notes field) */}
@@ -42,7 +72,7 @@ export default function ProductBannerSection({ productNotes }: ProductBannerSect
         <div className={styles.dynamicNotice}>
           <AlertCircle size={18} className={styles.noticeIcon} />
           <div className={styles.noticeContent}>
-            <span className={styles.noticeTitle}>Special Product Note & Instructions</span>
+            <span className={styles.noticeTitle}>Special Product Note</span>
             <p className={styles.noticeText}>{productNotes}</p>
           </div>
         </div>
