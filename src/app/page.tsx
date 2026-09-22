@@ -11,6 +11,14 @@ import PackageShowcaseCard from '@/components/products/PackageShowcaseCard';
 import { HeroCarouselDto, HomeGroupsResponse, PackageDto, ProductListDto, heroCarouselApi, packagesApi, productGroupsApi, productsApi } from '@/lib/api';
 import HeroCarouselSettings from '@/components/home/HeroCarouselSettings';
 import HomeInfiniteBanner from '@/components/home/HomeInfiniteBanner';
+import {
+  IpCameraCategoryIcon,
+  CcCameraCategoryIcon,
+  NvrDvrCategoryIcon,
+  NetworkingCategoryIcon,
+  MonitorCategoryIcon,
+  AccessoriesCategoryIcon,
+} from '@/components/home/CategoryIcons';
 import styles from './page.module.css';
 
 // Shown until the carousel settings load (and if the API is unreachable), so the
@@ -35,19 +43,19 @@ const fallbackCarousel: HeroCarouselDto = {
       order: 1,
     },
     {
-    title: 'Enterprise Networking\nSolutions',
-    subtitle: 'Switches, routers, and complete networking infrastructure for any scale',
-    cta: 'Explore Networking',
-    ctaLink: '/products?category=networking',
-    imageUrl: '/3.png',
+      title: 'Enterprise Networking\nSolutions',
+      subtitle: 'Switches, routers, and complete networking infrastructure for any scale',
+      cta: 'Explore Networking',
+      ctaLink: '/products?category=networking',
+      imageUrl: '/3.png',
       order: 2,
     },
     {
-    title: 'Complete Office\nInfrastructure Stack',
-    subtitle: 'Servers, network switches, storage, and deployment-ready enterprise equipment',
-    cta: 'Shop Infrastructure',
-    ctaLink: '/products?category=storage',
-    imageUrl: '/4.png',
+      title: 'Complete Office\nInfrastructure Stack',
+      subtitle: 'Servers, network switches, storage, and deployment-ready enterprise equipment',
+      cta: 'Shop Infrastructure',
+      ctaLink: '/products?category=storage',
+      imageUrl: '/4.png',
       order: 3,
     },
   ],
@@ -60,12 +68,12 @@ const heroSlideVariants = {
 };
 
 const categories = [
-  { name: 'IP Camera', slug: 'ip-cameras', icon: Camera, color: '#00c8e0', image: '/categories/ip-camera.jpg' },
-  { name: 'CC Camera', slug: 'analog-cameras', icon: Shield, color: '#f5a623', image: '/categories/cc-camera.jpg' },
-  { name: 'NVR / DVR', slug: 'dvr-nvr', icon: HardDrive, color: '#22c55e', image: '/categories/nvr-dvr.jpg' },
-  { name: 'Networking', slug: 'networking', icon: Wifi, color: '#3b82f6', image: '/categories/networking.jpg' },
-  { name: 'Monitor', slug: 'monitor', icon: Monitor, color: '#a855f7', image: '/categories/monitor.jpg' },
-  { name: 'Accessories', slug: 'accessories', icon: Package, color: '#ef4444', image: '/categories/accessories.jpg' },
+  { name: 'IP Camera', slug: 'ip-cameras', icon: IpCameraCategoryIcon, color: '#00c8e0' },
+  { name: 'CC Camera', slug: 'analog-cameras', icon: CcCameraCategoryIcon, color: '#f5a623' },
+  { name: 'NVR / DVR', slug: 'dvr-nvr', icon: NvrDvrCategoryIcon, color: '#22c55e' },
+  { name: 'Networking', slug: 'networking', icon: NetworkingCategoryIcon, color: '#3b82f6' },
+  { name: 'Monitor', slug: 'monitor', icon: MonitorCategoryIcon, color: '#a855f7' },
+  { name: 'Accessories', slug: 'accessories', icon: AccessoriesCategoryIcon, color: '#ef4444' },
 ];
 
 const brands = [
@@ -250,9 +258,9 @@ export default function HomePage() {
             <aside className={styles.hotDealsPanel}>
               <span className="section-label">Browse by Category</span>
               <h3>HOT DEAL OF THE DAY</h3>
-              <br/>
-            
-            <div className={styles.hotDealsList}>
+              <br />
+
+              <div className={styles.hotDealsList}>
                 {productsLoading ? (
                   Array.from({ length: 2 }).map((_, i) => (
                     <div key={`hot-skeleton-${i}`} className={styles.hotDealCardWrap}>
@@ -323,17 +331,22 @@ export default function HomePage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
               >
-                <Link href={`/products?category=${cat.slug}`} className={styles.categoryCard}>
-                  <div
-                    className={styles.categoryBgImage}
-                    style={{ backgroundImage: `url(${cat.image})` }}
-                  />
-                  <div className={styles.categoryOverlay} />
-                  <div className={styles.categoryIcon} style={{ background: `${cat.color}25`, borderColor: `${cat.color}50` }}>
-                    <cat.icon size={28} style={{ color: cat.color }} />
+                <Link
+                  href={`/products?category=${cat.slug}`}
+                  className={styles.categoryCard}
+                  style={{
+                    '--category-color': cat.color,
+                    '--category-glow': `${cat.color}35`,
+                    '--category-bg': `${cat.color}10`,
+                    '--category-border': `${cat.color}25`,
+                    '--category-bg-hover': `${cat.color}18`,
+                  } as React.CSSProperties}
+                >
+                  <div className={styles.categoryIconWrap}>
+                    <cat.icon size={52} className={styles.categorySvg} />
                   </div>
                   <span className={styles.categoryName}>{cat.name}</span>
-                  <ChevronRight size={14} className={styles.categoryArrow} />
+                  <ChevronRight size={15} className={styles.categoryArrow} />
                 </Link>
               </motion.div>
             ))}
@@ -357,9 +370,9 @@ export default function HomePage() {
             {productsLoading
               ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={`row1-skeleton-${i}`} />)
               : [
-                  ...featuredPackages.map((pkg, i) => <PackageProductCard key={`bs-pkg-${pkg.id}`} pkg={pkg} index={i} />),
-                  ...featuredRow1.map((p, i) => <ProductCard key={p.id} product={p} index={featuredPackages.length + i} />),
-                ]}
+                ...featuredPackages.map((pkg, i) => <PackageProductCard key={`bs-pkg-${pkg.id}`} pkg={pkg} index={i} />),
+                ...featuredRow1.map((p, i) => <ProductCard key={p.id} product={p} index={featuredPackages.length + i} />),
+              ]}
           </div>
         </div>
       </section>
@@ -399,7 +412,7 @@ export default function HomePage() {
             <span className="badge badge-warning" style={{ fontSize: '0.8rem', padding: '5px 14px' }}>
               <Clock size={12} /> Limited Time Offer
             </span>
-            <h2>Flash Sale — Up to <span className="gradient-text">40% OFF</span></h2>
+            <h2>Flash Sale</h2>
             <p className="text-muted">Get premium Hikvision & Dahua cameras at unbeatable prices. Offer ends soon!</p>
             <div className={styles.countdownRow}>
               {[

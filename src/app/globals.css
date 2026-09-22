@@ -320,14 +320,6 @@ p { line-height: 1.7; }
   margin-bottom: 8px;
 }
 
-.section-label::before {
-  content: '';
-  width: 24px;
-  height: 2px;
-  background: var(--color-primary);
-  border-radius: 2px;
-}
-
 /* ===== PRICE ===== */
 .price-current {
   font-family: var(--font-primary);

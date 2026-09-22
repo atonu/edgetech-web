@@ -410,68 +410,67 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding: 28px 16px;
+  justify-content: center;
+  gap: 16px;
+  padding: 30px 16px 24px;
   background: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-xl);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   text-align: center;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .categoryCard:hover {
-  transform: translateY(-6px);
-  border-color: var(--color-glass-border);
-  box-shadow: var(--shadow-lg), var(--shadow-glow-sm);
+  transform: translateY(-8px);
+  border-color: var(--category-border, var(--color-primary));
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.6), 0 0 24px -4px var(--category-glow, rgba(0, 200, 224, 0.2));
 }
 
-.categoryBgImage {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  transition: transform 0.45s ease;
-  z-index: 0;
-}
-
-.categoryOverlay {
-  position: absolute;
-  inset: 0;
-  background: transparent;
-  z-index: 1;
-}
-
-.categoryCard:hover .categoryBgImage {
-  transform: scale(1.06);
-}
-
-.categoryIcon {
-  width: 60px;
-  height: 60px;
+.categoryIconWrap {
+  width: 84px;
+  height: 84px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
-  border: 1px solid;
-  transition: transform var(--transition-base);
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  z-index: 2;
-  backdrop-filter: blur(8px);
 }
 
-.categoryCard:hover .categoryIcon {
-  transform: scale(1.1);
+.categoryCard:hover .categoryIconWrap {
+  transform: scale(1.08) translateY(-2px);
+  background: var(--category-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--category-color, var(--color-primary));
+  box-shadow: 0 8px 24px -6px var(--category-glow, rgba(0, 200, 224, 0.3));
+}
+
+.categorySvg {
+  color: #ffffff;
+  transition: color 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.categoryCard:hover .categorySvg {
+  color: var(--category-color, var(--color-primary)) !important;
+  transform: scale(1.06);
 }
 
 .categoryName {
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 0.95rem;
   position: relative;
   z-index: 2;
-  color: #ffffff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  transition: color 0.2s ease;
+}
+
+.categoryCard:hover .categoryName {
+  color: var(--category-color, var(--color-primary));
 }
 
 .categoryArrow {
@@ -480,14 +479,50 @@
   right: 12px;
   color: var(--color-text-subtle);
   opacity: 0;
-  transform: translateX(-4px);
-  transition: all var(--transition-base);
+  transform: translate(-4px, 4px);
+  transition: all 0.25s ease;
   z-index: 2;
 }
 
 .categoryCard:hover .categoryArrow {
   opacity: 1;
-  transform: translateX(0);
+  transform: translate(0, 0);
+  color: var(--category-color, var(--color-primary));
+}
+
+:global([data-theme='light']) .categoryCard {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+:global([data-theme='light']) .categoryIconWrap {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+}
+
+:global([data-theme='light']) .categorySvg {
+  color: #000000;
+}
+
+:global([data-theme='light']) .categoryCard:hover {
+  background: #ffffff;
+  border-color: var(--category-color, var(--color-primary));
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.12), 0 0 20px -4px var(--category-glow, rgba(0, 200, 224, 0.2));
+}
+
+:global([data-theme='light']) .categoryCard:hover .categoryIconWrap {
+  background: var(--category-bg-hover, rgba(0, 200, 224, 0.08));
+  border-color: var(--category-color, var(--color-primary));
+}
+
+:global([data-theme='light']) .categoryCard:hover .categorySvg {
+  color: var(--category-color, var(--color-primary)) !important;
+  transform: scale(1.06);
+}
+
+:global([data-theme='light']) .categoryName {
+  color: #0f172a;
 }
 
 /* ===== HOT DEAL ===== */
