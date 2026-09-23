@@ -1,21 +1,13 @@
 import React from 'react';
 import Image from 'next/image';
-import { ShieldCheck, Lock, CreditCard } from 'lucide-react';
+import { ShieldCheck, Lock, CreditCard, Truck } from 'lucide-react';
 import styles from './PaymentBanner.module.css';
 
 export default function PaymentBanner() {
   const paymentMethods = [
-    { name: 'SSLCommerz', isGateway: true },
-    { name: 'bKash', color: '#E2136E' },
-    { name: 'Nagad', color: '#F7941D' },
-    { name: 'Rocket', color: '#8C3494' },
-    { name: 'Upay', color: '#0059A1' },
-    { name: 'Visa Card', color: '#1A1F71' },
-    { name: 'Mastercard', color: '#EB001B' },
-    { name: 'Amex', color: '#006FCF' },
-    { name: 'Internet Banking', isGateway: false },
-    { name: 'Cash on Delivery', isGateway: false },
-    { name: 'EMI Available (3-36 Mo)', isGateway: true },
+    { name: 'SSLCommerz', isGateway: true, icon: Lock },
+    { name: 'Cash on Delivery', isGateway: false, icon: Truck },
+    { name: 'EMI Available on 32 Banks up to 36 Months', isGateway: true, icon: CreditCard },
   ];
 
   return (
@@ -31,7 +23,7 @@ export default function PaymentBanner() {
             key={m.name}
             className={`${styles.methodBadge} ${m.isGateway ? styles.gatewayBadge : ''}`}
           >
-            {m.isGateway ? <Lock size={12} /> : <CreditCard size={12} />}
+            <m.icon size={13} />
             <span>{m.name}</span>
           </div>
         ))}

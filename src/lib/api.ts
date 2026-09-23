@@ -549,6 +549,7 @@ export interface PolicySubItemDto {
 export interface PolicySectionDto {
   id?: string;
   title: string;
+  subtitle?: string;
   body: string;
   highlightTitle?: string;
   highlightText?: string;
