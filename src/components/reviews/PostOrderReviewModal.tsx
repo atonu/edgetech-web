@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { Star, X, Check, Zap, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { reviewsApi } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
+import { useAuthStore } from '@/store/useAuthStore';
 import toast from 'react-hot-toast';
 import styles from './PostOrderReviewModal.module.css';
 
@@ -30,6 +32,9 @@ const RATING_LABELS: Record<number, string> = {
 };
 
 export default function PostOrderReviewModal({ isOpen, items, onClose }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { isAuthenticated } = useAuthStore();
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [ratings, setRatings] = useState<Record<number, number>>({});
   const [comments, setComments] = useState<Record<number, string>>({});
@@ -53,6 +58,11 @@ export default function PostOrderReviewModal({ isOpen, items, onClose }: Props) 
   };
 
   const handleSubmitCurrent = async () => {
+    if (!isAuthenticated) {
+      router.push(`/auth/login?returnTo=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
     setSubmitting(true);
     try {
       await reviewsApi.add(currentItem.productId, {
