@@ -1,6 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { captureClickIds } from '@/lib/adIdentifiers';
 import { trackPageView } from '@/lib/gtm';
 
 /** Coarse bucket so GTM/GA4 can segment "landed on products" without regex on the path. */
@@ -28,6 +29,10 @@ export default function RouteTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
+
+  useEffect(() => {
+    captureClickIds();
+  }, []);
 
   useEffect(() => {
     trackPageView({

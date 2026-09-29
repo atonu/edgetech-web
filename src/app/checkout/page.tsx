@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ordersApi } from '@/lib/api';
+import { adIdentifiers } from '@/lib/adIdentifiers';
 import { getImageUrl } from '@/lib/imageUrl';
 import { Spinner } from '@/components/ui/Spinner';
 import {
@@ -96,6 +97,7 @@ function CheckoutContent() {
     // Snapshot before clearCart() wipes it.
     const purchasedItems = items.map(i => itemFromCartItem(i));
     const purchaseValue = totalAmount;
+    const identifiers = adIdentifiers();
     fireOnce('add_payment_info', () => trackAddPaymentInfo(purchasedItems, form.paymentMethod));
 
     try {
@@ -124,6 +126,7 @@ function CheckoutContent() {
           productId: item.productId,
           quantity: item.quantity,
         })),
+        ...identifiers,
         packages: packages.map(pkg => ({
           packageId: pkg.packageId,
           quantity: pkg.quantity,

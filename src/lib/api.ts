@@ -205,6 +205,10 @@ export interface PlaceOrderRequest {
   paymentMethod: string;
   customer: CustomerInfo;
   items: PlaceOrderItemRequest[];
+  fbp?: string | null;
+  fbc?: string | null;
+  gaClientId?: string | null;
+  gclid?: string | null;
   isEmi?: boolean;
   emiTenureMonths?: number;
   emiBank?: string;

@@ -30,7 +30,7 @@ export default function PaymentBanner() {
       </div>
 
       <div className={styles.securityNote}>
-        <Lock style={{ marginTop: '2px' }} size={12} />
+        <Lock style={{ marginTop: 'px' }} size={12} />
         All online card and mobile banking transactions are encrypted via 256-bit SSL certified payment gateways.
       </div>
 
