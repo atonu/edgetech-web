@@ -13,6 +13,7 @@ type DataLayerObject = Record<string, unknown>;
 declare global {
   interface Window {
     dataLayer?: DataLayerObject[];
+    fbq?: (...args: unknown[]) => void;
   }
 }
 
@@ -198,6 +199,48 @@ export function trackPurchase(args: {
       emi_bank: args.isEmi ? args.emiBank : undefined,
     }
   );
+}
+
+const sentMetaPurchases = new Set<string>();
+
+export function trackMetaPurchase(args: {
+  orderId: number;
+  items: Ga4Item[];
+  value: number;
+}) {
+  if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
+
+  const eventId = String(args.orderId);
+  const storageKey = `et_meta_purchase_${eventId}`;
+  if (sentMetaPurchases.has(eventId)) return;
+
+  try {
+    if (sessionStorage.getItem(storageKey)) return;
+  } catch {}
+
+  window.fbq(
+    'track',
+    'Purchase',
+    {
+      value: args.value,
+      currency: CURRENCY,
+      content_type: 'product',
+      content_ids: args.items.map(item => item.item_id),
+      contents: args.items.map(item => ({
+        id: item.item_id,
+        quantity: item.quantity,
+        item_price: item.price,
+      })),
+      num_items: args.items.reduce((count, item) => count + item.quantity, 0),
+      order_id: eventId,
+    },
+    { eventID: eventId }
+  );
+
+  sentMetaPurchases.add(eventId);
+  try {
+    sessionStorage.setItem(storageKey, '1');
+  } catch {}
 }
 
 export function trackCheckoutError(reason: string) {

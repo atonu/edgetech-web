@@ -17,6 +17,7 @@ import {
   trackAddShippingInfo,
   trackBeginCheckout,
   trackCheckoutError,
+  trackMetaPurchase,
   trackPurchase,
 } from '@/lib/gtm';
 import toast from 'react-hot-toast';
@@ -144,6 +145,13 @@ function CheckoutContent() {
         emiBank,
         city: form.city,
       });
+      if (form.paymentMethod.toLowerCase() === 'cod' && res.data?.orderId) {
+        trackMetaPurchase({
+          orderId: res.data.orderId,
+          items: purchasedItems,
+          value: purchaseValue,
+        });
+      }
 
       if (typeof window !== 'undefined') {
         const orderReviewItems = items.map(i => ({
