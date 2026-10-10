@@ -27,6 +27,22 @@ export default function PackageBuilderPage() {
   }, [selectedProducts]);
 
   const filledSlots = Object.keys(selectedProducts).length;
+  const groupedSelectedProducts = useMemo(() => {
+    const grouped = new Map<number, { product: ProductListDto; count: number; keys: string[] }>();
+
+    Object.entries(selectedProducts).forEach(([slotKey, product]) => {
+      const existing = grouped.get(product.id);
+      if (existing) {
+        existing.count += 1;
+        existing.keys.push(slotKey);
+        return;
+      }
+
+      grouped.set(product.id, { product, count: 1, keys: [slotKey] });
+    });
+
+    return Array.from(grouped.values());
+  }, [selectedProducts]);
 
   const selectProduct = (slotKey: string, product: ProductListDto) => {
     setSelectedProducts(prev => ({ ...prev, [slotKey]: product }));
@@ -100,19 +116,19 @@ export default function PackageBuilderPage() {
                   </div>
                 </div>
 
-                {filledSlots > 0 && (
+                {groupedSelectedProducts.length > 0 && (
                   <div className={styles.selectedList}>
-                    {Object.entries(selectedProducts).map(([key, product]) => {
-                      const sectionKey = key.split('_')[0];
+                    {groupedSelectedProducts.map(({ product, count, keys }) => {
+                      const sectionKey = keys[0].split('_')[0];
                       const section = sections.find(s => s.key === sectionKey);
-                      const filledKeys = Object.keys(selectedProducts).filter(k => k.startsWith(`${sectionKey}_`));
-                      const itemIndex = filledKeys.indexOf(key);
-                      const label = section ? `${section.label} ${itemIndex + 1}` : 'Item';
+                      const label = section ? section.label : 'Item';
+
                       return (
-                        <div key={key} className={styles.selectedItem}>
+                        <div key={`${label}-${product.id}`} className={styles.selectedItem}>
                           <span className={styles.selectedItemSlot}>{label}</span>
                           <span className={styles.selectedItemName}>{product.name}</span>
-                          <span className={styles.selectedItemPrice}>৳{(product.discountPrice ?? product.price).toLocaleString()}</span>
+                          <span className={styles.selectedItemCount}>× {count}</span>
+                          <span className={styles.selectedItemPrice}>৳{((product.discountPrice ?? product.price) * count).toLocaleString()}</span>
                         </div>
                       );
                     })}

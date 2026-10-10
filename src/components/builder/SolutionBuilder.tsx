@@ -51,6 +51,25 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
   const [slotSearch, setSlotSearch] = useState('');
 
+  const groupSectionProducts = (sectionKey: string) => {
+    const grouped = new Map<number, { product: ProductListDto; count: number; keys: string[] }>();
+
+    Object.entries(selectedProducts)
+      .filter(([slotKey]) => slotKey.startsWith(`${sectionKey}_`))
+      .forEach(([slotKey, product]) => {
+        const existing = grouped.get(product.id);
+        if (existing) {
+          existing.count += 1;
+          existing.keys.push(slotKey);
+          return;
+        }
+
+        grouped.set(product.id, { product, count: 1, keys: [slotKey] });
+      });
+
+    return Array.from(grouped.values());
+  };
+
   const activeSlotDef = useMemo(() => {
     if (!activeSlot) return null;
     const sectionKey = activeSlot.split('_')[0];
@@ -100,9 +119,7 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
     <>
       <div className={styles.sectionsContainer}>
         {sections.map((section) => {
-          const filledProducts = Object.entries(selectedProducts)
-            .filter(([key]) => key.startsWith(`${section.key}_`))
-            .map(([key, product]) => ({ key, product }));
+          const filledProducts = groupSectionProducts(section.key);
 
           return (
             <div key={section.key} className={styles.sectionRow}>
@@ -110,22 +127,23 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
                 <span className={styles.sectionRowLabel}>{section.label}</span>
               </div>
               <div className={styles.sectionCardsCol}>
-                {filledProducts.map(({ key, product }, cardIdx) => (
-                  <motion.div key={key} className={`${styles.slotCard} ${styles.slotFilled}`}
+                {filledProducts.map(({ product, count, keys }, cardIdx) => (
+                  <motion.div key={`${section.key}-${product.id}`} className={`${styles.slotCard} ${styles.slotFilled}`}
                     initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: cardIdx * 0.03 }}>
                     <div className={styles.slotHeader}>
                       <div className={styles.slotIcon} style={{ background: `${section.color}15`, color: section.color }}>
                         <section.icon size={18} />
                       </div>
-                      <span className={styles.slotLabel}>{`${section.label} ${cardIdx + 1}`}</span>
-                      <button type="button" className={styles.clearSlotBtn} onClick={() => onClear(key)}>
+                      <span className={styles.slotLabel}>{count > 1 ? `${section.label} (${count})` : section.label}</span>
+                      <button type="button" className={styles.clearSlotBtn} onClick={() => keys.forEach(key => onClear(key))}>
                         <X size={14} />
                       </button>
                     </div>
                     <div className={styles.selectedProduct}>
                       <span className={styles.selectedName}>{product.name}</span>
-                      <span className={styles.selectedPrice}>৳{(product.discountPrice ?? product.price).toLocaleString()}</span>
+                      <span className={styles.selectedCount}>Total {count} selected</span>
+                      <span className={styles.selectedPrice}>৳{((product.discountPrice ?? product.price) * count).toLocaleString()}</span>
                       <span className={styles.selectedBrand}>{product.brandName}</span>
                     </div>
                   </motion.div>

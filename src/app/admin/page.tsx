@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Boxes, ChevronDown, ChevronRight, FolderTree, Package, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench, MessageSquare, Star, Eye, X, Megaphone } from 'lucide-react';
+import { Boxes, ChevronDown, ChevronRight, FolderTree, Package, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench, MessageSquare, Star, Eye, X, Megaphone, MoreVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   adminApi,
@@ -130,6 +130,7 @@ export default function AdminPage() {
   const scrollToForm = () => formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const [confirmDelete, setConfirmDelete] = useState<DeleteTarget | null>(null);
+  const [productActionMenuId, setProductActionMenuId] = useState<number | null>(null);
 
   // Products table: server-side search + pagination (separate from the unfiltered
   // `products` list above, which the Groups tab's product picker needs in full).
@@ -883,6 +884,44 @@ export default function AdminPage() {
     scrollToForm();
   };
 
+  const duplicateProduct = async (product: ProductListDto) => {
+    setProductActionMenuId(null);
+    try {
+      const detailsRes = await productsApi.getBySlug(product.slug);
+      const source = detailsRes.data;
+      const payload = {
+        name: `${source.name} Copy`,
+        description: source.description ?? '',
+        shortDescription: source.shortDescription ?? '',
+        price: Number(source.price),
+        discountPrice: source.discountPrice && source.discountPrice > 0 ? Number(source.discountPrice) : null,
+        sku: source.sku ? `${source.sku}-COPY` : `COPY-${Date.now()}`,
+        stock: Number(source.stock),
+        categoryId: Number(source.categoryId),
+        brandId: Number(source.brandId),
+        isFeatured: source.isFeatured,
+        isActive: source.isActive,
+        notes: source.notes ?? undefined,
+        specifications: (source.specifications ?? []).map((spec, idx) => ({
+          key: spec.key,
+          value: spec.value,
+          displayOrder: idx,
+        })),
+      };
+
+      const created = await productsApi.create(payload);
+      for (const image of source.images ?? []) {
+        await productsApi.addImage(created.data.id, image.imageUrl);
+      }
+
+      toast.success('Product duplicated.');
+      setProductRefreshTick(t => t + 1);
+      setTab('products');
+    } catch {
+      toast.error('Failed to duplicate product.');
+    }
+  };
+
   const confirmDeleteLabel = (target: DeleteTarget) =>
     `Delete ${target.type === 'group' ? 'homepage group' : target.type} "${target.label}"? This action cannot be undone.`;
 
@@ -1064,9 +1103,46 @@ export default function AdminPage() {
                           <TD>{p.id}</TD><TD>{p.name}</TD><TD>{p.categoryName}</TD><TD>{p.brandName}</TD>
                           <TD>{(p.discountPrice ?? p.price).toLocaleString()}</TD><TD>{p.stock}</TD>
                           <TD>
-                            <div className={styles.actions}>
-                              <Button size="sm" variant="outline" onClick={() => editProduct(p.slug)}>Edit</Button>
-                              <Button size="sm" variant="destructive" loading={busy === `delete-product-${p.id}`} onClick={() => setConfirmDelete({ type: 'product', id: p.id, label: p.name })}>Delete</Button>
+                            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                aria-haspopup="menu"
+                                aria-expanded={productActionMenuId === p.id}
+                                aria-label={`Product actions for ${p.name}`}
+                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                onClick={() => setProductActionMenuId(current => current === p.id ? null : p.id)}
+                                onKeyDown={event => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    setProductActionMenuId(current => current === p.id ? null : p.id);
+                                  }
+                                }}
+                              >
+                                <MoreVertical size={18} />
+                              </span>
+
+                              {productActionMenuId === p.id && (
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    left: '50%',
+                                    top: 'calc(100% + 6px)',
+                                    transform: 'translateX(-50%)',
+                                    background: '#fff',
+                                    border: '1px solid #d0d7de',
+                                    borderRadius: 10,
+                                    boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+                                    minWidth: 150,
+                                    zIndex: 20,
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  <button type="button" onClick={() => editProduct(p.slug)} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer' }}>Edit</button>
+                                  <button type="button" onClick={() => duplicateProduct(p)} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer' }}>Duplicate</button>
+                                  <button type="button" onClick={() => setConfirmDelete({ type: 'product', id: p.id, label: p.name })} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', color: '#b42318', cursor: 'pointer' }}>Delete</button>
+                                </div>
+                              )}
                             </div>
                           </TD>
                         </tr>
