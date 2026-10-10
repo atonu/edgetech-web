@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Boxes, ChevronDown, ChevronRight, FolderTree, Package, PackageSearch, RefreshCcw, Search, ShoppingBag, Users, Wrench, MessageSquare, Star, Eye, X, Megaphone, MoreVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -132,6 +133,52 @@ export default function AdminPage() {
 
   const [confirmDelete, setConfirmDelete] = useState<DeleteTarget | null>(null);
   const [productActionMenuId, setProductActionMenuId] = useState<number | null>(null);
+  const [productActionMenuPosition, setProductActionMenuPosition] = useState({ top: 0, left: 0 });
+  const productActionTriggerRef = useRef<HTMLElement | null>(null);
+  const productActionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const openProductActionMenu = (productId: number, trigger: HTMLElement) => {
+    productActionTriggerRef.current = trigger;
+    const rect = trigger.getBoundingClientRect();
+    setProductActionMenuPosition({
+      top: rect.bottom + 6,
+      left: Math.max(8, Math.min(rect.left + rect.width / 2 - 75, window.innerWidth - 158)),
+    });
+    setProductActionMenuId(productId);
+  };
+
+  useEffect(() => {
+    if (productActionMenuId === null) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (productActionMenuRef.current?.contains(target) || productActionTriggerRef.current?.contains(target)) return;
+      setProductActionMenuId(null);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setProductActionMenuId(null);
+    };
+    const repositionMenu = () => {
+      const trigger = productActionTriggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      setProductActionMenuPosition({
+        top: rect.bottom + 6,
+        left: Math.max(8, Math.min(rect.left + rect.width / 2 - 75, window.innerWidth - 158)),
+      });
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('resize', repositionMenu);
+    window.addEventListener('scroll', repositionMenu, true);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('resize', repositionMenu);
+      window.removeEventListener('scroll', repositionMenu, true);
+    };
+  }, [productActionMenuId]);
 
   // Products table: server-side search + pagination (separate from the unfiltered
   // `products` list above, which the Groups tab's product picker needs in full).
@@ -1116,38 +1163,26 @@ export default function AdminPage() {
                                 aria-expanded={productActionMenuId === p.id}
                                 aria-label={`Product actions for ${p.name}`}
                                 style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                                onClick={() => setProductActionMenuId(current => current === p.id ? null : p.id)}
+                                onClick={event => {
+                                  if (productActionMenuId === p.id) {
+                                    setProductActionMenuId(null);
+                                  } else {
+                                    openProductActionMenu(p.id, event.currentTarget);
+                                  }
+                                }}
                                 onKeyDown={event => {
                                   if (event.key === 'Enter' || event.key === ' ') {
                                     event.preventDefault();
-                                    setProductActionMenuId(current => current === p.id ? null : p.id);
+                                    if (productActionMenuId === p.id) {
+                                      setProductActionMenuId(null);
+                                    } else {
+                                      openProductActionMenu(p.id, event.currentTarget);
+                                    }
                                   }
                                 }}
                               >
                                 <MoreVertical size={18} />
                               </span>
-
-                              {productActionMenuId === p.id && (
-                                <div
-                                  style={{
-                                    position: 'absolute',
-                                    left: '50%',
-                                    top: 'calc(100% + 6px)',
-                                    transform: 'translateX(-50%)',
-                                    background: '#fff',
-                                    border: '1px solid #d0d7de',
-                                    borderRadius: 10,
-                                    boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
-                                    minWidth: 150,
-                                    zIndex: 20,
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  <button type="button" onClick={() => editProduct(p.slug)} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer' }}>Edit</button>
-                                  <button type="button" onClick={() => duplicateProduct(p)} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer' }}>Duplicate</button>
-                                  <button type="button" onClick={() => setConfirmDelete({ type: 'product', id: p.id, label: p.name })} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', color: '#b42318', cursor: 'pointer' }}>Delete</button>
-                                </div>
-                              )}
                             </div>
                           </TD>
                         </tr>
@@ -1155,6 +1190,37 @@ export default function AdminPage() {
                     </tbody>
                   </Table>
                 </TableWrap>
+                {productActionMenuId !== null && typeof document !== 'undefined' && createPortal(
+                  <div
+                    ref={productActionMenuRef}
+                    role="menu"
+                    style={{
+                      position: 'fixed',
+                      top: productActionMenuPosition.top,
+                      left: productActionMenuPosition.left,
+                      width: 150,
+                      background: '#fff',
+                      border: '1px solid #d0d7de',
+                      borderRadius: 10,
+                      boxShadow: '0 8px 24px rgba(15, 23, 42, 0.16)',
+                      zIndex: 1000,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {(() => {
+                      const product = productTable.items.find(item => item.id === productActionMenuId);
+                      if (!product) return null;
+                      return (
+                        <>
+                          <button type="button" role="menuitem" onClick={() => { setProductActionMenuId(null); editProduct(product.slug); }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer' }}>Edit</button>
+                          <button type="button" role="menuitem" onClick={() => duplicateProduct(product)} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer' }}>Duplicate</button>
+                          <button type="button" role="menuitem" onClick={() => { setProductActionMenuId(null); setConfirmDelete({ type: 'product', id: product.id, label: product.name }); }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', color: '#b42318', cursor: 'pointer' }}>Delete</button>
+                        </>
+                      );
+                    })()}
+                  </div>,
+                  document.body,
+                )}
                 <AdminPagination
                   page={productTablePage}
                   totalPages={productTable.totalPages}
