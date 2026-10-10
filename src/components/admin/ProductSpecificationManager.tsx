@@ -3,6 +3,7 @@
 import React from 'react';
 import { Plus, Trash2, ArrowUp, ArrowDown, Sparkles } from 'lucide-react';
 import { Input, Button } from '@/components/ui/shadcn';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 import styles from './ProductSpecificationManager.module.css';
 
 export interface SpecificationItem {
@@ -137,10 +138,11 @@ export default function ProductSpecificationManager({ specifications, onChange }
                   value={spec.key}
                   onChange={(e) => handleUpdateSpec(idx, 'key', e.target.value)}
                 />
-                <Input
-                  placeholder="Specification Value (e.g. 4MP 2560x1440)"
+                <RichTextEditor
+                  ariaLabel={`${spec.key || `Specification ${idx + 1}`} value`}
+                  minHeight={100}
                   value={spec.value}
-                  onChange={(e) => handleUpdateSpec(idx, 'value', e.target.value)}
+                  onChange={(value) => handleUpdateSpec(idx, 'value', value)}
                 />
               </div>
 

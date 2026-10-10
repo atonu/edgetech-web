@@ -1,0 +1,119 @@
+.editor {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-surface-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.editor:focus-within {
+  border-color: var(--color-primary);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  padding: 6px;
+  border-bottom: 1px solid var(--color-surface-3);
+  background: var(--color-surface-2);
+}
+
+.tool,
+.activeTool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.tool:hover:not(:disabled),
+.activeTool {
+  border-color: var(--color-surface-3);
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.tool:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.separator {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: var(--color-surface-3);
+}
+
+.content {
+  padding: 12px;
+  color: var(--color-text);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.content :global(.tiptap) {
+  min-height: inherit;
+  outline: none;
+}
+
+.content :global(p) {
+  margin: 0 0 0.65em;
+}
+
+.content :global(p:last-child) {
+  margin-bottom: 0;
+}
+
+.content :global(ul),
+.content :global(ol) {
+  padding-left: 1.5rem;
+}
+
+.content :global(table) {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 0.75rem 0;
+}
+
+.content :global(th),
+.content :global(td) {
+  min-width: 70px;
+  padding: 7px 9px;
+  border: 1px solid var(--color-surface-3);
+  vertical-align: top;
+  text-align: left;
+}
+
+.content :global(th) {
+  background: var(--color-surface-2);
+  font-weight: 700;
+}
+
+.content :global(table[data-borderless="true"]) {
+  border-collapse: separate;
+  border-spacing: 8px 4px;
+}
+
+.content :global(table[data-borderless="true"] th),
+.content :global(table[data-borderless="true"] td) {
+  border: 0;
+  background: transparent;
+}
+
+.loading {
+  width: 100%;
+  border: 1px solid var(--color-surface-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}

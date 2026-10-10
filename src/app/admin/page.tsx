@@ -27,6 +27,7 @@ import {
 } from '@/lib/api';
 import ProductImageManager, { StagedImage } from '@/components/admin/ProductImageManager';
 import ProductSpecificationManager, { SpecificationItem } from '@/components/admin/ProductSpecificationManager';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 import AdminPagination from '@/components/admin/AdminPagination';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import PackageManager from '@/components/admin/PackageManager';
@@ -1021,7 +1022,11 @@ export default function AdminPage() {
                   <Field label="Short Description"><Input value={productForm.shortDescription} onChange={e => setProductForm(p => ({ ...p, shortDescription: e.target.value }))} /></Field>
                   <div className={styles.fullWidth}>
                     <Label>Description</Label>
-                    <Textarea rows={3} value={productForm.description} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} />
+                    <RichTextEditor
+                      ariaLabel="Product description"
+                      value={productForm.description}
+                      onChange={value => setProductForm(p => ({ ...p, description: value }))}
+                    />
                   </div>
                   <div className={styles.fullWidth}>
                     <Label>Product Notes & Dynamic Notice</Label>

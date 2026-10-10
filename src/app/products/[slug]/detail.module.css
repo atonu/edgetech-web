@@ -430,6 +430,58 @@
   line-height: 1.8;
 }
 
+.richContent {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  line-height: 1.7;
+}
+
+.richContent :global(p) {
+  margin: 0 0 0.75rem;
+}
+
+.richContent :global(p:last-child) {
+  margin-bottom: 0;
+}
+
+.richContent :global(ul),
+.richContent :global(ol) {
+  padding-left: 1.5rem;
+}
+
+.richContent :global(table) {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 0.75rem 0;
+}
+
+.richContent :global(th),
+.richContent :global(td) {
+  padding: 10px 12px;
+  border: 1px solid var(--color-surface-3);
+  vertical-align: top;
+  text-align: left;
+}
+
+.richContent :global(th) {
+  color: var(--color-text);
+  background: var(--color-surface-2);
+  font-weight: 700;
+}
+
+.richContent :global(table[data-borderless="true"]) {
+  border-collapse: separate;
+  border-spacing: 10px 5px;
+}
+
+.richContent :global(table[data-borderless="true"] th),
+.richContent :global(table[data-borderless="true"] td) {
+  border: 0;
+  background: transparent;
+}
+
 /* Specs Table */
 .specsTable {
   display: flex;

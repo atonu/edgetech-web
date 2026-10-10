@@ -12,6 +12,7 @@ import { ProductDto, ProductListDto, ReviewDto, productsApi, reviewsApi } from '
 import ProductCard from '@/components/products/ProductCard';
 import ProductBannerSection from '@/components/products/ProductBannerSection';
 import { Skeleton } from '@/components/ui/Skeleton';
+import RichTextContent from '@/components/ui/RichTextContent';
 import { getImageUrl } from '@/lib/imageUrl';
 import { trackViewItem } from '@/lib/gtm';
 import toast from 'react-hot-toast';
@@ -307,7 +308,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           <div className={styles.tabContent}>
             {activeTab === 'description' && (
               <div className={styles.description}>
-                <p>{product.description}</p>
+                <RichTextContent html={product.description ?? ''} className={styles.richContent} />
               </div>
             )}
             {activeTab === 'specs' && (
@@ -316,7 +317,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   product.specifications.map(spec => (
                     <div key={spec.id || `${spec.key}-${spec.value}`} className={styles.specRow}>
                       <span className={styles.specKey}>{spec.key}</span>
-                      <span className={styles.specVal}>{spec.value}</span>
+                      <RichTextContent html={spec.value} className={`${styles.specVal} ${styles.richContent}`} />
                     </div>
                   ))
                 ) : (
