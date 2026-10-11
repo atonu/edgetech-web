@@ -277,13 +277,14 @@
 }
 
 .selectedItem {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 4px 8px;
   padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   font-size: 0.8rem;
+  min-width: 0;
 }
 
 .selectedItemSlot {
@@ -295,16 +296,21 @@
 }
 
 .selectedItemName {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.selectedItemCount {
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
 .selectedItemPrice {
   font-weight: 600;
   color: var(--color-primary);
+  white-space: nowrap;
 }
 
 .totalRow {
