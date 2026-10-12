@@ -1,7 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Camera, HardDrive, Monitor, Cable, Power, Battery, X, Search, Check, Zap, Plus } from 'lucide-react';
+import { Camera, HardDrive, Monitor, Cable, Power, Battery, X, Search, Check, Zap, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProductListDto, PackageSlotWithProducts } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
@@ -136,8 +136,8 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
                         <section.icon size={18} />
                       </div>
                       <span className={styles.slotLabel}>{count > 1 ? `${section.label} (${count})` : section.label}</span>
-                      <button type="button" className={styles.clearSlotBtn} onClick={() => keys.forEach(key => onClear(key))}>
-                        <X size={14} />
+                      <button type="button" className={styles.clearSlotBtn} aria-label={`Remove one ${product.name}`} title="Remove one selected item" onClick={() => onClear(keys[keys.length - 1])}>
+                        <Trash2 size={14} />
                       </button>
                     </div>
                     <div className={styles.selectedProduct}>

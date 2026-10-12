@@ -277,10 +277,10 @@
 }
 
 .selectedItem {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
   padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   font-size: 0.8rem;
@@ -292,25 +292,42 @@
   color: var(--color-text-muted);
   font-size: 0.7rem;
   text-transform: uppercase;
-  width: 100%;
+  max-width: 100%;
+}
+
+.selectedItemDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
 }
 
 .selectedItemName {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+.selectedItemMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
 }
 
 .selectedItemCount {
   white-space: nowrap;
   color: var(--color-text-muted);
+  flex-shrink: 0;
 }
 
 .selectedItemPrice {
   font-weight: 600;
   color: var(--color-primary);
-  white-space: nowrap;
+  text-align: right;
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .totalRow {

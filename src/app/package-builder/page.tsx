@@ -126,9 +126,13 @@ export default function PackageBuilderPage() {
                       return (
                         <div key={`${label}-${product.id}`} className={styles.selectedItem}>
                           <span className={styles.selectedItemSlot}>{label}</span>
-                          <span className={styles.selectedItemName}>{product.name}</span>
-                          <span className={styles.selectedItemCount}>× {count}</span>
-                          <span className={styles.selectedItemPrice}>৳{((product.discountPrice ?? product.price) * count).toLocaleString()}</span>
+                          <div className={styles.selectedItemDetails}>
+                            <span className={styles.selectedItemName}>{product.name}</span>
+                            <div className={styles.selectedItemMeta}>
+                              <span className={styles.selectedItemCount}>× {count}</span>
+                              <span className={styles.selectedItemPrice}>৳{((product.discountPrice ?? product.price) * count).toLocaleString()}</span>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
