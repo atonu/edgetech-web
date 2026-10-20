@@ -167,7 +167,8 @@ export default function HomePage() {
   const featuredRow2 = homeGroups?.mostPopular?.slice(0, 5) ?? (fallbackFeatured.length >= 10 ? fallbackFeatured.slice(5, 10) : products.slice(5, 10));
   const hotDealProducts = (featuredRow2.length >= 2 ? featuredRow2 : products).slice(0, 2);
   const newArrivals = homeGroups?.newArrivals?.slice(0, 5) ?? products.slice(0, 5);
-  const featuredPackages = packages.filter(p => p.isFeatured);
+  const bestSellingPackages = (homeGroups?.bestSellingPackages ?? packages.filter(p => p.isFeatured)).slice(0, 5);
+  const bestSellingProducts = (homeGroups?.bestSellingProducts ?? featuredRow1).slice(0, 5 - bestSellingPackages.length);
 
   return (
     <div className={styles.home}>
@@ -370,8 +371,8 @@ export default function HomePage() {
             {productsLoading
               ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={`row1-skeleton-${i}`} />)
               : [
-                ...featuredPackages.map((pkg, i) => <PackageProductCard key={`bs-pkg-${pkg.id}`} pkg={pkg} index={i} />),
-                ...featuredRow1.map((p, i) => <ProductCard key={p.id} product={p} index={featuredPackages.length + i} />),
+                ...bestSellingPackages.map((pkg, i) => <PackageProductCard key={`bs-pkg-${pkg.id}`} pkg={pkg} index={i} />),
+                ...bestSellingProducts.map((p, i) => <ProductCard key={p.id} product={p} index={bestSellingPackages.length + i} />),
               ]}
           </div>
         </div>

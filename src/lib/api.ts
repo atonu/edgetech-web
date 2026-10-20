@@ -326,6 +326,8 @@ export interface ProductGroupDto {
 
 export interface HomeGroupsResponse {
   bestSellers: ProductListDto[];
+  bestSellingPackages: PackageDto[];
+  bestSellingProducts: ProductListDto[];
   mostPopular: ProductListDto[];
   newArrivals: ProductListDto[];
 }
@@ -648,5 +650,4 @@ export const feedbacksApi = {
     api.patch<FeedbackDto>(`/feedbacks/${id}/status`, data),
   delete: (id: number) => api.delete(`/feedbacks/${id}`),
 };
-
 
