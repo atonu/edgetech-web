@@ -8,7 +8,7 @@ import styles from './FlashSaleAdminManager.module.css';
 
 export default function FlashSaleAdminManager() {
   const [carousel, setCarousel] = useState<HeroCarouselDto | null>(null);
-  const [enabled, setEnabled] = useState(true);
+  const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -16,7 +16,7 @@ export default function FlashSaleAdminManager() {
     heroCarouselApi.get()
       .then(response => {
         setCarousel(response.data);
-        setEnabled(response.data.flashSaleEnabled ?? true);
+        setEnabled(response.data.flashSaleEnabled ?? false);
       })
       .catch(error => toast.error(error instanceof Error ? error.message : 'Could not load homepage settings'))
       .finally(() => setLoading(false));
@@ -27,7 +27,7 @@ export default function FlashSaleAdminManager() {
     const nextEnabled = event.target.checked;
     setSaving(true);
     try {
-      const response = await heroCarouselApi.update({ ...carousel, flashSaleEnabled: nextEnabled });
+      const response = await heroCarouselApi.updateFlashSale(nextEnabled);
       setCarousel(response.data);
       setEnabled(response.data.flashSaleEnabled);
       toast.success(`Flash Sale ${response.data.flashSaleEnabled ? 'enabled' : 'disabled'}`);

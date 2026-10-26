@@ -27,7 +27,7 @@ export default function HeroCarouselSettings({ carousel, onSaved }: Props) {
   const [open, setOpen] = useState(false);
   const [slides, setSlides] = useState<HeroSlideDto[]>([]);
   const [autoplaySec, setAutoplaySec] = useState(6);
-  const [flashSaleEnabled, setFlashSaleEnabled] = useState(true);
+  const [flashSaleEnabled, setFlashSaleEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -40,7 +40,7 @@ export default function HeroCarouselSettings({ carousel, onSaved }: Props) {
   const openModal = () => {
     setSlides(carousel.slides.map(s => ({ ...s })));
     setAutoplaySec(Math.round((carousel.autoplayMs || 6000) / 1000));
-    setFlashSaleEnabled(carousel.flashSaleEnabled ?? true);
+    setFlashSaleEnabled(carousel.flashSaleEnabled ?? false);
     setOpen(true);
   };
 

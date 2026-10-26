@@ -610,6 +610,7 @@ export const HERO_MIN_SLIDES = 2;
 export const heroCarouselApi = {
   get: () => api.get<HeroCarouselDto>('/hero-carousel'),
   update: (data: HeroCarouselDto) => api.put<HeroCarouselDto>('/hero-carousel', data),
+  updateFlashSale: (enabled: boolean) => api.patch<HeroCarouselDto>('/hero-carousel/flash-sale', { enabled }),
 };
 
 export interface HappyCustomerDto {

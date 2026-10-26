@@ -26,7 +26,7 @@ import styles from './page.module.css';
 // hero never renders empty. Admins manage the live slides from the settings modal.
 const fallbackCarousel: HeroCarouselDto = {
   autoplayMs: 6000,
-  flashSaleEnabled: true,
+  flashSaleEnabled: false,
   slides: [
     {
       title: 'Secure Your World\nWith Smart Surveillance',
