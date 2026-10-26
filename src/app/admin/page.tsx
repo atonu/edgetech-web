@@ -78,7 +78,7 @@ function paginateClient<T>(items: T[], page: number, pageSize: number) {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { isAuthenticated, isAdmin } = useAuthStore();
+  const { isAuthenticated, isAdmin, isHydrated } = useAuthStore();
   const [tab, setTab] = useState<TabKey>('products');
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -296,6 +296,8 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.replace('/auth/login');
       return;
@@ -307,7 +309,7 @@ export default function AdminPage() {
     }
 
     loadCore();
-  }, [isAuthenticated, isAdmin, router]);
+  }, [isHydrated, isAuthenticated, isAdmin, router]);
 
   useEffect(() => {
     if (productForm.categoryId === 0 && flatCategories.length > 0) {
@@ -1066,7 +1068,9 @@ export default function AdminPage() {
                       {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </Select>
                   </Field>
-                  <Field label="Short Description"><Input value={productForm.shortDescription} onChange={e => setProductForm(p => ({ ...p, shortDescription: e.target.value }))} /></Field>
+                  <Field label="Short Description">
+                    <Textarea rows={3} value={productForm.shortDescription} onChange={e => setProductForm(p => ({ ...p, shortDescription: e.target.value }))} />
+                  </Field>
                   <div className={styles.fullWidth}>
                     <Label>Description</Label>
                     <RichTextEditor

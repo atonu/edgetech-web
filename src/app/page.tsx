@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Shield, Wifi, Monitor, HardDrive, Camera, Package, ArrowRight, Zap, Star, Clock } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Shield, Monitor, Package, ArrowRight, Zap, Star, Clock, Cable, Network, Router } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
 import PackageProductCard from '@/components/products/PackageProductCard';
@@ -74,6 +74,10 @@ const categories = [
   { name: 'Networking', slug: 'networking', icon: NetworkingCategoryIcon, color: '#3b82f6' },
   { name: 'Monitor', slug: 'monitor', icon: MonitorCategoryIcon, color: '#a855f7' },
   { name: 'Accessories', slug: 'accessories', icon: AccessoriesCategoryIcon, color: '#ef4444' },
+  { name: 'Video Balloon', slug: 'video-balloon', icon: Cable, color: '#0ea5e9' },
+  { name: 'POE Switch', slug: 'poe-switch', icon: Network, color: '#14b8a6' },
+  { name: 'Desktop Switch', slug: 'desktop-switch', icon: Network, color: '#6366f1' },
+  { name: 'Router', slug: 'router', icon: Router, color: '#8b5cf6' },
 ];
 
 const brands = [
@@ -311,76 +315,53 @@ export default function HomePage() {
       {/* Infinite Continuous Scrolling Announcement Banner */}
       <HomeInfiniteBanner />
 
-      {/* ===== CATEGORIES GRID ===== */}
-      <section className={styles.section}>
-        <div className="container">
-          <div className="section-header">
-            <div>
-              <span className="section-label">Browse by Category</span>
-              <h2>Find What You Need</h2>
+      <div className={styles.homeDiscovery}>
+        {/* ===== CATEGORIES GRID ===== */}
+        <section className={`${styles.section} ${styles.homeCategories}`}>
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <span className="section-label">Browse by Category</span>
+                <h2>Find What You Need</h2>
+              </div>
+              <Link href="/products" className="btn btn-ghost btn-sm">
+                View All <ChevronRight size={16} />
+              </Link>
             </div>
-            <Link href="/products" className="btn btn-ghost btn-sm">
-              View All <ChevronRight size={16} />
-            </Link>
-          </div>
-          <div className={styles.categoryGrid}>
-            {categories.map((cat, i) => (
-              <motion.div
-                key={cat.slug}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-              >
-                <Link
-                  href={`/products?category=${cat.slug}`}
-                  className={styles.categoryCard}
-                  style={{
-                    '--category-color': cat.color,
-                    '--category-glow': `${cat.color}35`,
-                    '--category-bg': `${cat.color}10`,
-                    '--category-border': `${cat.color}25`,
-                    '--category-bg-hover': `${cat.color}18`,
-                  } as React.CSSProperties}
+            <div className={styles.categoryGrid}>
+              {categories.map((cat, i) => (
+                <motion.div
+                  key={cat.slug}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08 }}
                 >
-                  <div className={styles.categoryIconWrap}>
-                    <cat.icon size={52} className={styles.categorySvg} />
-                  </div>
-                  <span className={styles.categoryName}>{cat.name}</span>
-                  <ChevronRight size={15} className={styles.categoryArrow} />
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== FEATURED PRODUCTS ROW 1 ===== */}
-      <section className={styles.section}>
-        <div className="container">
-          <div className="section-header">
-            <div>
-              <span className="section-label"><Zap size={14} /> Featured Products</span>
-              <h2>Bestselling Security Solutions</h2>
+                  <Link
+                    href={`/products?category=${cat.slug}`}
+                    className={styles.categoryCard}
+                    style={{
+                      '--category-color': cat.color,
+                      '--category-glow': `${cat.color}35`,
+                      '--category-bg': `${cat.color}10`,
+                      '--category-border': `${cat.color}25`,
+                      '--category-bg-hover': `${cat.color}18`,
+                    } as React.CSSProperties}
+                  >
+                    <div className={styles.categoryIconWrap}>
+                      <cat.icon size={52} className={styles.categorySvg} />
+                    </div>
+                    <span className={styles.categoryName}>{cat.name}</span>
+                    <ChevronRight size={15} className={styles.categoryArrow} />
+                  </Link>
+                </motion.div>
+              ))}
             </div>
-            <Link href="/products?featured=true" className="btn btn-ghost btn-sm">
-              View All <ChevronRight size={16} />
-            </Link>
           </div>
-          <div className="grid-5">
-            {productsLoading
-              ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={`row1-skeleton-${i}`} />)
-              : [
-                ...bestSellingPackages.map((pkg, i) => <PackageProductCard key={`bs-pkg-${pkg.id}`} pkg={pkg} index={i} />),
-                ...bestSellingProducts.map((p, i) => <ProductCard key={p.id} product={p} index={bestSellingPackages.length + i} />),
-              ]}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ===== EDGETECH CCTV PACKAGES ===== */}
-      {(productsLoading || packages.length > 0) && (
-        <section className={styles.section}>
+        {/* ===== EDGETECH CCTV PACKAGES ===== */}
+        <section className={`${styles.section} ${styles.homePackages}`}>
           <div className="container">
             <div className="section-header">
               <div>
@@ -394,11 +375,36 @@ export default function HomePage() {
             <div className={styles.packageShowcaseGrid}>
               {productsLoading
                 ? Array.from({ length: 3 }).map((_, i) => <ProductCardSkeleton key={`pkg-showcase-skeleton-${i}`} />)
-                : packages.slice(0, 6).map((pkg, i) => <PackageShowcaseCard key={`showcase-${pkg.id}`} pkg={pkg} index={i} />)}
+                : packages.length > 0
+                  ? packages.slice(0, 6).map((pkg, i) => <PackageShowcaseCard key={`showcase-${pkg.id}`} pkg={pkg} index={i} />)
+                  : <p className={styles.packageEmpty}>No ready-made packages are available right now.</p>}
             </div>
           </div>
         </section>
-      )}
+
+        {/* ===== FEATURED PRODUCTS ROW 1 ===== */}
+        <section className={`${styles.section} ${styles.homeBestSellers}`}>
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <span className="section-label"><Zap size={14} /> Featured Products</span>
+                <h2>Bestselling Security Solutions</h2>
+              </div>
+              <Link href="/products?featured=true" className="btn btn-ghost btn-sm">
+                View All <ChevronRight size={16} />
+              </Link>
+            </div>
+            <div className="grid-5">
+              {productsLoading
+                ? Array.from({ length: 5 }).map((_, i) => <ProductCardSkeleton key={`row1-skeleton-${i}`} />)
+                : [
+                  ...bestSellingPackages.map((pkg, i) => <PackageProductCard key={`bs-pkg-${pkg.id}`} pkg={pkg} index={i} />),
+                  ...bestSellingProducts.map((p, i) => <ProductCard key={p.id} product={p} index={bestSellingPackages.length + i} />),
+                ]}
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* ===== HOT DEAL BANNER ===== */}
       <section className={styles.hotDeal}>

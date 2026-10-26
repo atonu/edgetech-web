@@ -1,7 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Camera, HardDrive, Monitor, Cable, Power, Battery, X, Search, Check, Zap, Plus, Trash2 } from 'lucide-react';
+import { Camera, HardDrive, Monitor, Cable, Power, Battery, X, Search, Check, Zap, Plus, Minus, Router, Network, Boxes } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProductListDto, PackageSlotWithProducts } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
@@ -24,6 +24,11 @@ export const sections: SectionDef[] = [
   { key: 'cable', label: 'Cable', icon: Cable, color: '#3b82f6' },
   { key: 'power', label: 'Power Adapter', icon: Power, color: '#f59e0b' },
   { key: 'ups', label: 'UPS', icon: Battery, color: '#84cc16' },
+  { key: 'video-balloon', label: 'Video Balloon', icon: Cable, color: '#0ea5e9' },
+  { key: 'poe-switch', label: 'POE Switch', icon: Network, color: '#14b8a6' },
+  { key: 'desktop-switch', label: 'Desktop Switch', icon: Network, color: '#6366f1' },
+  { key: 'router', label: 'Router', icon: Router, color: '#8b5cf6' },
+  { key: 'accessories', label: 'Accessories', icon: Boxes, color: '#f97316' },
 ];
 
 // Collapses the API's slot payload into a lookup of products keyed by their base slot type.
@@ -43,11 +48,12 @@ interface SolutionBuilderProps {
   selectedProducts: Record<string, ProductListDto>;
   onSelect: (slotKey: string, product: ProductListDto) => void;
   onClear: (slotKey: string) => void;
+  onAdd: (sectionKey: string, product: ProductListDto) => void;
 }
 
 // Shared device-selection grid + product-picker modal used by both the storefront
 // "Build Your Solution" page and the admin package editor.
-export default function SolutionBuilder({ productsByBase, loading, selectedProducts, onSelect, onClear }: SolutionBuilderProps) {
+export default function SolutionBuilder({ productsByBase, loading, selectedProducts, onSelect, onClear, onAdd }: SolutionBuilderProps) {
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
   const [slotSearch, setSlotSearch] = useState('');
 
@@ -136,9 +142,15 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
                         <section.icon size={18} />
                       </div>
                       <span className={styles.slotLabel}>{count > 1 ? `${section.label} (${count})` : section.label}</span>
-                      <button type="button" className={styles.clearSlotBtn} aria-label={`Remove one ${product.name}`} title="Remove one selected item" onClick={() => onClear(keys[keys.length - 1])}>
-                        <Trash2 size={14} />
-                      </button>
+                      <div className={styles.quantityControl} role="group" aria-label={`${product.name} quantity`}>
+                        <button type="button" className={styles.quantityButton} aria-label={`Remove one ${product.name}`} onClick={() => onClear(keys[keys.length - 1])}>
+                          <Minus size={14} />
+                        </button>
+                        <span className={styles.quantityValue}>{count}</span>
+                        <button type="button" className={styles.quantityButton} aria-label={`Add one ${product.name}`} onClick={() => onAdd(section.key, product)}>
+                          <Plus size={14} />
+                        </button>
+                      </div>
                     </div>
                     <div className={styles.selectedProduct}>
                       <span className={styles.selectedName}>{product.name}</span>

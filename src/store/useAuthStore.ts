@@ -11,6 +11,7 @@ interface AuthState {
   setAuth: (user: UserDto, token: string) => void;
   logout: () => void;
   isAdmin: () => boolean;
+  markHydrated: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -29,16 +30,17 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, token: null, isAuthenticated: false, isHydrated: true });
       },
       isAdmin: () => get().user?.role === 'Admin',
+      markHydrated: () => set({ isHydrated: true }),
     }),
     {
       name: 'et-auth',
       partialize: (s) => ({ user: s.user, token: s.token, isAuthenticated: s.isAuthenticated }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isHydrated = true;
           if (state.token && typeof window !== 'undefined') {
             localStorage.setItem('et_token', state.token);
           }
+          state.markHydrated();
         }
       },
     }

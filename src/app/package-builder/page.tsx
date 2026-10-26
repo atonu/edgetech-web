@@ -27,6 +27,7 @@ export default function PackageBuilderPage() {
   }, [selectedProducts]);
 
   const filledSlots = Object.keys(selectedProducts).length;
+  const selectedSectionCount = new Set(Object.keys(selectedProducts).map(slotKey => slotKey.split('_')[0])).size;
   const groupedSelectedProducts = useMemo(() => {
     const grouped = new Map<number, { product: ProductListDto; count: number; keys: string[] }>();
 
@@ -45,6 +46,11 @@ export default function PackageBuilderPage() {
   }, [selectedProducts]);
 
   const selectProduct = (slotKey: string, product: ProductListDto) => {
+    setSelectedProducts(prev => ({ ...prev, [slotKey]: product }));
+  };
+
+  const addProduct = (sectionKey: string, product: ProductListDto) => {
+    const slotKey = `${sectionKey}_${Math.random().toString(36).slice(2, 9)}`;
     setSelectedProducts(prev => ({ ...prev, [slotKey]: product }));
   };
 
@@ -77,7 +83,7 @@ export default function PackageBuilderPage() {
         {loading ? (
           <div className={styles.layout}>
             <div>
-              <SolutionBuilder productsByBase={{}} loading selectedProducts={{}} onSelect={() => {}} onClear={() => {}} />
+              <SolutionBuilder productsByBase={{}} loading selectedProducts={{}} onSelect={() => {}} onClear={() => {}} onAdd={() => {}} />
             </div>
             <div className={styles.sidebar}>
               <div className={styles.summaryCard}>
@@ -97,6 +103,7 @@ export default function PackageBuilderPage() {
                 selectedProducts={selectedProducts}
                 onSelect={selectProduct}
                 onClear={clearSlot}
+                onAdd={addProduct}
               />
             </div>
 
@@ -111,8 +118,8 @@ export default function PackageBuilderPage() {
                     <span className={styles.statLabel}>Components</span>
                   </div>
                   <div className={styles.statItem}>
-                    <span className={styles.statValue}>{Math.max(sections.length - filledSlots, 0)}</span>
-                    <span className={styles.statLabel}>Remaining</span>
+                    <span className={styles.statValue}>{Math.max(sections.length - selectedSectionCount, 0)}</span>
+                    <span className={styles.statLabel}>Categories left</span>
                   </div>
                 </div>
 

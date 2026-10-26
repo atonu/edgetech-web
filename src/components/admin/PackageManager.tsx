@@ -109,6 +109,11 @@ export default function PackageManager() {
   const onSelect = (slotKey: string, product: ProductListDto) =>
     setSelected(prev => ({ ...prev, [slotKey]: product }));
 
+  const onAdd = (sectionKey: string, product: ProductListDto) => {
+    const slotKey = `${sectionKey}_${Math.random().toString(36).slice(2, 9)}`;
+    setSelected(prev => ({ ...prev, [slotKey]: product }));
+  };
+
   const onClear = (slotKey: string) =>
     setSelected(prev => {
       const next = { ...prev };
@@ -294,7 +299,7 @@ export default function PackageManager() {
               <div className={styles.builderCol}>
                 <p className={styles.builderHint}>Add each device that belongs in this package.</p>
                 {slotsLoading ? (
-                  <SolutionBuilder productsByBase={{}} loading selectedProducts={{}} onSelect={() => {}} onClear={() => {}} />
+                  <SolutionBuilder productsByBase={{}} loading selectedProducts={{}} onSelect={() => {}} onClear={() => {}} onAdd={() => {}} />
                 ) : (
                   <SolutionBuilder
                     productsByBase={productsByBase}
@@ -302,6 +307,7 @@ export default function PackageManager() {
                     selectedProducts={selected}
                     onSelect={onSelect}
                     onClear={onClear}
+                    onAdd={onAdd}
                   />
                 )}
               </div>
