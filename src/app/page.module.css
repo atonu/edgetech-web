@@ -87,10 +87,6 @@
   align-items: stretch;
 }
 
-.heroMainNoDeals {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 .heroBanner {
   position: relative;
   height: 380px;
@@ -334,7 +330,7 @@
   position: relative;
   z-index: 1;
   padding: 18px 0;
-  background: rgba(17, 24, 39, 0.6);
+  background: #087f9b;
   backdrop-filter: blur(12px);
   border-top: 1px solid rgba(255, 255, 255, 0.18);
   border-bottom: 1px solid rgba(255, 255, 255, 0.18);
@@ -394,7 +390,7 @@
 }
 
 :global([data-theme='light']) .statsBar {
-  background: var(--color-primary);
+  background: #0babc7;
   backdrop-filter: none;
   border-top: 1px solid transparent;
   border-bottom: 1px solid transparent;
@@ -465,7 +461,8 @@
 /* ===== PACKAGE SHOWCASE ===== */
 .packageShowcaseGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 360px));
+  justify-content: center;
   gap: 24px;
 }
 
@@ -475,11 +472,11 @@
 }
 
 @media (max-width: 1024px) {
-  .packageShowcaseGrid { grid-template-columns: repeat(2, 1fr); }
+  .packageShowcaseGrid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 360px)); }
 }
 
 @media (max-width: 640px) {
-  .packageShowcaseGrid { grid-template-columns: 1fr; }
+  .packageShowcaseGrid { grid-template-columns: minmax(0, 360px); }
 }
 
 /* ===== CATEGORIES ===== */

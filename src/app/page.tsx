@@ -203,7 +203,7 @@ export default function HomePage() {
         </div>
 
         <div className={`container ${styles.heroContent}`}>
-          <div className={`${styles.heroMain} ${!flashSaleEnabled ? styles.heroMainNoDeals : ''}`}>
+          <div className={styles.heroMain}>
             <div className={styles.heroBanner}>
               <HeroCarouselSettings
                 carousel={carousel}
@@ -284,7 +284,7 @@ export default function HomePage() {
               )}
             </div>
 
-            {flashSaleEnabled && <aside className={styles.hotDealsPanel}>
+            <aside className={styles.hotDealsPanel}>
               <span className="section-label">Browse by Category</span>
               <h3>HOT DEAL OF THE DAY</h3>
               <br />
@@ -307,7 +307,7 @@ export default function HomePage() {
               <Link href="/products?sale=true" className={styles.hotDealsViewAll}>
                 View All <ChevronRight size={16} />
               </Link>
-            </aside>}
+            </aside>
           </div>
         </div>
 
