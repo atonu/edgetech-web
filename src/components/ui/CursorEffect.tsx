@@ -6,6 +6,8 @@ export default function CursorEffect() {
   const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches) return;
+
     const dot = dotRef.current;
     const ring = ringRef.current;
     if (!dot || !ring) return;

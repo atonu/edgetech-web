@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { PackageDto } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { getImageUrl } from '@/lib/imageUrl';
+import { aggregatePackageItems } from '@/lib/packageItems';
 import styles from './ProductCard.module.css';
 
 interface Props { pkg: PackageDto; index?: number; }
@@ -49,7 +50,8 @@ export default function PackageProductCard({ pkg, index = 0 }: Props) {
     ? Math.round((1 - pkg.packagePrice / pkg.regularPrice) * 100)
     : null;
 
-  const itemCount = pkg.items.length;
+  const itemCount = aggregatePackageItems(pkg.items).length;
+  const unitCount = pkg.items.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <motion.div
@@ -113,7 +115,9 @@ export default function PackageProductCard({ pkg, index = 0 }: Props) {
           <div className={styles.info}>
             <div className={styles.meta}>
               <span className={styles.brand}>EdgeTech Package</span>
-              <span className={styles.category}>{itemCount} item{itemCount === 1 ? '' : 's'}</span>
+              <span className={styles.category}>
+                {itemCount} product{itemCount === 1 ? '' : 's'} · {unitCount} unit{unitCount === 1 ? '' : 's'}
+              </span>
             </div>
 
             <h3 className={styles.name}>{pkg.name}</h3>

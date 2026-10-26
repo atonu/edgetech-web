@@ -1,11 +1,13 @@
 'use client';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart, Zap, Package as PackageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { PackageDto } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
+import { aggregatePackageItems } from '@/lib/packageItems';
 import { useCartStore } from '@/store/useCartStore';
 import styles from './PackageShowcaseCard.module.css';
 
@@ -18,8 +20,9 @@ export default function PackageShowcaseCard({ pkg, index = 0, maxItems = 4 }: Pr
 
   const savings = pkg.regularPrice - pkg.packagePrice;
   const savingsPct = pkg.regularPrice > 0 ? Math.round((savings / pkg.regularPrice) * 100) : 0;
-  const shownItems = pkg.items.slice(0, maxItems);
-  const remaining = pkg.items.length - shownItems.length;
+  const uniqueItems = aggregatePackageItems(pkg.items);
+  const shownItems = uniqueItems.slice(0, maxItems);
+  const remaining = uniqueItems.length - shownItems.length;
 
   const handleAdd = () => {
     addPackage(pkg);
@@ -42,12 +45,12 @@ export default function PackageShowcaseCard({ pkg, index = 0, maxItems = 4 }: Pr
       </div>
 
       <div className={styles.body}>
-        <span className={styles.title}>{pkg.name}</span>
+        <Link href={`/packages/${pkg.id}`} className={styles.title}>{pkg.name}</Link>
         {pkg.description && <p className={styles.description}>{pkg.description}</p>}
 
         <div className={styles.items}>
-          {shownItems.map((item, i) => (
-            <div key={`${pkg.id}-${i}`} className={styles.item}>
+          {shownItems.map(item => (
+            <div key={`${pkg.id}-${item.productId}`} className={styles.item}>
               <div className={styles.itemImg}>
                 {item.imageUrl ? (
                   <Image src={getImageUrl(item.imageUrl)!} alt="" fill sizes="34px" style={{ objectFit: 'cover' }} />
@@ -68,6 +71,9 @@ export default function PackageShowcaseCard({ pkg, index = 0, maxItems = 4 }: Pr
         </div>
 
         <div className={styles.footer}>
+          <Link href={`/packages/${pkg.id}`} className={styles.detailsLink}>
+            View package details
+          </Link>
           <button className="btn btn-primary btn-lg w-full" style={{ justifyContent: 'center' }} onClick={handleAdd}>
             <ShoppingCart size={18} /> Add Package to Cart
           </button>

@@ -600,6 +600,7 @@ export interface HeroCarouselDto {
   id?: string;
   slides: HeroSlideDto[];
   autoplayMs: number;
+  flashSaleEnabled: boolean;
   updatedAt?: string;
 }
 
@@ -609,6 +610,22 @@ export const HERO_MIN_SLIDES = 2;
 export const heroCarouselApi = {
   get: () => api.get<HeroCarouselDto>('/hero-carousel'),
   update: (data: HeroCarouselDto) => api.put<HeroCarouselDto>('/hero-carousel', data),
+};
+
+export interface HappyCustomerDto {
+  id: string;
+  name: string;
+  imageUrl: string;
+  displayOrder: number;
+  isActive: boolean;
+}
+
+export const happyCustomersApi = {
+  get: () => api.get<HappyCustomerDto[]>('/happy-customers'),
+  getForAdmin: () => api.get<HappyCustomerDto[]>('/happy-customers/admin'),
+  create: (data: Omit<HappyCustomerDto, 'id'>) => api.post<HappyCustomerDto>('/happy-customers', data),
+  update: (id: string, data: Omit<HappyCustomerDto, 'id'>) => api.put<HappyCustomerDto>(`/happy-customers/${id}`, data),
+  delete: (id: string) => api.delete(`/happy-customers/${id}`),
 };
 
 export interface FeedbackDto {
@@ -650,4 +667,3 @@ export const feedbacksApi = {
     api.patch<FeedbackDto>(`/feedbacks/${id}/status`, data),
   delete: (id: number) => api.delete(`/feedbacks/${id}`),
 };
-

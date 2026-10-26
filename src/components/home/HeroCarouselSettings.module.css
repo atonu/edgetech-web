@@ -110,6 +110,78 @@
   gap: 14px;
 }
 
+.flashSaleToggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-glass-border, rgba(0, 200, 224, 0.2));
+  border-radius: var(--radius-md, 14px);
+  background: var(--color-surface-2);
+  cursor: pointer;
+}
+
+.flashSaleToggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.flashSaleSlider {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-glass-border, rgba(0, 200, 224, 0.2));
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.flashSaleSlider::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 160ms ease;
+}
+
+.flashSaleToggle input:checked + .flashSaleSlider {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.flashSaleToggle input:checked + .flashSaleSlider::after {
+  transform: translateX(20px);
+}
+
+.flashSaleToggle input:focus-visible + .flashSaleSlider {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.flashSaleToggle input:disabled + .flashSaleSlider {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.flashSaleToggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.flashSaleToggle small {
+  color: var(--color-text-muted);
+}
+
 .slideCard {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr) auto;

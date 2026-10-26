@@ -82,6 +82,14 @@
 .active { color: var(--color-primary) !important; background: rgba(0, 200, 224, 0.08) !important; }
 .highlight { color: var(--color-accent) !important; }
 .highlight:hover { background: rgba(0, 229, 255, 0.08) !important; }
+.packagesLink,
+.packagesLink.active {
+  color: #ef4444 !important;
+}
+.packagesLink:hover,
+.packagesLink.active {
+  background: rgba(239, 68, 68, 0.1) !important;
+}
 
 /* Mega Menu */
 .megaMenuTrigger {
@@ -242,6 +250,28 @@
   flex-shrink: 0;
 }
 
+.callLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.callLink:hover {
+  color: var(--color-primary);
+  background: var(--color-surface-2);
+}
+
+.callLink svg {
+  flex: none;
+}
+
 .iconBtn {
   position: relative;
   width: 40px;
@@ -386,6 +416,10 @@
   width: 100%;
 }
 .mobileNavLink:hover { color: var(--color-primary); background: var(--color-surface-2); padding-left: 16px; }
+.mobilePackagesLink,
+.mobilePackagesLink:hover {
+  color: #ef4444;
+}
 
 .mobileCategorySection {
   display: flex;
@@ -509,6 +543,16 @@
     display: flex;
     background: var(--color-surface);
   }
+}
+
+@media (max-width: 768px) {
+  .callLink {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+  .callLink span { display: none; }
 }
 
 @media (max-width: 480px) {

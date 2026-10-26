@@ -84,6 +84,19 @@
   line-height: 1.3;
 }
 
+.detailsLink {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--color-primary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.detailsLink:hover {
+  color: var(--color-accent);
+}
+
 .description {
   font-size: 0.88rem;
   color: var(--color-text-muted);

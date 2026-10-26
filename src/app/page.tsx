@@ -3,14 +3,15 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Shield, Monitor, Package, ArrowRight, Zap, Star, Clock, Cable, Network, Router } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Shield, Monitor, Package, ArrowRight, Zap, Star, Clock, Cable, Network, Router, ShieldCheck, UserRoundCog, CreditCard, Headset } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
 import PackageProductCard from '@/components/products/PackageProductCard';
 import PackageShowcaseCard from '@/components/products/PackageShowcaseCard';
-import { HeroCarouselDto, HomeGroupsResponse, PackageDto, ProductListDto, heroCarouselApi, packagesApi, productGroupsApi, productsApi } from '@/lib/api';
+import { HappyCustomerDto, HeroCarouselDto, HomeGroupsResponse, PackageDto, ProductListDto, happyCustomersApi, heroCarouselApi, packagesApi, productGroupsApi, productsApi } from '@/lib/api';
 import HeroCarouselSettings from '@/components/home/HeroCarouselSettings';
 import HomeInfiniteBanner from '@/components/home/HomeInfiniteBanner';
+import { getImageUrl } from '@/lib/imageUrl';
 import {
   IpCameraCategoryIcon,
   CcCameraCategoryIcon,
@@ -25,6 +26,7 @@ import styles from './page.module.css';
 // hero never renders empty. Admins manage the live slides from the settings modal.
 const fallbackCarousel: HeroCarouselDto = {
   autoplayMs: 6000,
+  flashSaleEnabled: true,
   slides: [
     {
       title: 'Secure Your World\nWith Smart Surveillance',
@@ -95,7 +97,9 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideDirection, setSlideDirection] = useState(1);
   const [carousel, setCarousel] = useState<HeroCarouselDto>(fallbackCarousel);
+  const [flashSaleEnabled, setFlashSaleEnabled] = useState(false);
   const [products, setProducts] = useState<ProductListDto[]>([]);
+  const [happyCustomers, setHappyCustomers] = useState<HappyCustomerDto[]>([]);
   const [homeGroups, setHomeGroups] = useState<HomeGroupsResponse | null>(null);
   const [packages, setPackages] = useState<PackageDto[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
@@ -110,8 +114,9 @@ export default function HomePage() {
     heroCarouselApi.get()
       .then(res => {
         if (res.data?.slides?.length) setCarousel(res.data);
+        setFlashSaleEnabled(res.data?.flashSaleEnabled === true);
       })
-      .catch(() => { /* keep fallback slides */ });
+      .catch(() => { /* keep fallback slides and leave sale hidden until settings load */ });
   }, []);
 
   // Auto-advance hero carousel
@@ -141,13 +146,15 @@ export default function HomePage() {
 
   useEffect(() => {
     Promise.allSettled([
-      productsApi.getFeatured(20),
+      productsApi.getAll({ sort: 'newest', page: 1, pageSize: 100 }),
       productGroupsApi.getHome(),
       packagesApi.getAll(),
-    ]).then(([featuredResult, groupsResult, packagesResult]) => {
-      if (featuredResult.status === 'fulfilled') setProducts(featuredResult.value.data);
+      happyCustomersApi.get(),
+    ]).then(([featuredResult, groupsResult, packagesResult, customersResult]) => {
+      if (featuredResult.status === 'fulfilled') setProducts(featuredResult.value.data.items);
       if (groupsResult.status === 'fulfilled') setHomeGroups(groupsResult.value.data);
       if (packagesResult.status === 'fulfilled') setPackages(packagesResult.value.data ?? []);
+      if (customersResult.status === 'fulfilled') setHappyCustomers(customersResult.value.data);
       setProductsLoading(false);
     });
   }, []);
@@ -166,13 +173,24 @@ export default function HomePage() {
   const activeIndex = slideCount > 0 ? Math.min(currentSlide, slideCount - 1) : 0;
   const activeSlide = heroSlides[activeIndex];
 
-  const fallbackFeatured = products.filter(p => p.isFeatured);
-  const featuredRow1 = homeGroups?.bestSellers?.slice(0, 5) ?? (fallbackFeatured.length >= 5 ? fallbackFeatured.slice(0, 5) : products.slice(0, 5));
-  const featuredRow2 = homeGroups?.mostPopular?.slice(0, 5) ?? (fallbackFeatured.length >= 10 ? fallbackFeatured.slice(5, 10) : products.slice(5, 10));
-  const hotDealProducts = (featuredRow2.length >= 2 ? featuredRow2 : products).slice(0, 2);
-  const newArrivals = homeGroups?.newArrivals?.slice(0, 5) ?? products.slice(0, 5);
-  const bestSellingPackages = (homeGroups?.bestSellingPackages ?? packages.filter(p => p.isFeatured)).slice(0, 5);
-  const bestSellingProducts = (homeGroups?.bestSellingProducts ?? featuredRow1).slice(0, 5 - bestSellingPackages.length);
+  const latestProducts = products;
+  const fillFromLatest = (items: ProductListDto[] | undefined, limit: number) => {
+    const result = (items ?? []).slice(0, limit);
+    const selectedIds = new Set(result.map(product => product.id));
+    for (const product of latestProducts) {
+      if (result.length >= limit) break;
+      if (!selectedIds.has(product.id)) {
+        result.push(product);
+        selectedIds.add(product.id);
+      }
+    }
+    return result;
+  };
+  const featuredRow2 = fillFromLatest(homeGroups?.mostPopular, 5);
+  const hotDealProducts = (featuredRow2.length >= 2 ? featuredRow2 : latestProducts).slice(0, 2);
+  const newArrivals = fillFromLatest(homeGroups?.newArrivals, 5);
+  const bestSellingPackages = (homeGroups?.bestSellingPackages ?? []).slice(0, 5);
+  const bestSellingProducts = fillFromLatest(homeGroups?.bestSellingProducts, 5 - bestSellingPackages.length);
 
   return (
     <div className={styles.home}>
@@ -185,9 +203,15 @@ export default function HomePage() {
         </div>
 
         <div className={`container ${styles.heroContent}`}>
-          <div className={styles.heroMain}>
+          <div className={`${styles.heroMain} ${!flashSaleEnabled ? styles.heroMainNoDeals : ''}`}>
             <div className={styles.heroBanner}>
-              <HeroCarouselSettings carousel={carousel} onSaved={setCarousel} />
+              <HeroCarouselSettings
+                carousel={carousel}
+                onSaved={updated => {
+                  setCarousel(updated);
+                  setFlashSaleEnabled(updated.flashSaleEnabled ?? true);
+                }}
+              />
               <AnimatePresence initial={false} custom={slideDirection}>
                 <motion.div
                   key={`slide-${activeIndex}`}
@@ -260,7 +284,7 @@ export default function HomePage() {
               )}
             </div>
 
-            <aside className={styles.hotDealsPanel}>
+            {flashSaleEnabled && <aside className={styles.hotDealsPanel}>
               <span className="section-label">Browse by Category</span>
               <h3>HOT DEAL OF THE DAY</h3>
               <br />
@@ -283,29 +307,41 @@ export default function HomePage() {
               <Link href="/products?sale=true" className={styles.hotDealsViewAll}>
                 View All <ChevronRight size={16} />
               </Link>
-            </aside>
+            </aside>}
           </div>
         </div>
 
-        {/* Stats bar */}
+        {/* Customer assurance cards */}
         <div className={styles.statsBar}>
           <div className="container">
             <div className={styles.stats}>
               <div className={styles.stat}>
-                <strong>5,000+</strong>
-                <span>Products Sold</span>
+                <ShieldCheck size={28} aria-hidden="true" />
+                <div>
+                  <strong>Authentic Products</strong>
+                  <span>100% genuine products</span>
+                </div>
               </div>
               <div className={styles.stat}>
-                <strong>50+</strong>
-                <span>Top Brands</span>
+                <UserRoundCog size={28} aria-hidden="true" />
+                <div>
+                  <strong>Expert Engineers</strong>
+                  <span>Professional technical guidance</span>
+                </div>
               </div>
               <div className={styles.stat}>
-                <strong>2,000+</strong>
-                <span>Happy Clients</span>
+                <CreditCard size={28} aria-hidden="true" />
+                <div>
+                  <strong>36 Months EMI</strong>
+                  <span>0% EMI for up to 36 months</span>
+                </div>
               </div>
               <div className={styles.stat}>
-                <strong>24/7</strong>
-                <span>Support</span>
+                <Headset size={28} aria-hidden="true" />
+                <div>
+                  <strong>Online Support</strong>
+                  <span>Technical and software assistance</span>
+                </div>
               </div>
             </div>
           </div>
@@ -407,7 +443,7 @@ export default function HomePage() {
       </div>
 
       {/* ===== HOT DEAL BANNER ===== */}
-      <section className={styles.hotDeal}>
+      {flashSaleEnabled && <section className={styles.hotDeal}>
         <div className={styles.hotDealBg} />
         <div className={`container ${styles.hotDealContent}`}>
           <motion.div
@@ -438,7 +474,7 @@ export default function HomePage() {
             </Link>
           </motion.div>
         </div>
-      </section>
+      </section>}
 
       {/* ===== FEATURED PRODUCTS ROW 2 ===== */}
       <section className={styles.section}>
@@ -456,6 +492,38 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ===== HAPPY CUSTOMERS ===== */}
+      {happyCustomers.length > 0 && (
+        <section className={styles.section}>
+          <div className="container">
+            <div className="section-header" style={{ justifyContent: 'center' }}>
+              <div className="text-center">
+                <span className="section-label" style={{ justifyContent: 'center' }}>Customer Stories</span>
+                <h2>Happy Customers</h2>
+              </div>
+            </div>
+            <div className={styles.brandTrack}>
+              <div className={styles.customerScroll}>
+                {[...happyCustomers, ...happyCustomers].map((customer, index) => (
+                  <div key={`${customer.id}-${index}`} className={styles.customerCard}>
+                    <div className={styles.customerImageWrap}>
+                      <Image
+                        src={getImageUrl(customer.imageUrl)!}
+                        alt={customer.name}
+                        fill
+                        sizes="96px"
+                        className={styles.customerImage}
+                      />
+                    </div>
+                    <span className={styles.brandName}>{customer.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ===== BRAND CAROUSEL ===== */}
       <section className={styles.section}>
@@ -521,7 +589,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== MOBILE HOT DEALS (Shown only on phone, just above New Arrivals) ===== */}
-      <section className={styles.mobileHotDealsSection}>
+      {flashSaleEnabled && <section className={styles.mobileHotDealsSection}>
         <div className="container">
           <div className="section-header">
             <div>
@@ -542,7 +610,7 @@ export default function HomePage() {
             )}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ===== NEW ARRIVALS ===== */}
       <section className={styles.section}>

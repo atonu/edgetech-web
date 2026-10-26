@@ -33,6 +33,8 @@ import AdminPagination from '@/components/admin/AdminPagination';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import PackageManager from '@/components/admin/PackageManager';
 import BannersAdminManager from '@/components/admin/BannersAdminManager';
+import HappyCustomersAdminManager from '@/components/admin/HappyCustomersAdminManager';
+import FlashSaleAdminManager from '@/components/admin/FlashSaleAdminManager';
 import {
   Badge,
   Button,
@@ -62,7 +64,7 @@ const ADMIN_PAGE_SIZE = 10;
 
 type DeleteTarget = { type: 'product' | 'category' | 'brand' | 'service' | 'group' | 'user' | 'feedback'; id: number | string; label: string };
 
-type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'packages' | 'users' | 'feedbacks' | 'banners';
+type TabKey = 'products' | 'categories' | 'brands' | 'services' | 'orders' | 'groups' | 'packages' | 'users' | 'feedbacks' | 'banners' | 'customers' | 'flashSale';
 
 const ORDER_STATUSES = ['Placed', 'Verified', 'InProgress', 'Done', 'Cancelled'] as const;
 const FEEDBACK_STATUSES = ['New', 'InProgress', 'Resolved', 'Archived'] as const;
@@ -1033,6 +1035,8 @@ export default function AdminPage() {
               { key: 'users', label: 'Users' },
               { key: 'feedbacks', label: 'Feedbacks' },
               { key: 'banners', label: 'Banners' },
+              { key: 'customers', label: 'Happy Customers' },
+              { key: 'flashSale', label: 'Flash Sale' },
             ].map(t => (
               <TabsTrigger key={t.key} active={tab === t.key} onClick={() => setTab(t.key as TabKey)}>
                 {t.label}
@@ -1779,6 +1783,12 @@ export default function AdminPage() {
 
         {tab === 'banners' && (
           <BannersAdminManager />
+        )}
+        {tab === 'customers' && (
+          <HappyCustomersAdminManager />
+        )}
+        {tab === 'flashSale' && (
+          <FlashSaleAdminManager />
         )}
       </div>
 

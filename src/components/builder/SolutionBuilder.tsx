@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { Camera, HardDrive, Monitor, Cable, Power, Battery, X, Search, Check, Zap, Plus, Minus, Router, Network, Boxes } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -177,52 +178,55 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
         })}
       </div>
 
-      <AnimatePresence>
-        {activeSlot && (
-          <motion.div className={styles.modalOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={closeModal}>
-            <motion.div className={styles.modal} initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-              transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }} onClick={e => e.stopPropagation()}>
-              <div className={styles.modalHeader}>
-                <h3>Select {activeSlotDef?.label}</h3>
-                <button type="button" className={styles.modalClose} onClick={closeModal}><X size={20} /></button>
-              </div>
-              <div className={styles.modalSearch}>
-                <Search size={16} />
-                <input type="text" placeholder={`Search ${activeSlotDef?.label} products...`}
-                  value={slotSearch} onChange={e => setSlotSearch(e.target.value)} autoFocus />
-              </div>
-              <div className={styles.modalProducts}>
-                {filteredSlotProducts.length === 0 ? (
-                  <div className={styles.noProducts}>No products found</div>
-                ) : (
-                  filteredSlotProducts.map(product => {
-                    const isSelected = selectedProducts[activeSlot]?.id === product.id;
-                    return (
-                      <button type="button" key={product.id} className={`${styles.productOption} ${isSelected ? styles.productSelected : ''}`}
-                        onClick={() => selectProduct(product)}>
-                        <div className={styles.productOptionIcon}>
-                          {product.primaryImageUrl ? (
-                            <Image src={getImageUrl(product.primaryImageUrl)!} alt="" fill sizes="48px" style={{ objectFit: 'cover' }} />
-                          ) : (
-                            <Zap size={18} />
-                          )}
-                        </div>
-                        <div className={styles.productOptionInfo}>
-                          <span className={styles.productOptionName}>{product.name}</span>
-                          <span className={styles.productOptionBrand}>{product.brandName}</span>
-                        </div>
-                        <span className={styles.productOptionPrice}>৳{(product.discountPrice ?? product.price).toLocaleString()}</span>
-                        {isSelected && <Check size={16} className={styles.checkIcon} />}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {activeSlot && (
+            <motion.div className={styles.modalOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={closeModal}>
+              <motion.div className={styles.modal} initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }} onClick={e => e.stopPropagation()}>
+                <div className={styles.modalHeader}>
+                  <h3>Select {activeSlotDef?.label}</h3>
+                  <button type="button" className={styles.modalClose} onClick={closeModal}><X size={20} /></button>
+                </div>
+                <div className={styles.modalSearch}>
+                  <Search size={16} />
+                  <input type="text" placeholder={`Search ${activeSlotDef?.label} products...`}
+                    value={slotSearch} onChange={e => setSlotSearch(e.target.value)} autoFocus />
+                </div>
+                <div className={styles.modalProducts}>
+                  {filteredSlotProducts.length === 0 ? (
+                    <div className={styles.noProducts}>No products found</div>
+                  ) : (
+                    filteredSlotProducts.map(product => {
+                      const isSelected = selectedProducts[activeSlot]?.id === product.id;
+                      return (
+                        <button type="button" key={product.id} className={`${styles.productOption} ${isSelected ? styles.productSelected : ''}`}
+                          onClick={() => selectProduct(product)}>
+                          <div className={styles.productOptionIcon}>
+                            {product.primaryImageUrl ? (
+                              <Image src={getImageUrl(product.primaryImageUrl)!} alt="" fill sizes="48px" style={{ objectFit: 'cover' }} />
+                            ) : (
+                              <Zap size={18} />
+                            )}
+                          </div>
+                          <div className={styles.productOptionInfo}>
+                            <span className={styles.productOptionName}>{product.name}</span>
+                            <span className={styles.productOptionBrand}>{product.brandName}</span>
+                          </div>
+                          <span className={styles.productOptionPrice}>৳{(product.discountPrice ?? product.price).toLocaleString()}</span>
+                          {isSelected && <Check size={16} className={styles.checkIcon} />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 }

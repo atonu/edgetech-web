@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ShoppingCart, Search, Menu, X, User, LogOut, ChevronDown, Package, Shield, Sun, Moon, ArrowRight } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, User, LogOut, ChevronDown, Package, Shield, Sun, Moon, ArrowRight, Phone } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { categoriesApi, CategoryDto } from '@/lib/api';
@@ -159,7 +159,7 @@ export default function Header() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/products', label: 'All Products' },
-    { href: '/packages', label: 'Packages' },
+    { href: '/packages', label: 'Packages', packageLink: true },
     { href: '/package-builder', label: 'Build Your Solution', highlight: true },
   ];
 
@@ -187,7 +187,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`${styles.navLink} ${pathname === link.href ? styles.active : ''} ${link.highlight ? styles.highlight : ''}`}
+                className={`${styles.navLink} ${pathname === link.href ? styles.active : ''} ${link.highlight ? styles.highlight : ''} ${link.packageLink ? styles.packagesLink : ''}`}
               >
                 {link.label}
               </Link>
@@ -259,6 +259,10 @@ export default function Header() {
 
           {/* Actions */}
           <div className={styles.actions}>
+            <a className={styles.callLink} href="tel:+8801329661250" aria-label="Call EdgeTech at +880 1329-661250">
+              <Phone size={18} />
+              <span>+880 1329-661250</span>
+            </a>
             <button
               onClick={toggleTheme}
               className={`${styles.iconBtn} ${styles.themeBtn}`}
@@ -339,7 +343,7 @@ export default function Header() {
               <button type="submit"><Search size={16} /></button>
             </form>
             {visibleNavLinks.map(link => (
-              <Link key={link.href} href={link.href} className={styles.mobileNavLink} onClick={() => setMenuOpen(false)}>
+              <Link key={link.href} href={link.href} className={`${styles.mobileNavLink} ${link.packageLink ? styles.mobilePackagesLink : ''}`} onClick={() => setMenuOpen(false)}>
                 {link.label}
               </Link>
             ))}

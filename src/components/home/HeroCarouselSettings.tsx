@@ -27,6 +27,7 @@ export default function HeroCarouselSettings({ carousel, onSaved }: Props) {
   const [open, setOpen] = useState(false);
   const [slides, setSlides] = useState<HeroSlideDto[]>([]);
   const [autoplaySec, setAutoplaySec] = useState(6);
+  const [flashSaleEnabled, setFlashSaleEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -39,6 +40,7 @@ export default function HeroCarouselSettings({ carousel, onSaved }: Props) {
   const openModal = () => {
     setSlides(carousel.slides.map(s => ({ ...s })));
     setAutoplaySec(Math.round((carousel.autoplayMs || 6000) / 1000));
+    setFlashSaleEnabled(carousel.flashSaleEnabled ?? true);
     setOpen(true);
   };
 
@@ -132,6 +134,7 @@ export default function HeroCarouselSettings({ carousel, onSaved }: Props) {
       const res = await heroCarouselApi.update({
         slides: slides.map((s, i) => ({ ...s, order: i })),
         autoplayMs: Math.min(30000, Math.max(2000, autoplaySec * 1000)),
+        flashSaleEnabled,
       });
 
       // Drop files for slides that were removed, so the image volume doesn't grow forever.
@@ -181,6 +184,22 @@ export default function HeroCarouselSettings({ carousel, onSaved }: Props) {
             </div>
 
             <div className={styles.body}>
+              <label className={styles.flashSaleToggle}>
+                <input
+                  type="checkbox"
+                  checked={flashSaleEnabled}
+                  onChange={e => setFlashSaleEnabled(e.target.checked)}
+                  disabled={busy}
+                  role="switch"
+                  aria-checked={flashSaleEnabled}
+                />
+                <span className={styles.flashSaleSlider} aria-hidden="true" />
+                <span>
+                  <strong>Show Flash Sale on homepage</strong>
+                  <small>Controls the Flash Sale and mobile Hot Deals sections.</small>
+                </span>
+              </label>
+
               {belowMinimum && (
                 <div className={styles.warn}>
                   <AlertTriangle size={15} style={{ flex: 'none', marginTop: 1 }} />
