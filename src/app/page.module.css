@@ -867,13 +867,12 @@
   .heroText {
     position: absolute !important;
     top: auto !important;
-    /* Centred horizontally on the banner rather than pinned to the right corner. */
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%);
+    left: auto !important;
+    right: 14px !important;
+    transform: none;
     bottom: 14px !important;
     width: auto !important;
-    max-width: 70% !important;
+    max-width: calc(100% - 28px) !important;
     padding: 0 !important;
     background: transparent !important;
     border: none !important;
@@ -883,7 +882,7 @@
     -webkit-backdrop-filter: none !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
+    align-items: flex-end !important;
     justify-content: flex-end !important;
     pointer-events: auto;
     z-index: 3;
@@ -898,7 +897,8 @@
   .heroCtas {
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
+    align-items: flex-end !important;
+    justify-content: flex-end !important;
     gap: 6px !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -907,7 +907,7 @@
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    width: fit-content;
+    width: auto;
   }
   .heroCtas :global(.btn) {
     padding: 6px 14px !important;
@@ -958,13 +958,12 @@
   .heroText {
     position: absolute !important;
     top: auto !important;
-    /* Centred horizontally on the banner rather than pinned to the right corner. */
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%);
+    left: auto !important;
+    right: 8px !important;
+    transform: none;
     bottom: 10px !important;
     width: auto !important;
-    max-width: 70% !important;
+    max-width: calc(100% - 16px) !important;
     padding: 0 !important;
     background: transparent !important;
     border: none !important;
@@ -974,7 +973,7 @@
     -webkit-backdrop-filter: none !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
+    align-items: flex-end !important;
     justify-content: flex-end !important;
     pointer-events: auto;
     z-index: 3;
@@ -989,7 +988,8 @@
   .heroCtas {
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
+    align-items: flex-end !important;
+    justify-content: flex-end !important;
     gap: 5px !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -998,7 +998,7 @@
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    width: fit-content;
+    width: auto;
   }
   .heroCtas :global(.btn) {
     padding: 5px 12px !important;
