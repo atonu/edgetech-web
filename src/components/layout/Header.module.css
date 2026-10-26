@@ -556,6 +556,20 @@
 }
 
 @media (max-width: 480px) {
-  .inner { gap: 12px; }
-  .logoText { display: none; }
+  .inner { gap: 8px; }
+  .logo {
+    gap: 5px;
+    font-size: 1.05rem;
+  }
+  .logoIcon {
+    width: 34px;
+    height: 34px;
+  }
+  .userBtn {
+    gap: 4px;
+    padding: 8px;
+  }
+  .userBtn span {
+    display: none;
+  }
 }

@@ -263,15 +263,6 @@ export default function Header() {
               <Phone size={18} />
               <span>+880 1329-661250</span>
             </a>
-            <button
-              onClick={toggleTheme}
-              className={`${styles.iconBtn} ${styles.themeBtn}`}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
-            </button>
-
             {/* Search */}
             <div className={`${styles.searchWrapper} ${searchOpen ? styles.searchOpen : ''}`}>
               {searchOpen ? (
@@ -298,6 +289,15 @@ export default function Header() {
             <button onClick={toggleCart} className={styles.iconBtn} aria-label="Cart">
               <ShoppingCart size={20} />
               {mounted && count() > 0 && <span className={styles.cartBadge}>{count()}</span>}
+            </button>
+
+            <button
+              onClick={toggleTheme}
+              className={`${styles.iconBtn} ${styles.themeBtn}`}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
             </button>
 
             {/* Auth */}
