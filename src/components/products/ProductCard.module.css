@@ -299,8 +299,8 @@
   .wishlistBtn {
     top: 4px;
     right: 4px;
-    width: 24px;
-    height: 24px;
+    width: 44px;
+    height: 44px;
     opacity: 0.85;
   }
   .cardActions {
@@ -310,10 +310,14 @@
     gap: 3px;
   }
   .actionBtn {
-    padding: 4px 2px;
-    font-size: 0.6rem;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 4px 3px;
+    font-size: 0.62rem;
+    line-height: 1.15;
     border-radius: 4px;
     gap: 2px;
+    white-space: normal;
   }
   .info {
     padding: 8px 8px 10px;

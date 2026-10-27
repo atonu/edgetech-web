@@ -52,14 +52,17 @@
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 32px;
   max-width: 1140px;
+  width: 100%;
+  min-width: 0;
   margin: 0 auto;
   align-items: flex-start;
 }
 
 .formCard {
+  min-width: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl, 16px);
@@ -254,9 +257,11 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
 }
 
 .infoCard {
+  min-width: 0;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl, 16px);
@@ -289,6 +294,10 @@
   gap: 12px;
 }
 
+.channelItem > div {
+  min-width: 0;
+}
+
 .channelIcon {
   width: 36px;
   height: 36px;
@@ -315,6 +324,7 @@
   color: var(--text-primary);
   text-decoration: none;
   transition: color 0.2s;
+  overflow-wrap: anywhere;
 }
 
 .channelValue:hover {

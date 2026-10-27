@@ -320,11 +320,16 @@ export default function Header() {
                 )}
               </div>
             ) : (
-              <Link href="/auth/login" className="btn btn-primary btn-sm">Login</Link>
+              <Link href="/auth/login" className={`btn btn-primary btn-sm ${styles.desktopLogin}`}>Login</Link>
             )}
 
             {/* Mobile menu toggle */}
-            <button className={styles.mobileMenuBtn} onClick={() => setMenuOpen(!menuOpen)}>
+            <button
+              className={styles.mobileMenuBtn}
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-expanded={menuOpen}
+              aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            >
               {menuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>

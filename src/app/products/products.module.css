@@ -21,10 +21,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .sortWrap {
   position: relative;
+  min-width: 0;
 }
 
 .sortSelect {
@@ -33,6 +35,7 @@
   border: 1px solid var(--color-surface-3);
   border-radius: var(--radius-md);
   padding: 10px 36px 10px 14px;
+  width: 100%;
   color: var(--color-text);
   font-size: 0.85rem;
   cursor: pointer;
@@ -346,8 +349,24 @@
     margin-bottom: 16px;
   }
   .headerControls {
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 8px;
+    width: 100%;
+  }
+  .sortWrap {
+    grid-column: 1 / -1;
+  }
+  .viewToggle {
+    justify-self: start;
+  }
+  .filterToggle {
+    min-height: 44px;
+    justify-self: end;
+  }
+  .viewBtn {
+    min-width: 44px;
+    min-height: 44px;
   }
   .mobileSearchContainer {
     margin-top: -8px;

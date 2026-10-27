@@ -250,6 +250,10 @@
   flex-shrink: 0;
 }
 
+.desktopLogin {
+  flex-shrink: 0;
+}
+
 .callLink {
   display: inline-flex;
   align-items: center;
@@ -389,6 +393,7 @@
   border-top: 1px solid var(--color-glass-border);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   max-height: calc(100vh - 72px);
+  max-height: calc(100dvh - 72px);
   overflow-y: auto;
 }
 
@@ -557,6 +562,7 @@
 
 @media (max-width: 480px) {
   .inner { gap: 8px; }
+  .actions { gap: 4px; }
   .logo {
     gap: 5px;
     font-size: 1.05rem;
@@ -571,5 +577,18 @@
   }
   .userBtn span {
     display: none;
+  }
+  .searchWrapper,
+  .desktopLogin {
+    display: none;
+  }
+  .callLink,
+  .iconBtn,
+  .mobileMenuBtn,
+  .userBtn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
   }
 }
