@@ -29,6 +29,26 @@
   overflow: hidden;
 }
 
+.packageCard .imageWrap {
+  padding-top: 70%;
+}
+
+.packageCard .info {
+  padding: 8px 10px 10px;
+}
+
+.packageCard .name {
+  margin-bottom: 4px;
+}
+
+.packageCard .stars {
+  margin-bottom: 4px;
+}
+
+.packageCard .stockStatus {
+  margin-top: 2px;
+}
+
 .image { transition: transform 0.4s ease; }
 
 .imagePlaceholder {

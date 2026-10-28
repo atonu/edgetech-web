@@ -52,7 +52,7 @@ export default function PackagesPage() {
         ) : (
           <div className={styles.grid}>
             {packages.map((pkg, idx) => (
-              <PackageShowcaseCard key={pkg.id} pkg={pkg} index={idx} maxItems={6} />
+              <PackageShowcaseCard key={pkg.id} pkg={pkg} index={idx} />
             ))}
           </div>
         )}

@@ -13,8 +13,7 @@ import styles from './PackageShowcaseCard.module.css';
 
 interface Props { pkg: PackageDto; index?: number; maxItems?: number; }
 
-// Large "detail" card for the storefront CCTV Packages showcase and the /packages listing.
-export default function PackageShowcaseCard({ pkg, index = 0, maxItems = 4 }: Props) {
+export default function PackageShowcaseCard({ pkg, index = 0, maxItems = 3 }: Props) {
   const router = useRouter();
   const { addPackage } = useCartStore();
 
@@ -74,7 +73,7 @@ export default function PackageShowcaseCard({ pkg, index = 0, maxItems = 4 }: Pr
           <Link href={`/packages/${pkg.id}`} className={styles.detailsLink}>
             View package details
           </Link>
-          <button className="btn btn-primary btn-lg w-full" style={{ justifyContent: 'center' }} onClick={handleAdd}>
+          <button className={`btn btn-primary w-full ${styles.addButton}`} onClick={handleAdd}>
             <ShoppingCart size={18} /> Add Package to Cart
           </button>
         </div>

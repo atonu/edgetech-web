@@ -61,7 +61,7 @@ export default function PackageProductCard({ pkg, index = 0 }: Props) {
     >
       <Link href="/packages">
         <div
-          className={styles.card}
+          className={`${styles.card} ${styles.packageCard}`}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           style={{ transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}

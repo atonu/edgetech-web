@@ -1,7 +1,7 @@
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-glass-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -18,7 +18,7 @@
 .imageWrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 5 / 3;
   background: var(--color-surface-2);
   overflow: hidden;
 }
@@ -39,21 +39,21 @@
 
 .saveBadge {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
   background: var(--color-success);
   color: #fff;
   border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 0.75rem;
+  padding: 4px 10px;
+  font-size: 0.7rem;
   font-weight: 800;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .packageTag {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 10px;
+  left: 10px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -61,34 +61,38 @@
   backdrop-filter: blur(4px);
   color: #fff;
   border-radius: 999px;
-  padding: 5px 11px;
-  font-size: 0.7rem;
+  padding: 4px 9px;
+  font-size: 0.66rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .body {
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   flex: 1;
 }
 
 .title {
   font-family: var(--font-primary);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .detailsLink {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   color: var(--color-primary);
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 700;
   text-align: center;
 }
@@ -98,11 +102,11 @@
 }
 
 .description {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   color: var(--color-text-muted);
   line-height: 1.5;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -110,8 +114,8 @@
 .items {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px 0;
+  gap: 6px;
+  padding: 10px 0;
   border-top: 1px solid var(--color-glass-border);
   border-bottom: 1px solid var(--color-glass-border);
 }
@@ -120,7 +124,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .itemImg {
@@ -147,12 +151,12 @@
 }
 
 .itemQty {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--color-text-subtle);
 }
 
 .moreItems {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   color: var(--color-text-subtle);
   padding-top: 2px;
 }
@@ -160,23 +164,41 @@
 .priceRow {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .packagePrice {
   font-family: var(--font-primary);
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: var(--color-primary);
 }
 
 .regularPrice {
-  font-size: 1rem;
+  font-size: 0.88rem;
   color: var(--color-text-subtle);
   text-decoration: line-through;
 }
 
 .footer {
   margin-top: auto;
+}
+
+.addButton {
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 600px) {
+  .body {
+    padding: 14px;
+    gap: 8px;
+  }
+
+  .addButton {
+    padding: 9px 12px;
+    font-size: 0.82rem;
+  }
 }
