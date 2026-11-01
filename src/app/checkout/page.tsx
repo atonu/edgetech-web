@@ -7,7 +7,7 @@ import { CreditCard, Truck, MapPin, ChevronRight, ShieldCheck, Check, Zap, Packa
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { ordersApi } from '@/lib/api';
+import { ordersApi, servicesApi, ServiceItemDto } from '@/lib/api';
 import { adIdentifiers } from '@/lib/adIdentifiers';
 import { getImageUrl } from '@/lib/imageUrl';
 import { Spinner } from '@/components/ui/Spinner';
@@ -37,13 +37,31 @@ function CheckoutContent() {
   const stepParam = searchParams.get('step') as Step | null;
   const step: Step = stepParam && STEPS.includes(stepParam) ? stepParam : 'shipping';
   const stepIndex = STEPS.indexOf(step) + 1;
-  const goToStep = (next: Step) =>
-    router.push(next === 'shipping' ? '/checkout' : `/checkout?step=${next}`, { scroll: false });
+  const serviceIdParam = searchParams.get('serviceId');
+  const requestedUnits = Number(searchParams.get('units')) || 1;
+  const serviceId = serviceIdParam ? Number(serviceIdParam) : null;
+  const validServiceId = serviceId !== null && Number.isInteger(serviceId) && serviceId > 0
+    ? serviceId
+    : null;
 
+  const [loadedService, setLoadedService] = useState<{ requestedId: string; service: ServiceItemDto | null } | null>(null);
+  const [serviceUnits, setServiceUnits] = useState(Math.max(1, Math.min(10000, requestedUnits)));
+  const service = loadedService?.requestedId === serviceIdParam ? loadedService.service : null;
+  const serviceLoading = Boolean(validServiceId && loadedService?.requestedId !== serviceIdParam);
   const [isPlacing, setIsPlacing] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false); // MANDATORY unchecked by default
   const [emiTenure, setEmiTenure] = useState(12);
   const [emiBank, setEmiBank] = useState('City Bank');
+  const goToStep = (next: Step) => {
+    const params = new URLSearchParams();
+    if (next !== 'shipping') params.set('step', next);
+    if (serviceIdParam) {
+      params.set('serviceId', serviceIdParam);
+      params.set('units', String(service?.isPerUnit ? serviceUnits : 1));
+    }
+    const query = params.toString();
+    router.push(query ? `/checkout?${query}` : '/checkout', { scroll: false });
+  };
 
   const [form, setForm] = useState({
     fullName: user ? `${user.firstName} ${user.lastName}` : '',
@@ -63,8 +81,29 @@ function CheckoutContent() {
   };
 
   const isEmi = form.paymentMethod === 'emi';
-  const totalAmount = total();
+  const serviceTotal = service ? service.price * (service.isPerUnit ? serviceUnits : 1) : 0;
+  const totalAmount = total() + serviceTotal;
   const emiMonthlyAmount = isEmi && emiTenure > 0 ? Math.round(totalAmount / emiTenure) : 0;
+
+  useEffect(() => {
+    if (!serviceIdParam || validServiceId === null) return;
+
+    let active = true;
+    servicesApi.getAll()
+      .then(res => {
+        if (!active) return;
+        const found = res.data.find(item => item.id === validServiceId);
+        setLoadedService({ requestedId: serviceIdParam, service: found ?? null });
+        if (found) {
+          setServiceUnits(found.isPerUnit ? Math.max(1, Math.min(10000, requestedUnits)) : 1);
+        }
+      })
+      .catch(() => {
+        if (active) setLoadedService({ requestedId: serviceIdParam, service: null });
+      });
+
+    return () => { active = false; };
+  }, [serviceIdParam, requestedUnits, validServiceId]);
 
   // Funnel events fire at most once per visit, so a Back-button hop can't inflate the counts.
   const fired = useRef<Set<string>>(new Set());
@@ -132,6 +171,7 @@ function CheckoutContent() {
           packageId: pkg.packageId,
           quantity: pkg.quantity,
         })),
+        services: service ? [{ serviceId: service.id, quantity: service.isPerUnit ? serviceUnits : 1 }] : [],
       });
 
       const orderNumber = res.data?.orderNumber;
@@ -177,14 +217,18 @@ function CheckoutContent() {
     }
   };
 
-  if (items.length === 0 && packages.length === 0) {
+  if (serviceLoading) {
+    return <div className={styles.checkoutPage}><div className="container"><h1 className={styles.pageTitle}>Loading service…</h1></div></div>;
+  }
+
+  if ((Boolean(serviceIdParam) && !service) || (items.length === 0 && packages.length === 0 && !service)) {
     return (
       <div className={styles.checkoutPage}>
         <div className="container">
           <div className={styles.emptyState}>
-            <h2>No items in cart</h2>
-            <p className="text-muted">Add some products before checking out.</p>
-            <Link href="/products" className="btn btn-primary">Browse Products</Link>
+            <h2>{serviceIdParam ? 'Service unavailable' : 'No items in cart'}</h2>
+            <p className="text-muted">{serviceIdParam ? 'This service may have been removed or is no longer available.' : 'Add some products before checking out.'}</p>
+            <Link href={serviceIdParam ? '/services' : '/products'} className="btn btn-primary">{serviceIdParam ? 'Browse Services' : 'Browse Products'}</Link>
           </div>
         </div>
       </div>
@@ -282,6 +326,21 @@ function CheckoutContent() {
                         <span className={styles.reviewItemPrice}>৳{(pkg.packagePrice * pkg.quantity).toLocaleString()}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+                {service && (
+                  <div className={styles.reviewSection}>
+                    <h4>Services:</h4>
+                    <div className={styles.reviewItem}>
+                      <div className={styles.reviewItemIcon}>
+                        {service.images[0] ? (
+                          <Image src={getImageUrl(service.images[0])!} alt={service.name} fill sizes="50px" style={{ objectFit: 'cover' }} />
+                        ) : <Zap size={16} />}
+                      </div>
+                      <span className={styles.reviewItemName}>{service.name}</span>
+                      <span className={styles.reviewItemQty}>{service.isPerUnit ? `×${serviceUnits} units` : '×1'}</span>
+                      <span className={styles.reviewItemPrice}>৳{serviceTotal.toLocaleString()}</span>
+                    </div>
                   </div>
                 )}
                 <div className={styles.reviewSection}>

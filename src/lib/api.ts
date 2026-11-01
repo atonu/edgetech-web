@@ -164,6 +164,7 @@ export interface OrderDto {
   emiMonthlyAmount?: number;
   emiBank?: string;
   packages?: OrderPackageDto[];
+  services?: OrderServiceDto[];
 }
 
 export interface CustomerInfo {
@@ -215,6 +216,7 @@ export interface PlaceOrderRequest {
   emiTenureMonths?: number;
   emiBank?: string;
   packages?: PlaceOrderPackageRequest[];
+  services?: { serviceId: number; quantity: number }[];
 }
 
 export interface UserDto {
@@ -310,10 +312,23 @@ export interface OrderPackageDto {
   items: OrderPackageItemDto[];
 }
 
+export interface OrderServiceDto {
+  serviceId: number;
+  name: string;
+  imageUrl?: string;
+  unitPrice: number;
+  quantity: number;
+  isPerUnit: boolean;
+}
+
 export interface ServiceItemDto {
   id: number;
   name: string;
+  images: string[];
+  price: number;
+  shortDescription?: string;
   description?: string;
+  isPerUnit: boolean;
   isActive: boolean;
 }
 
@@ -417,7 +432,7 @@ export const productImagesApi = {
   },
   remove: async (url: string): Promise<void> => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('et_token') : null;
-    await fetch('/api/uploads/product-images', {
+    const res = await fetch('/api/uploads/product-images', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -425,6 +440,7 @@ export const productImagesApi = {
       },
       body: JSON.stringify({ url }),
     });
+    if (!res.ok) throw new Error('Image removal failed');
   },
 };
 
@@ -501,8 +517,8 @@ export const servicesApi = {
 
 export const adminServicesApi = {
   getAll: () => api.get<ServiceItemDto[]>('/admin/services'),
-  create: (data: { name: string; description?: string }) => api.post<ServiceItemDto>('/admin/services', data),
-  update: (id: number, data: { name: string; description?: string; isActive: boolean }) => api.put(`/admin/services/${id}`, data),
+  create: (data: Omit<ServiceItemDto, 'id'>) => api.post<ServiceItemDto>('/admin/services', data),
+  update: (id: number, data: Omit<ServiceItemDto, 'id'>) => api.put(`/admin/services/${id}`, data),
   delete: (id: number) => api.delete(`/admin/services/${id}`),
 };
 

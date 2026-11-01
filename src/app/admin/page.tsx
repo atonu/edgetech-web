@@ -126,7 +126,17 @@ export default function AdminPage() {
 
   const [categoryForm, setCategoryForm] = useState({ id: 0, name: '', parentCategoryId: 0, isActive: true });
   const [brandForm, setBrandForm] = useState({ id: 0, name: '', description: '', logoUrl: '', isActive: true });
-  const [serviceForm, setServiceForm] = useState({ id: 0, name: '', description: '', isActive: true });
+  const [serviceForm, setServiceForm] = useState({
+    id: 0,
+    name: '',
+    images: [] as string[],
+    price: 0,
+    shortDescription: '',
+    description: '',
+    isPerUnit: false,
+    isActive: true,
+  });
+  const [serviceFiles, setServiceFiles] = useState<File[]>([]);
   const [groupForm, setGroupForm] = useState({ id: 0, key: 'best-sellers', name: '', isActive: true, productIds: [] as number[] });
   const canAccessAdmin = isAuthenticated && isAdmin();
 
@@ -462,7 +472,12 @@ export default function AdminPage() {
   const serviceTableResult = useMemo(
     () => paginateClient(
       serviceSearch.trim()
-        ? services.filter(s => s.name.toLowerCase().includes(serviceSearch.trim().toLowerCase()) || (s.description ?? '').toLowerCase().includes(serviceSearch.trim().toLowerCase()))
+        ? services.filter(s => {
+          const term = serviceSearch.trim().toLowerCase();
+          return s.name.toLowerCase().includes(term)
+            || (s.shortDescription ?? '').toLowerCase().includes(term)
+            || (s.description ?? '').toLowerCase().includes(term);
+        })
         : services,
       serviceTablePage, ADMIN_PAGE_SIZE
     ),
@@ -759,23 +774,54 @@ export default function AdminPage() {
   const saveService = async (e: FormEvent) => {
     e.preventDefault();
     await withBusy('save-service', async () => {
+      const uploadedImages: string[] = [];
       try {
+        const images = [...serviceForm.images];
+        setUploadingImage(true);
+        for (const file of serviceFiles) {
+          const uploaded = await productImagesApi.upload(file);
+          uploadedImages.push(uploaded.url);
+          images.push(uploaded.url);
+        }
+
+        const payload = {
+          name: serviceForm.name.trim(),
+          images,
+          price: Number(serviceForm.price),
+          shortDescription: serviceForm.shortDescription,
+          description: serviceForm.description,
+          isPerUnit: serviceForm.isPerUnit,
+          isActive: serviceForm.isActive,
+        };
         if (serviceForm.id) {
-          await adminServicesApi.update(serviceForm.id, {
-            name: serviceForm.name,
-            description: serviceForm.description,
-            isActive: serviceForm.isActive,
-          });
+          await adminServicesApi.update(serviceForm.id, payload);
           toast.success('Service updated.');
         } else {
-          await adminServicesApi.create({ name: serviceForm.name, description: serviceForm.description });
+          await adminServicesApi.create({
+            name: payload.name,
+            images: payload.images,
+            price: payload.price,
+            shortDescription: payload.shortDescription,
+            description: payload.description,
+            isPerUnit: payload.isPerUnit,
+            isActive: payload.isActive,
+          });
           toast.success('Service created.');
         }
 
-        setServiceForm({ id: 0, name: '', description: '', isActive: true });
+        const removedImages = serviceForm.images.filter(image => !images.includes(image));
+        setServiceForm({ id: 0, name: '', images: [], price: 0, shortDescription: '', description: '', isPerUnit: false, isActive: true });
+        setServiceFiles([]);
         await loadCore();
+        const cleanupResults = await Promise.allSettled(removedImages.map(image => productImagesApi.remove(image)));
+        if (cleanupResults.some(result => result.status === 'rejected')) {
+          toast.error('Service saved, but one or more removed images could not be deleted.');
+        }
       } catch {
+        await Promise.allSettled(uploadedImages.map(image => productImagesApi.remove(image)));
         toast.error('Failed to save service.');
+      } finally {
+        setUploadingImage(false);
       }
     });
   };
@@ -783,9 +829,14 @@ export default function AdminPage() {
   const removeService = async (id: number) => {
     await withBusy(`delete-service-${id}`, async () => {
       try {
+        const service = services.find(item => item.id === id);
         await adminServicesApi.delete(id);
         toast.success('Service removed.');
         await loadCore();
+        const cleanupResults = await Promise.allSettled((service?.images ?? []).map(image => productImagesApi.remove(image)));
+        if (cleanupResults.some(result => result.status === 'rejected')) {
+          toast.error('Service removed, but one or more service images could not be deleted.');
+        }
       } catch {
         toast.error('Failed to remove service.');
       }
@@ -858,7 +909,17 @@ export default function AdminPage() {
   };
 
   const editService = (s: ServiceItemDto) => {
-    setServiceForm({ id: s.id, name: s.name, description: s.description ?? '', isActive: s.isActive });
+    setServiceForm({
+      id: s.id,
+      name: s.name,
+      images: s.images ?? [],
+      price: s.price ?? 0,
+      shortDescription: s.shortDescription ?? '',
+      description: s.description ?? '',
+      isPerUnit: s.isPerUnit ?? false,
+      isActive: s.isActive,
+    });
+    setServiceFiles([]);
     setTab('services');
     scrollToForm();
   };
@@ -1436,16 +1497,60 @@ export default function AdminPage() {
               <CardContent>
                 <form onSubmit={saveService} className={styles.grid2}>
                   <Field label="Name"><Input value={serviceForm.name} onChange={e => setServiceForm(f => ({ ...f, name: e.target.value }))} required /></Field>
+                  <Field label="Price (৳)"><Input type="number" min="0" step="0.01" value={serviceForm.price} onChange={e => setServiceForm(f => ({ ...f, price: Number(e.target.value) }))} required /></Field>
+                  <Field label="Per unit cost">
+                    <Select value={String(serviceForm.isPerUnit)} onChange={e => setServiceForm(f => ({ ...f, isPerUnit: e.target.value === 'true' }))}>
+                      <option value="false">No — fixed price</option>
+                      <option value="true">Yes — price per unit</option>
+                    </Select>
+                  </Field>
                   <Field label="Active">
                     <Select value={String(serviceForm.isActive)} onChange={e => setServiceForm(f => ({ ...f, isActive: e.target.value === 'true' }))}>
                       <option value="true">Yes</option>
                       <option value="false">No</option>
                     </Select>
                   </Field>
-                  <div className={styles.fullWidth}><Label>Description</Label><Textarea rows={2} value={serviceForm.description} onChange={e => setServiceForm(f => ({ ...f, description: e.target.value }))} /></div>
+                  <div className={styles.fullWidth}>
+                    <Label>Images <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>— use 16:9 images for best results</span></Label>
+                    <Input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      multiple
+                      onChange={e => setServiceFiles(prev => [...prev, ...Array.from(e.target.files ?? [])])}
+                    />
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+                      {serviceForm.images.map((image, index) => (
+                        <div key={`${image}-${index}`} style={{ position: 'relative', width: 120, aspectRatio: '16 / 9' }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element -- admin image preview */}
+                          <img src={image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setServiceForm(f => ({ ...f, images: f.images.filter((_, imageIndex) => imageIndex !== index) }))}
+                            style={{ position: 'absolute', top: 2, right: 2, minHeight: 24, padding: '0 6px' }}
+                          >×</Button>
+                        </div>
+                      ))}
+                      {serviceFiles.map((file, index) => (
+                        <div key={`${file.name}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>{file.name}</span>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => setServiceFiles(prev => prev.filter((_, fileIndex) => fileIndex !== index))}>Remove</Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={styles.fullWidth}>
+                    <Label>Short description</Label>
+                    <Input value={serviceForm.shortDescription} onChange={e => setServiceForm(f => ({ ...f, shortDescription: e.target.value }))} />
+                  </div>
+                  <div className={styles.fullWidth}><Label>Description</Label><Textarea rows={6} value={serviceForm.description} onChange={e => setServiceForm(f => ({ ...f, description: e.target.value }))} /></div>
                   <div className={`${styles.actions} ${styles.fullWidth}`}>
-                    <Button type="submit" loading={busy === 'save-service'}>Save Service</Button>
-                    <Button variant="ghost" type="button" onClick={() => setServiceForm({ id: 0, name: '', description: '', isActive: true })}>Clear</Button>
+                    <Button type="submit" loading={busy === 'save-service' || uploadingImage}>Save Service</Button>
+                    <Button variant="ghost" type="button" onClick={() => {
+                      setServiceForm({ id: 0, name: '', images: [], price: 0, shortDescription: '', description: '', isPerUnit: false, isActive: true });
+                      setServiceFiles([]);
+                    }}>Clear</Button>
                   </div>
                 </form>
               </CardContent>
@@ -1460,15 +1565,15 @@ export default function AdminPage() {
                 </div>
                 <TableWrap>
                   <Table>
-                    <thead><tr><TH>ID</TH><TH>Name</TH><TH>Description</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
+                    <thead><tr><TH>ID</TH><TH>Name</TH><TH>Price</TH><TH>Description</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
                     <tbody>
                       {loading ? (
-                        <SkeletonRows cols={5} />
+                        <SkeletonRows cols={6} />
                       ) : serviceTableResult.pageItems.length === 0 ? (
-                        <tr><TD colSpan={5}>No services found.</TD></tr>
+                        <tr><TD colSpan={6}>No services found.</TD></tr>
                       ) : serviceTableResult.pageItems.map(s => (
                         <tr key={s.id}>
-                          <TD>{s.id}</TD><TD>{s.name}</TD><TD>{s.description}</TD>
+                          <TD>{s.id}</TD><TD>{s.name}</TD><TD>৳{s.price.toLocaleString()}{s.isPerUnit ? ' / unit' : ''}</TD><TD>{s.shortDescription || s.description}</TD>
                           <TD><Badge variant={s.isActive ? 'success' : 'secondary'}>{s.isActive ? 'Active' : 'Inactive'}</Badge></TD>
                           <TD>
                             <div className={styles.actions}>
@@ -2049,6 +2154,9 @@ function OrderRow({
   const itemsSubtotal = lineItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const orderPackages = order.packages ?? [];
   const packagesSubtotal = orderPackages.reduce((sum, p) => sum + p.packagePrice * p.quantity, 0);
+  const orderServices = order.services ?? [];
+  const servicesSubtotal = orderServices.reduce((sum, service) => sum + service.unitPrice * service.quantity, 0);
+  const orderLineCount = lineItems.length + orderPackages.length + orderServices.length;
 
   return (
     <>
@@ -2114,11 +2222,16 @@ function OrderRow({
           </div>
         )}
         <button type="button" className={styles.itemCountLink} onClick={() => setExpanded(v => !v)}>
-          {lineItems.length} item{lineItems.length === 1 ? '' : 's'} · {expanded ? 'hide' : 'view'} details
+          {orderLineCount} line{orderLineCount === 1 ? '' : 's'} · {expanded ? 'hide' : 'view'} details
         </button>
         {order.packages && order.packages.length > 0 && (
           <div style={{ fontSize: '0.75rem', marginTop: 2, color: 'var(--primary)', fontWeight: 600 }}>
             {order.packages.map(pkg => `${pkg.name}${pkg.quantity > 1 ? ` ×${pkg.quantity}` : ''}`).join(', ')}
+          </div>
+        )}
+        {orderServices.length > 0 && (
+          <div style={{ fontSize: '0.75rem', marginTop: 2, color: 'var(--primary)', fontWeight: 600 }}>
+            {orderServices.map(service => `${service.name}${service.isPerUnit ? ` ×${service.quantity} units` : ''}`).join(', ')}
           </div>
         )}
       </TD>
@@ -2259,9 +2372,28 @@ function OrderRow({
                 </div>
               )}
 
-              {(lineItems.length > 0 || orderPackages.length > 0) && Math.round(itemsSubtotal + packagesSubtotal) !== Math.round(order.totalAmount) && (
+              {orderServices.length > 0 && (
+                <div style={{ marginTop: lineItems.length > 0 || orderPackages.length > 0 ? 20 : 0 }}>
+                  <div className={styles.detailHeading}>
+                    Services
+                    <span className={styles.detailCount}>{orderServices.length} service{orderServices.length === 1 ? '' : 's'}</span>
+                  </div>
+                  {orderServices.map((service, index) => (
+                    <div key={`os-${service.serviceId}-${index}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--color-glass-border)' }}>
+                      <div>
+                        <strong>{service.name}</strong>
+                        <div className={styles.itemMeta}>{service.isPerUnit ? `${service.quantity} unit${service.quantity === 1 ? '' : 's'} × ৳${service.unitPrice.toLocaleString()}` : 'Fixed price'}</div>
+                      </div>
+                      <span className={styles.lineTotal}>৳{(service.unitPrice * service.quantity).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(lineItems.length > 0 || orderPackages.length > 0 || orderServices.length > 0)
+                && Math.round(itemsSubtotal + packagesSubtotal + servicesSubtotal) !== Math.round(order.totalAmount) && (
                 <div className={styles.detailWarn}>
-                  Items subtotal does not match the recorded order total. The product price may have
+                  Order line subtotal does not match the recorded order total. A price may have
                   changed after this order was placed.
                 </div>
               )}

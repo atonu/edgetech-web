@@ -159,6 +159,7 @@ export default function Header() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/products', label: 'All Products' },
+    { href: '/services', label: 'Services' },
     { href: '/packages', label: 'Packages', packageLink: true },
     { href: '/package-builder', label: 'Build Your Solution', highlight: true },
   ];

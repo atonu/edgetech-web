@@ -131,6 +131,7 @@ export default function AccountOrdersPage() {
                           {[
                             order.items.length ? `${order.items.length} item${order.items.length === 1 ? '' : 's'}` : null,
                             order.packages?.length ? `${order.packages.length} package${order.packages.length === 1 ? '' : 's'}` : null,
+                            order.services?.length ? `${order.services.length} service${order.services.length === 1 ? '' : 's'}` : null,
                           ].filter(Boolean).join(', ') || '—'}
                         </td>
                       </tr>
