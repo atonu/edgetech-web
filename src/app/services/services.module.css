@@ -36,8 +36,8 @@
 .banner {
   position: relative;
   isolation: isolate;
-  aspect-ratio: 16 / 9;
-  min-height: 190px;
+  aspect-ratio: 80 / 27;
+  min-height: 114px;
   background: var(--color-surface-2);
 }
 
@@ -46,7 +46,13 @@
   z-index: 1;
   inset: 0;
   content: '';
-  background: linear-gradient(90deg, transparent 20%, rgba(0, 0, 0, 0.72) 100%);
+  background: linear-gradient(
+    180deg,
+    transparent 30%,
+    rgba(0, 0, 0, 0.22) 52%,
+    rgba(0, 0, 0, 0.72) 82%,
+    #080b0f 100%
+  );
 }
 
 .bannerImage {
@@ -64,12 +70,12 @@
 .bannerTitle {
   position: absolute;
   z-index: 2;
-  top: 50%;
-  right: clamp(18px, 5vw, 56px);
-  max-width: 55%;
-  text-align: right;
+  top: clamp(20px, 4vw, 44px);
+  left: clamp(20px, 4vw, 44px);
+  max-width: min(70%, 620px);
+  text-align: left;
   color: #fff;
-  transform: translateY(-50%);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
 }
 
 .bannerTitle h2 {
@@ -83,11 +89,17 @@
 }
 
 .content {
-  padding: 22px clamp(16px, 3vw, 30px) 24px;
+  padding: 0;
+}
+
+.descriptionPanel {
+  padding: 15px clamp(16px, 3vw, 30px) 17px;
+  background: #080b0f;
+  color: #fff;
 }
 
 .description {
-  color: var(--color-text-muted);
+  color: rgba(255, 255, 255, 0.92);
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
@@ -121,9 +133,9 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
-  padding-top: 20px;
-  margin-top: 18px;
+  gap: 12px;
+  padding: 14px clamp(16px, 3vw, 30px) 17px;
+  background: var(--color-surface);
   border-top: 1px solid var(--color-glass-border);
 }
 
@@ -223,20 +235,24 @@
   }
 
   .banner {
-    aspect-ratio: 16 / 9;
-    min-height: 155px;
+    aspect-ratio: 16 / 6;
+    min-height: 112px;
   }
 
   .banner::after {
-    background: linear-gradient(0deg, rgba(0, 0, 0, 0.78), transparent 90%);
+    background: linear-gradient(
+      180deg,
+      transparent 30%,
+      rgba(0, 0, 0, 0.24) 52%,
+      rgba(0, 0, 0, 0.76) 82%,
+      #080b0f 100%
+    );
   }
 
   .bannerTitle {
-    right: 16px;
-    bottom: 16px;
-    top: auto;
+    top: 20px;
+    left: 16px;
     max-width: 78%;
-    transform: none;
   }
 
   .footer {

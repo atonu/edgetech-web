@@ -70,17 +70,19 @@ export default function ServicesPage() {
                     </div>
                   </div>
                   <div className={styles.content}>
-                    <div className={`${styles.description} ${!isExpanded ? styles.descriptionClamped : ''}`}>
-                      {(service.description || '').split(/\r?\n/).filter(Boolean).map((paragraph, index) => (
-                        <p key={`${service.id}-description-${index}`}>{paragraph}</p>
-                      ))}
-                      {!service.description && <p>Contact us to learn more about this service.</p>}
+                    <div className={styles.descriptionPanel}>
+                      <div className={`${styles.description} ${!isExpanded ? styles.descriptionClamped : ''}`}>
+                        {(service.description || '').split(/\r?\n/).filter(Boolean).map((paragraph, index) => (
+                          <p key={`${service.id}-description-${index}`}>{paragraph}</p>
+                        ))}
+                        {!service.description && <p>Contact us to learn more about this service.</p>}
+                      </div>
+                      {service.description && (
+                        <button type="button" className={styles.seeMore} onClick={() => toggleDescription(service.id)}>
+                          {isExpanded ? 'See less' : 'See more'}
+                        </button>
+                      )}
                     </div>
-                    {service.description && (
-                      <button type="button" className={styles.seeMore} onClick={() => toggleDescription(service.id)}>
-                        {isExpanded ? 'See less' : 'See more'}
-                      </button>
-                    )}
                     <div className={styles.footer}>
                       <div className={styles.price}>
                         <strong>৳{service.price.toLocaleString()}</strong>
