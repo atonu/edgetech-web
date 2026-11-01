@@ -40,11 +40,17 @@
 
 .marqueeTrack {
   display: flex;
-  align-items: center;
-  gap: 28px;
   animation: scrollInfinite 96s linear infinite;
   white-space: nowrap;
   flex-shrink: 0;
+  will-change: transform;
+}
+
+.marqueeGroup {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 28px;
   padding-right: 28px;
 }
 
@@ -54,10 +60,10 @@
 
 @keyframes scrollInfinite {
   0% {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
@@ -190,9 +196,8 @@
   .itemBody {
     font-size: 0.75rem;
   }
-  .marqueeTrack {
+  .marqueeGroup {
     gap: 16px;
     padding-right: 16px;
-    animation-duration: 75s;
   }
 }
