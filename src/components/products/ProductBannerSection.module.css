@@ -59,11 +59,17 @@
 
 .marqueeTrack {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  animation: scrollInfiniteProduct 45s linear infinite;
+  animation: scrollInfiniteProduct 96s linear infinite;
   white-space: nowrap;
   flex-shrink: 0;
+  will-change: transform;
+}
+
+.marqueeGroup {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 16px;
   padding-right: 16px;
 }
 
@@ -73,10 +79,10 @@
 
 @keyframes scrollInfiniteProduct {
   0% {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
@@ -234,10 +240,9 @@
     padding: 6px 0;
     border-radius: var(--radius-sm);
   }
-  .marqueeTrack {
+  .marqueeGroup {
     gap: 10px;
     padding-right: 10px;
-    animation-duration: 40s;
   }
   .bannerItem {
     padding: 3px 8px;

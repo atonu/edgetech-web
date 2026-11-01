@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -104,6 +104,9 @@ export default function HomePage() {
   const [packages, setPackages] = useState<PackageDto[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [countdown, setCountdown] = useState({ hours: 23, minutes: 45, seconds: 12 });
+  const [customerScrollDuration, setCustomerScrollDuration] = useState(30);
+  const brandScrollRef = useRef<HTMLDivElement>(null);
+  const customerScrollRef = useRef<HTMLDivElement>(null);
 
   // Slide count, indicators and autoplay speed all follow the admin-managed settings.
   const heroSlides = carousel.slides;
@@ -143,6 +146,26 @@ export default function HomePage() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const brandScroll = brandScrollRef.current;
+    const customerScroll = customerScrollRef.current;
+    if (!brandScroll || !customerScroll) return;
+
+    const updateCustomerScrollDuration = () => {
+      const brandWidth = brandScroll.getBoundingClientRect().width;
+      const customerWidth = customerScroll.getBoundingClientRect().width;
+      if (brandWidth > 0 && customerWidth > 0) {
+        setCustomerScrollDuration(30 * customerWidth / brandWidth);
+      }
+    };
+
+    updateCustomerScrollDuration();
+    const resizeObserver = new ResizeObserver(updateCustomerScrollDuration);
+    resizeObserver.observe(brandScroll);
+    resizeObserver.observe(customerScroll);
+    return () => resizeObserver.disconnect();
+  }, [happyCustomers.length]);
 
   useEffect(() => {
     Promise.allSettled([
@@ -504,7 +527,11 @@ export default function HomePage() {
               </div>
             </div>
             <div className={styles.brandTrack}>
-              <div className={styles.customerScroll}>
+              <div
+                ref={customerScrollRef}
+                className={styles.customerScroll}
+                style={{ animationDuration: `${customerScrollDuration}s` }}
+              >
                 {[...happyCustomers, ...happyCustomers].map((customer, index) => (
                   <div key={`${customer.id}-${index}`} className={styles.customerCard}>
                     <div className={styles.customerImageWrap}>
@@ -535,7 +562,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className={styles.brandTrack}>
-            <div className={styles.brandScroll}>
+            <div ref={brandScrollRef} className={styles.brandScroll}>
               {[...brands, ...brands].map((b, i) => (
                 <Link key={`${b.slug}-${i}`} href={`/products?brand=${b.slug}`} className={styles.brandCard}>
                   <div className={styles.brandLogoWrap}>

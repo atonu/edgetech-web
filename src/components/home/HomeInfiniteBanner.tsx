@@ -11,11 +11,15 @@ const DEFAULT_BANNER_ITEMS = [
   { order: 6, title: 'Professional On-Site Installation', body: 'Nationwide setup and warranty coverage', highlightTitle: 'SETUP', highlightText: '⚡' },
 ];
 
+const PRODUCT_SCROLL_DURATION_SECONDS = 96;
+const PRODUCT_SCROLL_CYCLE_ITEM_COUNT = 9;
+
 export default function HomeInfiniteBanner() {
   const { page } = usePolicyPage('home-banner');
 
   const rawSections = page?.sections && page.sections.length > 0 ? page.sections : DEFAULT_BANNER_ITEMS;
   const items = [...rawSections].sort((a, b) => a.order - b.order);
+  const scrollDuration = (PRODUCT_SCROLL_DURATION_SECONDS * items.length) / PRODUCT_SCROLL_CYCLE_ITEM_COUNT;
 
   const renderItems = (keyPrefix: string) =>
     items.map((item, idx) => (
@@ -37,7 +41,7 @@ export default function HomeInfiniteBanner() {
   return (
     <div className={styles.bannerWrapper} aria-label="Store Announcements and Guarantees">
       <div className={styles.marqueeContainer}>
-        <div className={styles.marqueeTrack}>
+        <div className={styles.marqueeTrack} style={{ animationDuration: `${scrollDuration}s` }}>
           <div className={styles.marqueeGroup}>{renderItems('first')}</div>
           <div className={styles.marqueeGroup} aria-hidden="true">{renderItems('second')}</div>
         </div>

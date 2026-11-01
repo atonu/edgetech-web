@@ -19,50 +19,31 @@ export default function ProductBannerSection({ productNotes }: ProductBannerSect
   const rawSections = page?.sections && page.sections.length > 0 ? page.sections : DEFAULT_PRODUCT_BANNER_ITEMS;
   const items = [...rawSections].sort((a, b) => a.order - b.order);
 
-  // Duplicate items to ensure smooth continuous marquee loop across all widths
-  const renderItems = [...items, ...items, ...items];
+  const renderItems = (keyPrefix: string) =>
+    [...items, ...items, ...items].map((item, idx) => (
+      <div key={`${keyPrefix}-${item.order}-${idx}`} className={styles.bannerItem}>
+        {item.highlightText && <span className={styles.itemIcon}>{item.highlightText}</span>}
+        <div className={styles.itemTextGroup}>
+          {item.highlightTitle && <span className={styles.itemTag}>{item.highlightTitle}</span>}
+          <span className={styles.itemTitle}>{item.title}</span>
+          {item.body && (
+            <>
+              <span className={styles.itemDot}>•</span>
+              <span className={styles.itemBody}>{item.body}</span>
+            </>
+          )}
+        </div>
+      </div>
+    ));
 
   return (
     <div className={styles.sectionContainer}>
       {/* Infinite Marquee Loop Banner */}
       <div className={styles.marqueeWrapper} aria-label="Product Guarantees and Services">
         <div className={styles.marqueeContainer}>
-          {/* Track 1 */}
           <div className={styles.marqueeTrack}>
-            {renderItems.map((item, idx) => (
-              <div key={`p-track1-${item.order}-${idx}`} className={styles.bannerItem}>
-                {item.highlightText && <span className={styles.itemIcon}>{item.highlightText}</span>}
-                <div className={styles.itemTextGroup}>
-                  {item.highlightTitle && <span className={styles.itemTag}>{item.highlightTitle}</span>}
-                  <span className={styles.itemTitle}>{item.title}</span>
-                  {item.body && (
-                    <>
-                      <span className={styles.itemDot}>•</span>
-                      <span className={styles.itemBody}>{item.body}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Track 2 (for seamless continuous loop) */}
-          <div className={styles.marqueeTrack} aria-hidden="true">
-            {renderItems.map((item, idx) => (
-              <div key={`p-track2-${item.order}-${idx}`} className={styles.bannerItem}>
-                {item.highlightText && <span className={styles.itemIcon}>{item.highlightText}</span>}
-                <div className={styles.itemTextGroup}>
-                  {item.highlightTitle && <span className={styles.itemTag}>{item.highlightTitle}</span>}
-                  <span className={styles.itemTitle}>{item.title}</span>
-                  {item.body && (
-                    <>
-                      <span className={styles.itemDot}>•</span>
-                      <span className={styles.itemBody}>{item.body}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
+            <div className={styles.marqueeGroup}>{renderItems('first')}</div>
+            <div className={styles.marqueeGroup} aria-hidden="true">{renderItems('second')}</div>
           </div>
         </div>
       </div>
