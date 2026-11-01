@@ -330,6 +330,7 @@ export interface ServiceItemDto {
   description?: string;
   isPerUnit: boolean;
   isActive: boolean;
+  displayOrder: number;
 }
 
 export interface ProductGroupDto {

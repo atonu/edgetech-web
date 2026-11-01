@@ -135,8 +135,12 @@ export default function AdminPage() {
     description: '',
     isPerUnit: false,
     isActive: true,
+    displayOrder: 0,
   });
   const [serviceFiles, setServiceFiles] = useState<File[]>([]);
+  const [serviceOrderDrafts, setServiceOrderDrafts] = useState<Record<number, string>>({});
+  const [serviceLoadError, setServiceLoadError] = useState(false);
+  const serviceRevisionRef = useRef(0);
   const [groupForm, setGroupForm] = useState({ id: 0, key: 'best-sellers', name: '', isActive: true, productIds: [] as number[] });
   const canAccessAdmin = isAuthenticated && isAdmin();
 
@@ -146,17 +150,31 @@ export default function AdminPage() {
   const [confirmDelete, setConfirmDelete] = useState<DeleteTarget | null>(null);
   const [productActionMenuId, setProductActionMenuId] = useState<number | null>(null);
   const [productActionMenuPosition, setProductActionMenuPosition] = useState({ top: 0, left: 0 });
+  const [serviceActionMenuId, setServiceActionMenuId] = useState<number | null>(null);
+  const [serviceActionMenuPosition, setServiceActionMenuPosition] = useState({ top: 0, left: 0 });
   const productActionTriggerRef = useRef<HTMLElement | null>(null);
   const productActionMenuRef = useRef<HTMLDivElement | null>(null);
+  const serviceActionTriggerRef = useRef<HTMLElement | null>(null);
+  const serviceActionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const getActionMenuPosition = (trigger: HTMLElement) => {
+    const rect = trigger.getBoundingClientRect();
+    return {
+      top: rect.bottom + 6,
+      left: Math.max(8, Math.min(rect.left + rect.width / 2 - 75, window.innerWidth - 158)),
+    };
+  };
 
   const openProductActionMenu = (productId: number, trigger: HTMLElement) => {
     productActionTriggerRef.current = trigger;
-    const rect = trigger.getBoundingClientRect();
-    setProductActionMenuPosition({
-      top: rect.bottom + 6,
-      left: Math.max(8, Math.min(rect.left + rect.width / 2 - 75, window.innerWidth - 158)),
-    });
+    setProductActionMenuPosition(getActionMenuPosition(trigger));
     setProductActionMenuId(productId);
+  };
+
+  const openServiceActionMenu = (serviceId: number, trigger: HTMLElement) => {
+    serviceActionTriggerRef.current = trigger;
+    setServiceActionMenuPosition(getActionMenuPosition(trigger));
+    setServiceActionMenuId(serviceId);
   };
 
   useEffect(() => {
@@ -173,11 +191,7 @@ export default function AdminPage() {
     const repositionMenu = () => {
       const trigger = productActionTriggerRef.current;
       if (!trigger) return;
-      const rect = trigger.getBoundingClientRect();
-      setProductActionMenuPosition({
-        top: rect.bottom + 6,
-        left: Math.max(8, Math.min(rect.left + rect.width / 2 - 75, window.innerWidth - 158)),
-      });
+      setProductActionMenuPosition(getActionMenuPosition(trigger));
     };
 
     document.addEventListener('pointerdown', closeOnOutsidePointer);
@@ -191,6 +205,34 @@ export default function AdminPage() {
       window.removeEventListener('scroll', repositionMenu, true);
     };
   }, [productActionMenuId]);
+
+  useEffect(() => {
+    if (serviceActionMenuId === null) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (serviceActionMenuRef.current?.contains(target) || serviceActionTriggerRef.current?.contains(target)) return;
+      setServiceActionMenuId(null);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setServiceActionMenuId(null);
+    };
+    const repositionMenu = () => {
+      const trigger = serviceActionTriggerRef.current;
+      if (trigger) setServiceActionMenuPosition(getActionMenuPosition(trigger));
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('resize', repositionMenu);
+    window.addEventListener('scroll', repositionMenu, true);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('resize', repositionMenu);
+      window.removeEventListener('scroll', repositionMenu, true);
+    };
+  }, [serviceActionMenuId]);
 
   // Products table: server-side search + pagination (separate from the unfiltered
   // `products` list above, which the Groups tab's product picker needs in full).
@@ -282,6 +324,7 @@ export default function AdminPage() {
     : 0;
 
   const loadCore = async () => {
+    const serviceRevision = serviceRevisionRef.current;
     setLoading(true);
     try {
       const [pRes, cRes, bRes, sRes, gRes, pkgRes] = await Promise.allSettled([
@@ -317,7 +360,13 @@ export default function AdminPage() {
         categoryId: current.categoryId || findFirstLeaf(loadedCategories)?.id || 0,
         brandId: current.brandId || loadedBrands[0]?.id || 0,
       }));
-      setServices(sRes.status === 'fulfilled' ? (sRes.value.data ?? []) : []);
+      if (sRes.status === 'fulfilled' && serviceRevision === serviceRevisionRef.current) {
+        setServices(sRes.value.data ?? []);
+        setServiceLoadError(false);
+      } else if (sRes.status === 'rejected' && serviceRevision === serviceRevisionRef.current) {
+        setServiceLoadError(true);
+        toast.error('Services failed to refresh. The existing services list was kept.');
+      }
       setGroups(gRes.status === 'fulfilled' ? (gRes.value.data ?? []) : []);
       setPackagesCount(pkgRes.status === 'fulfilled' ? (pkgRes.value.data?.length ?? 0) : 0);
 
@@ -470,17 +519,20 @@ export default function AdminPage() {
   );
 
   const serviceTableResult = useMemo(
-    () => paginateClient(
-      serviceSearch.trim()
-        ? services.filter(s => {
-          const term = serviceSearch.trim().toLowerCase();
-          return s.name.toLowerCase().includes(term)
-            || (s.shortDescription ?? '').toLowerCase().includes(term)
-            || (s.description ?? '').toLowerCase().includes(term);
-        })
-        : services,
-      serviceTablePage, ADMIN_PAGE_SIZE
-    ),
+    () => {
+      const sortedServices = [...services]
+        .sort((a, b) => a.displayOrder - b.displayOrder || a.id - b.id)
+        .map((service, index) => service.displayOrder > 0
+          ? service
+          : { ...service, displayOrder: index + 1 });
+      const term = serviceSearch.trim().toLowerCase();
+      const filteredServices = term
+        ? sortedServices.filter(s => s.name.toLowerCase().includes(term)
+          || (s.shortDescription ?? '').toLowerCase().includes(term)
+          || (s.description ?? '').toLowerCase().includes(term))
+        : sortedServices;
+      return paginateClient(filteredServices, serviceTablePage, ADMIN_PAGE_SIZE);
+    },
     [services, serviceSearch, serviceTablePage]
   );
 
@@ -792,12 +844,18 @@ export default function AdminPage() {
           description: serviceForm.description,
           isPerUnit: serviceForm.isPerUnit,
           isActive: serviceForm.isActive,
+          displayOrder: Number(serviceForm.displayOrder),
         };
         if (serviceForm.id) {
           await adminServicesApi.update(serviceForm.id, payload);
+          serviceRevisionRef.current += 1;
+          setServices(current => current.map(service => service.id === serviceForm.id
+            ? { ...service, ...payload }
+            : service));
+          setServiceLoadError(false);
           toast.success('Service updated.');
         } else {
-          await adminServicesApi.create({
+          const created = await adminServicesApi.create({
             name: payload.name,
             images: payload.images,
             price: payload.price,
@@ -805,14 +863,19 @@ export default function AdminPage() {
             description: payload.description,
             isPerUnit: payload.isPerUnit,
             isActive: payload.isActive,
+            displayOrder: payload.displayOrder,
           });
+          serviceRevisionRef.current += 1;
+          setServices(current => [...current, created.data]);
+          setServiceLoadError(false);
+          setServiceSearch('');
+          setServiceTablePage(1);
           toast.success('Service created.');
         }
 
         const removedImages = serviceForm.images.filter(image => !images.includes(image));
-        setServiceForm({ id: 0, name: '', images: [], price: 0, shortDescription: '', description: '', isPerUnit: false, isActive: true });
+        setServiceForm({ id: 0, name: '', images: [], price: 0, shortDescription: '', description: '', isPerUnit: false, isActive: true, displayOrder: 0 });
         setServiceFiles([]);
-        await loadCore();
         const cleanupResults = await Promise.allSettled(removedImages.map(image => productImagesApi.remove(image)));
         if (cleanupResults.some(result => result.status === 'rejected')) {
           toast.error('Service saved, but one or more removed images could not be deleted.');
@@ -831,14 +894,95 @@ export default function AdminPage() {
       try {
         const service = services.find(item => item.id === id);
         await adminServicesApi.delete(id);
+        serviceRevisionRef.current += 1;
+        setServices(current => current.filter(item => item.id !== id));
         toast.success('Service removed.');
-        await loadCore();
-        const cleanupResults = await Promise.allSettled((service?.images ?? []).map(image => productImagesApi.remove(image)));
-        if (cleanupResults.some(result => result.status === 'rejected')) {
-          toast.error('Service removed, but one or more service images could not be deleted.');
+        try {
+          const remainingServices = await adminServicesApi.getAll();
+          const stillUsedImages = new Set(remainingServices.data.flatMap(item => item.images ?? []));
+          const unusedImages = (service?.images ?? []).filter(image => !stillUsedImages.has(image));
+          const cleanupResults = await Promise.allSettled(unusedImages.map(image => productImagesApi.remove(image)));
+          if (cleanupResults.some(result => result.status === 'rejected')) {
+            toast.error('Service removed, but one or more unused service images could not be deleted.');
+          }
+        } catch {
+          toast.error('Service removed, but image cleanup could not be checked.');
         }
       } catch {
         toast.error('Failed to remove service.');
+      }
+    });
+  };
+
+  const saveServiceOrder = async (service: ServiceItemDto, value: string) => {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      setServiceOrderDrafts(prev => ({ ...prev, [service.id]: String(service.displayOrder) }));
+      toast.error('Order must be a whole number greater than or equal to zero.');
+      return;
+    }
+
+    setServiceOrderDrafts(prev => ({ ...prev, [service.id]: String(parsed) }));
+    if (parsed === service.displayOrder) return;
+
+    await withBusy(`save-service-order-${service.id}`, async () => {
+      try {
+        await adminServicesApi.update(service.id, {
+          name: service.name,
+          images: service.images ?? [],
+          price: service.price,
+          shortDescription: service.shortDescription,
+          description: service.description,
+          isPerUnit: service.isPerUnit,
+          isActive: service.isActive,
+          displayOrder: parsed,
+        });
+        serviceRevisionRef.current += 1;
+        setServices(current => current.map(item => item.id === service.id
+          ? { ...item, displayOrder: parsed }
+          : item));
+        toast.success('Service order updated.');
+      } catch {
+        setServiceOrderDrafts(prev => ({ ...prev, [service.id]: String(service.displayOrder) }));
+        toast.error('Failed to update service order.');
+      }
+    });
+  };
+
+  const refreshServices = async () => {
+    try {
+      const response = await adminServicesApi.getAll();
+      serviceRevisionRef.current += 1;
+      setServices(response.data ?? []);
+      setServiceLoadError(false);
+    } catch {
+      setServiceLoadError(true);
+      toast.error('Failed to load services. The existing list was kept.');
+    }
+  };
+
+  const duplicateService = async (service: ServiceItemDto) => {
+    setServiceActionMenuId(null);
+    await withBusy(`duplicate-service-${service.id}`, async () => {
+      try {
+        const response = await adminServicesApi.create({
+          name: `${service.name} (copy)`,
+          images: service.images ?? [],
+          price: service.price,
+          shortDescription: service.shortDescription,
+          description: service.description,
+          isPerUnit: service.isPerUnit,
+          isActive: true,
+          displayOrder: 0,
+        });
+        serviceRevisionRef.current += 1;
+        setServices(current => [...current, response.data]);
+        setServiceLoadError(false);
+        setServiceSearch('');
+        setServiceTablePage(1);
+        toast.success('Service duplicated.');
+      } catch {
+        toast.error('Failed to duplicate service.');
       }
     });
   };
@@ -918,6 +1062,7 @@ export default function AdminPage() {
       description: s.description ?? '',
       isPerUnit: s.isPerUnit ?? false,
       isActive: s.isActive,
+      displayOrder: s.displayOrder ?? 0,
     });
     setServiceFiles([]);
     setTab('services');
@@ -1498,6 +1643,15 @@ export default function AdminPage() {
                 <form onSubmit={saveService} className={styles.grid2}>
                   <Field label="Name"><Input value={serviceForm.name} onChange={e => setServiceForm(f => ({ ...f, name: e.target.value }))} required /></Field>
                   <Field label="Price (৳)"><Input type="number" min="0" step="0.01" value={serviceForm.price} onChange={e => setServiceForm(f => ({ ...f, price: Number(e.target.value) }))} required /></Field>
+                  <Field label={serviceForm.id ? 'Display order' : 'Display order (0 = add at end)'}>
+                    <Input
+                      type="number"
+                      min={serviceForm.id ? '1' : '0'}
+                      step="1"
+                      value={serviceForm.displayOrder}
+                      onChange={e => setServiceForm(f => ({ ...f, displayOrder: Number(e.target.value) }))}
+                    />
+                  </Field>
                   <Field label="Per unit cost">
                     <Select value={String(serviceForm.isPerUnit)} onChange={e => setServiceForm(f => ({ ...f, isPerUnit: e.target.value === 'true' }))}>
                       <option value="false">No — fixed price</option>
@@ -1548,7 +1702,7 @@ export default function AdminPage() {
                   <div className={`${styles.actions} ${styles.fullWidth}`}>
                     <Button type="submit" loading={busy === 'save-service' || uploadingImage}>Save Service</Button>
                     <Button variant="ghost" type="button" onClick={() => {
-                      setServiceForm({ id: 0, name: '', images: [], price: 0, shortDescription: '', description: '', isPerUnit: false, isActive: true });
+                      setServiceForm({ id: 0, name: '', images: [], price: 0, shortDescription: '', description: '', isPerUnit: false, isActive: true, displayOrder: 0 });
                       setServiceFiles([]);
                     }}>Clear</Button>
                   </div>
@@ -1565,20 +1719,53 @@ export default function AdminPage() {
                 </div>
                 <TableWrap>
                   <Table>
-                    <thead><tr><TH>ID</TH><TH>Name</TH><TH>Price</TH><TH>Description</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
+                    <thead><tr><TH>ID</TH><TH>Order</TH><TH>Name</TH><TH>Price</TH><TH>Description</TH><TH>Status</TH><TH>Actions</TH></tr></thead>
                     <tbody>
                       {loading ? (
-                        <SkeletonRows cols={6} />
+                        <SkeletonRows cols={7} />
+                      ) : serviceLoadError && serviceTableResult.pageItems.length === 0 ? (
+                        <tr>
+                          <TD colSpan={7}>
+                            Couldn’t load services. <Button size="sm" variant="outline" onClick={() => void refreshServices()}>Retry</Button>
+                          </TD>
+                        </tr>
                       ) : serviceTableResult.pageItems.length === 0 ? (
-                        <tr><TD colSpan={6}>No services found.</TD></tr>
+                        <tr><TD colSpan={7}>No services found.</TD></tr>
                       ) : serviceTableResult.pageItems.map(s => (
                         <tr key={s.id}>
-                          <TD>{s.id}</TD><TD>{s.name}</TD><TD>৳{s.price.toLocaleString()}{s.isPerUnit ? ' / unit' : ''}</TD><TD>{s.shortDescription || s.description}</TD>
+                          <TD>{s.id}</TD>
+                          <TD>
+                            <Input
+                              aria-label={`Display order for ${s.name}`}
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={serviceOrderDrafts[s.id] ?? String(s.displayOrder)}
+                              onChange={e => setServiceOrderDrafts(prev => ({ ...prev, [s.id]: e.target.value }))}
+                              onBlur={e => void saveServiceOrder(s, e.currentTarget.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') e.currentTarget.blur();
+                              }}
+                              style={{ width: 82 }}
+                            />
+                          </TD>
+                          <TD>{s.name}</TD><TD>৳{s.price.toLocaleString()}{s.isPerUnit ? ' / unit' : ''}</TD><TD>{s.shortDescription || s.description}</TD>
                           <TD><Badge variant={s.isActive ? 'success' : 'secondary'}>{s.isActive ? 'Active' : 'Inactive'}</Badge></TD>
                           <TD>
-                            <div className={styles.actions}>
-                              <Button size="sm" variant="outline" onClick={() => editService(s)}>Edit</Button>
-                              <Button size="sm" variant="destructive" loading={busy === `delete-service-${s.id}`} onClick={() => setConfirmDelete({ type: 'service', id: s.id, label: s.name })}>Delete</Button>
+                            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                              <button
+                                type="button"
+                                aria-haspopup="menu"
+                                aria-expanded={serviceActionMenuId === s.id}
+                                aria-label={`Service actions for ${s.name}`}
+                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: 0, background: 'transparent', cursor: 'pointer' }}
+                                onClick={event => {
+                                  if (serviceActionMenuId === s.id) setServiceActionMenuId(null);
+                                  else openServiceActionMenu(s.id, event.currentTarget);
+                                }}
+                              >
+                                <MoreVertical size={18} />
+                              </button>
                             </div>
                           </TD>
                         </tr>
@@ -1595,6 +1782,37 @@ export default function AdminPage() {
                 />
               </CardContent>
             </Card>
+            {serviceActionMenuId !== null && typeof document !== 'undefined' && createPortal(
+              <div
+                ref={serviceActionMenuRef}
+                role="menu"
+                style={{
+                  position: 'fixed',
+                  top: serviceActionMenuPosition.top,
+                  left: serviceActionMenuPosition.left,
+                  width: 150,
+                  background: '#fff',
+                  border: '1px solid #d0d7de',
+                  borderRadius: 10,
+                  boxShadow: '0 8px 24px rgba(15, 23, 42, 0.16)',
+                  zIndex: 1000,
+                  overflow: 'hidden',
+                }}
+              >
+                {(() => {
+                  const service = serviceTableResult.pageItems.find(item => item.id === serviceActionMenuId);
+                  if (!service) return null;
+                  return (
+                    <>
+                      <button type="button" role="menuitem" onClick={() => { setServiceActionMenuId(null); editService(service); }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer' }}>Edit</button>
+                      <button type="button" role="menuitem" onClick={() => void duplicateService(service)} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer' }}>Duplicate</button>
+                      <button type="button" role="menuitem" onClick={() => { setServiceActionMenuId(null); setConfirmDelete({ type: 'service', id: service.id, label: service.name }); }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', color: '#b42318', cursor: 'pointer' }}>Delete</button>
+                    </>
+                  );
+                })()}
+              </div>,
+              document.body,
+            )}
           </div>
         )}
 
