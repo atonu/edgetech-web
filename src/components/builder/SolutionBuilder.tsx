@@ -1,8 +1,8 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { Camera, HardDrive, Monitor, Cable, Power, Battery, X, Search, Check, Zap, Plus, Minus, Router, Network, Boxes } from 'lucide-react';
+import { Camera, HardDrive, Monitor, Cable, Power, Battery, X, Search, Check, Zap, Plus, Minus, Network, Boxes } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProductListDto, PackageSlotWithProducts } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
@@ -24,11 +24,8 @@ export const sections: SectionDef[] = [
   { key: 'storage', label: 'Storage', icon: HardDrive, color: '#ef4444' },
   { key: 'cable', label: 'Cable', icon: Cable, color: '#3b82f6' },
   { key: 'power', label: 'Power Adapter', icon: Power, color: '#f59e0b' },
-  { key: 'ups', label: 'UPS', icon: Battery, color: '#84cc16' },
-  { key: 'video-balloon', label: 'Video Balloon', icon: Cable, color: '#0ea5e9' },
-  { key: 'poe-switch', label: 'POE Switch', icon: Network, color: '#14b8a6' },
-  { key: 'desktop-switch', label: 'Desktop Switch', icon: Network, color: '#6366f1' },
-  { key: 'router', label: 'Router', icon: Router, color: '#8b5cf6' },
+  { key: 'power-backup', label: 'Power Backup', icon: Battery, color: '#84cc16' },
+  { key: 'networking', label: 'Networking', icon: Network, color: '#3b82f6' },
   { key: 'accessories', label: 'Accessories', icon: Boxes, color: '#f97316' },
 ];
 
@@ -57,6 +54,27 @@ interface SolutionBuilderProps {
 export default function SolutionBuilder({ productsByBase, loading, selectedProducts, onSelect, onClear, onAdd }: SolutionBuilderProps) {
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
   const [slotSearch, setSlotSearch] = useState('');
+  const [activeSubcategory, setActiveSubcategory] = useState('');
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
+  const quantityTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  useEffect(() => () => {
+    quantityTimers.current.forEach(timer => clearTimeout(timer));
+  }, []);
+
+  const applyQuantity = (
+    sectionKey: string,
+    product: ProductListDto,
+    keys: string[],
+    currentCount: number,
+    nextCount: number
+  ) => {
+    if (nextCount < currentCount) {
+      keys.slice(0, currentCount - nextCount).forEach(onClear);
+    } else {
+      for (let i = currentCount; i < nextCount; i++) onAdd(sectionKey, product);
+    }
+  };
 
   const groupSectionProducts = (sectionKey: string) => {
     const grouped = new Map<number, { product: ProductListDto; count: number; keys: string[] }>();
@@ -90,11 +108,26 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
     return productsByBase[activeSlotDef.key.split('_')[0]] || [];
   }, [activeSlotDef, productsByBase]);
 
-  const filteredSlotProducts = slotProducts.filter(p => p.name.toLowerCase().includes(slotSearch.toLowerCase()));
+  const activeSectionKey = activeSlotDef?.key.split('_')[0];
+  const showSubcategoryFilter = activeSectionKey === 'accessories' || activeSectionKey === 'networking';
+  const subcategoryOptions = useMemo(() => {
+    const options = new Map<string, string>();
+    for (const product of slotProducts) {
+      if (product.categorySlug && product.categorySlug !== activeSectionKey) {
+        options.set(product.categorySlug, product.categoryName);
+      }
+    }
+    return Array.from(options, ([slug, name]) => ({ slug, name }));
+  }, [slotProducts, activeSectionKey]);
+  const filteredSlotProducts = slotProducts.filter(product =>
+    product.name.toLowerCase().includes(slotSearch.toLowerCase()) &&
+    (!activeSubcategory || product.categorySlug === activeSubcategory)
+  );
 
   const closeModal = () => {
     setActiveSlot(null);
     setSlotSearch('');
+    setActiveSubcategory('');
   };
 
   const selectProduct = (product: ProductListDto) => {
@@ -144,11 +177,75 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
                       </div>
                       <span className={styles.slotLabel}>{count > 1 ? `${section.label} (${count})` : section.label}</span>
                       <div className={styles.quantityControl} role="group" aria-label={`${product.name} quantity`}>
-                        <button type="button" className={styles.quantityButton} aria-label={`Remove one ${product.name}`} onClick={() => onClear(keys[keys.length - 1])}>
+                        <button type="button" className={styles.quantityButton} aria-label={`Remove one ${product.name}`} onClick={() => {
+                          const key = `${section.key}-${product.id}`;
+                          const timer = quantityTimers.current.get(key);
+                          if (timer) clearTimeout(timer);
+                          quantityTimers.current.delete(key);
+                          const draft = quantityDrafts[key];
+                          const baseCount = draft && Number.isInteger(Number(draft)) && Number(draft) > 0 ? Number(draft) : count;
+                          applyQuantity(section.key, product, keys, count, Math.max(0, baseCount - 1));
+                          setQuantityDrafts(drafts => {
+                            const next = { ...drafts };
+                            delete next[key];
+                            return next;
+                          });
+                        }}>
                           <Minus size={14} />
                         </button>
-                        <span className={styles.quantityValue}>{count}</span>
-                        <button type="button" className={styles.quantityButton} aria-label={`Add one ${product.name}`} onClick={() => onAdd(section.key, product)}>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          className={styles.quantityInput}
+                          aria-label={`${product.name} quantity`}
+                          value={quantityDrafts[`${section.key}-${product.id}`] ?? count}
+                          onFocus={() => setQuantityDrafts(drafts => ({ ...drafts, [`${section.key}-${product.id}`]: String(count) }))}
+                          onChange={event => {
+                            const key = `${section.key}-${product.id}`;
+                            const value = event.target.value;
+                            setQuantityDrafts(drafts => ({ ...drafts, [key]: value }));
+
+                            const timer = quantityTimers.current.get(key);
+                            if (timer) clearTimeout(timer);
+
+                            const nextCount = Number(value);
+                            if (value !== '' && Number.isInteger(nextCount) && nextCount >= 1) {
+                              quantityTimers.current.set(key, setTimeout(() => {
+                                applyQuantity(section.key, product, keys, count, nextCount);
+                                quantityTimers.current.delete(key);
+                              }, 250));
+                            }
+                          }}
+                          onBlur={event => {
+                            const key = `${section.key}-${product.id}`;
+                            const timer = quantityTimers.current.get(key);
+                            if (timer) clearTimeout(timer);
+                            quantityTimers.current.delete(key);
+                            const parsed = Number(event.currentTarget.value);
+                            const nextCount = Number.isInteger(parsed) && parsed >= 1 ? parsed : count;
+                            applyQuantity(section.key, product, keys, count, nextCount);
+                            setQuantityDrafts(drafts => {
+                              const next = { ...drafts };
+                              delete next[key];
+                              return next;
+                            });
+                          }}
+                        />
+                        <button type="button" className={styles.quantityButton} aria-label={`Add one ${product.name}`} onClick={() => {
+                          const key = `${section.key}-${product.id}`;
+                          const timer = quantityTimers.current.get(key);
+                          if (timer) clearTimeout(timer);
+                          quantityTimers.current.delete(key);
+                          const draft = quantityDrafts[key];
+                          const baseCount = draft && Number.isInteger(Number(draft)) && Number(draft) > 0 ? Number(draft) : count;
+                          applyQuantity(section.key, product, keys, count, baseCount + 1);
+                          setQuantityDrafts(drafts => {
+                            const next = { ...drafts };
+                            delete next[key];
+                            return next;
+                          });
+                        }}>
                           <Plus size={14} />
                         </button>
                       </div>
@@ -167,6 +264,7 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
                     const newUniqueId = Math.random().toString(36).substring(2, 9);
                     setActiveSlot(`${section.key}_${newUniqueId}`);
                     setSlotSearch('');
+                    setActiveSubcategory('');
                   }}
                   initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.2 }}>
@@ -194,6 +292,27 @@ export default function SolutionBuilder({ productsByBase, loading, selectedProdu
                   <input type="text" placeholder={`Search ${activeSlotDef?.label} products...`}
                     value={slotSearch} onChange={e => setSlotSearch(e.target.value)} autoFocus />
                 </div>
+                {showSubcategoryFilter && subcategoryOptions.length > 0 && (
+                  <div className={styles.subcategoryFilters} aria-label="Filter by subcategory">
+                    <button
+                      type="button"
+                      className={`${styles.subcategoryChip} ${activeSubcategory === '' ? styles.subcategoryChipActive : ''}`}
+                      onClick={() => setActiveSubcategory('')}
+                    >
+                      All
+                    </button>
+                    {subcategoryOptions.map(option => (
+                      <button
+                        type="button"
+                        key={option.slug}
+                        className={`${styles.subcategoryChip} ${activeSubcategory === option.slug ? styles.subcategoryChipActive : ''}`}
+                        onClick={() => setActiveSubcategory(activeSubcategory === option.slug ? '' : option.slug)}
+                      >
+                        {option.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className={styles.modalProducts}>
                   {filteredSlotProducts.length === 0 ? (
                     <div className={styles.noProducts}>No products found</div>

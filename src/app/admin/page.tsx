@@ -263,6 +263,13 @@ export default function AdminPage() {
     walk(categories);
     return out;
   }, [categories]);
+  const selectedProductCategory = flatCategories.find(category => category.id === productForm.categoryId);
+  const selectedProductTypeId = selectedProductCategory?.parentCategoryId ?? selectedProductCategory?.id ?? 0;
+  const selectedProductType = categories.find(category => category.id === selectedProductTypeId);
+  const productSubcategories = selectedProductType?.subCategories?.filter(category => category.isActive) ?? [];
+  const selectedProductSubcategoryId = productSubcategories.some(category => category.id === productForm.categoryId)
+    ? productForm.categoryId
+    : 0;
 
   const loadCore = async () => {
     setLoading(true);
@@ -276,9 +283,30 @@ export default function AdminPage() {
         adminPackagesApi.getAll(),
       ]);
 
+      const loadedCategories = cRes.status === 'fulfilled' ? (cRes.value.data ?? []) : [];
+      const loadedBrands = bRes.status === 'fulfilled' ? (bRes.value.data ?? []) : [];
+      const findFirstLeaf = (items: CategoryDto[]): CategoryDto | undefined => {
+        for (const category of items) {
+          if (!category.isActive) continue;
+          const activeChildren = category.subCategories?.filter(child => child.isActive) ?? [];
+          if (activeChildren.length) {
+            const child = findFirstLeaf(activeChildren);
+            if (child) return child;
+          } else {
+            return category;
+          }
+        }
+        return undefined;
+      };
+
       setProducts(pRes.status === 'fulfilled' ? (pRes.value.data.items ?? []) : []);
-      setCategories(cRes.status === 'fulfilled' ? (cRes.value.data ?? []) : []);
-      setBrands(bRes.status === 'fulfilled' ? (bRes.value.data ?? []) : []);
+      setCategories(loadedCategories);
+      setBrands(loadedBrands);
+      setProductForm(current => ({
+        ...current,
+        categoryId: current.categoryId || findFirstLeaf(loadedCategories)?.id || 0,
+        brandId: current.brandId || loadedBrands[0]?.id || 0,
+      }));
       setServices(sRes.status === 'fulfilled' ? (sRes.value.data ?? []) : []);
       setGroups(gRes.status === 'fulfilled' ? (gRes.value.data ?? []) : []);
       setPackagesCount(pkgRes.status === 'fulfilled' ? (pkgRes.value.data?.length ?? 0) : 0);
@@ -312,15 +340,6 @@ export default function AdminPage() {
 
     loadCore();
   }, [isHydrated, isAuthenticated, isAdmin, router]);
-
-  useEffect(() => {
-    if (productForm.categoryId === 0 && flatCategories.length > 0) {
-      setProductForm(prev => ({ ...prev, categoryId: flatCategories[0].id }));
-    }
-    if (productForm.brandId === 0 && brands.length > 0) {
-      setProductForm(prev => ({ ...prev, brandId: brands[0].id }));
-    }
-  }, [flatCategories, brands, productForm.categoryId, productForm.brandId]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedProductSearch(productSearch), 350);
@@ -479,7 +498,10 @@ export default function AdminPage() {
       discountPrice: 0,
       sku: '',
       stock: 0,
-      categoryId: flatCategories[0]?.id ?? 0,
+      categoryId: (
+        flatCategories.find(category => category.isActive && !category.subCategories?.length) ??
+        flatCategories.find(category => category.isActive)
+      )?.id ?? 0,
       brandId: brands[0]?.id ?? 0,
       isFeatured: false,
       isActive: true,
@@ -1060,12 +1082,36 @@ export default function AdminPage() {
                   <Field label="Price"><Input type="number" min="0" step="0.01" value={productForm.price} onChange={e => setProductForm(p => ({ ...p, price: Number(e.target.value) }))} required /></Field>
                   <Field label="Discount Price"><Input type="number" min="0" step="0.01" value={productForm.discountPrice} onChange={e => setProductForm(p => ({ ...p, discountPrice: Number(e.target.value) }))} /></Field>
                   <Field label="Stock"><Input type="number" min="0" value={productForm.stock} onChange={e => setProductForm(p => ({ ...p, stock: Number(e.target.value) }))} required /></Field>
-                  <Field label="Category">
-                    <Select value={productForm.categoryId} onChange={e => setProductForm(p => ({ ...p, categoryId: Number(e.target.value) }))} required>
-                      <option value={0}>Select category</option>
-                      {flatCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  <Field label="Type">
+                    <Select
+                      value={selectedProductTypeId}
+                      onChange={e => {
+                        const selectedType = categories.find(category => category.id === Number(e.target.value));
+                        const firstSubcategory = selectedType?.subCategories?.find(category => category.isActive);
+                        setProductForm(p => ({ ...p, categoryId: firstSubcategory?.id ?? selectedType?.id ?? 0 }));
+                      }}
+                      required
+                    >
+                      <option value={0}>Select type</option>
+                      {categories.filter(category => !category.parentCategoryId).map(category => (
+                        <option key={category.id} value={category.id}>{category.name}</option>
+                      ))}
                     </Select>
                   </Field>
+                  {productSubcategories.length > 0 && (
+                    <Field label="Subcategory">
+                      <Select
+                        value={selectedProductSubcategoryId}
+                        onChange={e => setProductForm(p => ({ ...p, categoryId: Number(e.target.value) }))}
+                        required
+                      >
+                        <option value={0}>Select subcategory</option>
+                        {productSubcategories.map(category => (
+                          <option key={category.id} value={category.id}>{category.name}</option>
+                        ))}
+                      </Select>
+                    </Field>
+                  )}
                   <Field label="Brand">
                     <Select value={productForm.brandId} onChange={e => setProductForm(p => ({ ...p, brandId: Number(e.target.value) }))} required>
                       <option value={0}>Select brand</option>

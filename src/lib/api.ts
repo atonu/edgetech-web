@@ -44,6 +44,8 @@ export interface ProductListDto {
   stock: number;
   isFeatured: boolean;
   categoryName: string;
+  categoryId?: number;
+  categorySlug?: string;
   brandName: string;
   averageRating?: number;
   reviewCount?: number;

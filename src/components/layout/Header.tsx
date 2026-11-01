@@ -230,7 +230,7 @@ export default function Header() {
                               {cat.subCategories!.map(sub => (
                                 <Link
                                   key={sub.id}
-                                  href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
+                                  href={`/products?category=${encodeURIComponent(cat.slug || cat.name)}&subcategory=${encodeURIComponent(sub.slug || sub.name)}`}
                                   className={styles.megaMenuSub}
                                   onClick={() => setMegaMenuOpen(null)}
                                 >
@@ -388,7 +388,7 @@ export default function Header() {
                         {cat.subCategories!.map(sub => (
                           <Link
                             key={sub.id}
-                            href={`/products?category=${encodeURIComponent(sub.slug || sub.name)}`}
+                            href={`/products?category=${encodeURIComponent(cat.slug || cat.name)}&subcategory=${encodeURIComponent(sub.slug || sub.name)}`}
                             className={styles.mobileSubNavLink}
                             onClick={() => setMenuOpen(false)}
                           >

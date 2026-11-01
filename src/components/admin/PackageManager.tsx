@@ -157,8 +157,17 @@ export default function PackageManager() {
     pkg.items.forEach((item, idx) => {
       const base = item.slotKey.split('_')[0];
       const fromSlots = productsByBase[base]?.find(p => p.id === item.productId);
+      const sectionBase = ({
+        ups: 'power-backup',
+        'video-balloon': 'accessories',
+        'poe-switch': 'networking',
+        'desktop-switch': 'networking',
+        router: 'networking',
+      } as Record<string, string>)[base] ?? base;
+      const slotSuffix = item.slotKey.split('_').slice(1).join('_') || String(idx);
+      const migratedSlotKey = sectionBase === base ? item.slotKey : `${sectionBase}_${slotSuffix}`;
       // Guarantee a unique key even if two saved items shared a slotKey.
-      const key = reconstructed[item.slotKey] ? `${item.slotKey}_${idx}` : item.slotKey;
+      const key = reconstructed[migratedSlotKey] ? `${migratedSlotKey}_${idx}` : migratedSlotKey;
       reconstructed[key] = fromSlots ?? itemToProduct(item);
     });
     setSelected(reconstructed);

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Shield, Monitor, Package, ArrowRight, Zap, Star, Clock, Cable, Network, Router, ShieldCheck, UserRoundCog, CreditCard, Headset } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Shield, Monitor, Package, ArrowRight, Zap, Star, Clock, ShieldCheck, UserRoundCog, CreditCard, Headset } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 import ProductCardSkeleton from '@/components/products/ProductCardSkeleton';
 import PackageProductCard from '@/components/products/PackageProductCard';
@@ -76,10 +76,6 @@ const categories = [
   { name: 'Networking', slug: 'networking', icon: NetworkingCategoryIcon, color: '#3b82f6' },
   { name: 'Monitor', slug: 'monitor', icon: MonitorCategoryIcon, color: '#a855f7' },
   { name: 'Accessories', slug: 'accessories', icon: AccessoriesCategoryIcon, color: '#ef4444' },
-  { name: 'Video Balloon', slug: 'video-balloon', icon: Cable, color: '#0ea5e9' },
-  { name: 'POE Switch', slug: 'poe-switch', icon: Network, color: '#14b8a6' },
-  { name: 'Desktop Switch', slug: 'desktop-switch', icon: Network, color: '#6366f1' },
-  { name: 'Router', slug: 'router', icon: Router, color: '#8b5cf6' },
 ];
 
 const brands = [

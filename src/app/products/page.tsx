@@ -18,21 +18,13 @@ const sortOptions = [
 
 interface FilterOption { name: string; slug: string; }
 
-function flattenCategories(categories: CategoryDto[]): FilterOption[] {
-  const result: FilterOption[] = [];
-  for (const c of categories) {
-    result.push({ name: c.name, slug: c.slug ?? '' });
-    if (c.subCategories?.length) result.push(...flattenCategories(c.subCategories));
-  }
-  return result;
-}
-
 function ProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // Read current filters directly from URL searchParams
   const selectedCategory = searchParams.get('category') || '';
+  const selectedSubcategory = searchParams.get('subcategory') || '';
   const selectedBrand = searchParams.get('brand') || '';
   const sortBy = searchParams.get('sort') || 'newest';
   const pageParam = parseInt(searchParams.get('page') || '1', 10);
@@ -43,8 +35,16 @@ function ProductsContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [resolvedRequestKey, setResolvedRequestKey] = useState<string | null>(null);
 
-  const [categoryOptions, setCategoryOptions] = useState<FilterOption[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<CategoryDto[]>([]);
   const [brandOptions, setBrandOptions] = useState<FilterOption[]>([]);
+  const legacySubcategory = categoryOptions
+    .map(parent => ({ parent, subcategory: parent.subCategories?.find(sub => sub.slug === selectedCategory) }))
+    .find(item => item.subcategory);
+  const selectedCategorySlug = legacySubcategory?.parent.slug ?? selectedCategory;
+  const selectedSubcategorySlug = selectedSubcategory || (legacySubcategory ? selectedCategory : '');
+  const selectedCategoryOption = categoryOptions.find(category => category.slug === selectedCategorySlug);
+  const subcategoryOptions = selectedCategoryOption?.subCategories ?? [];
+  const showSubcategoryFilter = ['accessories', 'networking'].includes(selectedCategorySlug);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -62,7 +62,7 @@ function ProductsContent() {
 
   // Load filter option lists once
   useEffect(() => {
-    categoriesApi.getAll().then(res => setCategoryOptions(flattenCategories(res.data))).catch(() => setCategoryOptions([]));
+    categoriesApi.getAll().then(res => setCategoryOptions(res.data)).catch(() => setCategoryOptions([]));
     brandsApi.getAll().then(res => setBrandOptions(res.data.map(b => ({ name: b.name, slug: b.slug })))).catch(() => setBrandOptions([]));
   }, []);
 
@@ -97,8 +97,15 @@ function ProductsContent() {
   }, [search]);
 
   const handleCategoryClick = (slug: string) => {
-    const next = selectedCategory === slug ? null : slug;
-    updateUrlParams({ category: next });
+    const next = selectedCategorySlug === slug ? null : slug;
+    updateUrlParams({ category: next, subcategory: null });
+  };
+
+  const handleSubcategoryClick = (slug: string) => {
+    updateUrlParams({
+      category: selectedCategorySlug,
+      subcategory: selectedSubcategorySlug === slug ? null : slug,
+    });
   };
 
   const handleBrandClick = (slug: string) => {
@@ -122,7 +129,7 @@ function ProductsContent() {
     router.push('/products', { scroll: false });
   };
 
-  const requestKey = `${debouncedSearch}|${selectedCategory}|${selectedBrand}|${sortBy}|${priceRange[0]}|${priceRange[1]}|${currentPage}`;
+  const requestKey = `${debouncedSearch}|${selectedCategorySlug}|${selectedSubcategorySlug}|${selectedBrand}|${sortBy}|${priceRange[0]}|${priceRange[1]}|${currentPage}`;
   const loading = requestKey !== resolvedRequestKey;
 
   // Fetch products from the API whenever filters/page change
@@ -130,7 +137,8 @@ function ProductsContent() {
     let active = true;
     productsApi.getAll({
       search: debouncedSearch || undefined,
-      category: selectedCategory || undefined,
+      category: selectedCategorySlug || undefined,
+      subcategory: selectedSubcategorySlug || undefined,
       brand: selectedBrand || undefined,
       sort: sortBy,
       minPrice: priceRange[0] || undefined,
@@ -144,11 +152,11 @@ function ProductsContent() {
       setTotalPages(res.data.totalPages);
 
       // List identity mirrors the URL, so GA4 shows which filter combination drove the views.
-      const listId = ['products', selectedCategory, selectedBrand, debouncedSearch && 'search']
+      const listId = ['products', selectedCategorySlug, selectedSubcategorySlug, selectedBrand, debouncedSearch && 'search']
         .filter(Boolean).join(':');
       trackViewItemList(
         listId,
-        `Products${selectedCategory ? ` · ${selectedCategory}` : ''}${selectedBrand ? ` · ${selectedBrand}` : ''}`,
+        `Products${selectedCategorySlug ? ` · ${selectedCategorySlug}` : ''}${selectedSubcategorySlug ? ` · ${selectedSubcategorySlug}` : ''}${selectedBrand ? ` · ${selectedBrand}` : ''}`,
         res.data.items.map((p, i) => itemFromProduct(p, 1, (currentPage - 1) * 15 + i))
       );
       if (debouncedSearch) trackSearch(debouncedSearch, res.data.totalCount);
@@ -163,7 +171,7 @@ function ProductsContent() {
     return () => { active = false; };
   }, [requestKey]);
 
-  const activeFilterCount = [debouncedSearch, selectedCategory, selectedBrand].filter(Boolean).length;
+  const activeFilterCount = [debouncedSearch, selectedCategorySlug, selectedSubcategorySlug, selectedBrand].filter(Boolean).length;
 
   return (
     <div className={styles.productsPage}>
@@ -238,13 +246,30 @@ function ProductsContent() {
                 <label className={styles.filterLabel}>Category</label>
                 <div className={styles.filterOptions}>
                   {categoryOptions.map(cat => (
-                    <button key={cat.slug} className={`${styles.filterOption} ${selectedCategory === cat.slug ? styles.filterOptionActive : ''}`}
-                      onClick={() => handleCategoryClick(cat.slug)}>
+                    <button key={cat.slug ?? cat.name} className={`${styles.filterOption} ${selectedCategorySlug === cat.slug ? styles.filterOptionActive : ''}`}
+                      onClick={() => handleCategoryClick(cat.slug ?? cat.name)}>
                       {cat.name}
                     </button>
                   ))}
                 </div>
               </div>
+
+              {showSubcategoryFilter && subcategoryOptions.length > 0 && (
+                <div className={styles.filterGroup}>
+                  <label className={styles.filterLabel}>Subcategory</label>
+                  <div className={styles.filterOptions}>
+                    {subcategoryOptions.map(subcategory => (
+                      <button
+                        key={subcategory.slug ?? subcategory.name}
+                        className={`${styles.filterOption} ${selectedSubcategorySlug === subcategory.slug ? styles.filterOptionActive : ''}`}
+                        onClick={() => handleSubcategoryClick(subcategory.slug ?? subcategory.name)}
+                      >
+                        {subcategory.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Brands */}
               <div className={styles.filterGroup}>

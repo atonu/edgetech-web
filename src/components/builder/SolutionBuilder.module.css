@@ -172,6 +172,24 @@
   font-weight: 700;
 }
 
+.quantityInput {
+  width: 42px;
+  height: 28px;
+  padding: 2px 3px;
+  border: 1px solid var(--color-glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.quantityInput:focus {
+  outline: 1px solid var(--color-primary);
+}
+
 .selectedProduct {
   display: flex;
   flex-direction: column;
@@ -278,6 +296,34 @@
 }
 
 .modalSearch svg { color: var(--color-text-subtle); }
+
+.subcategoryFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 24px 12px;
+}
+
+.subcategoryChip {
+  padding: 6px 12px;
+  border: 1px solid var(--color-glass-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  transition: all var(--transition-fast);
+}
+
+.subcategoryChip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.subcategoryChipActive {
+  border-color: rgba(0, 200, 224, 0.4);
+  background: rgba(0, 200, 224, 0.12);
+  color: var(--color-primary);
+}
 
 .modalProducts {
   flex: 1;
