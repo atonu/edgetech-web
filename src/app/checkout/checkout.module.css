@@ -146,12 +146,14 @@
 .reviewSection p {
   font-size: 0.9rem;
   line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 
 .reviewItem {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   padding: 10px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
@@ -170,9 +172,18 @@
   flex-shrink: 0;
 }
 
-.reviewItemName { flex: 1; font-size: 0.85rem; }
-.reviewItemQty { color: var(--color-text-muted); font-size: 0.85rem; }
-.reviewItemPrice { font-weight: 600; font-size: 0.9rem; }
+.reviewItemName {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reviewItemQty { color: var(--color-text-muted); font-size: 0.85rem; flex-shrink: 0; }
+.reviewItemPrice { font-weight: 600; font-size: 0.9rem; flex-shrink: 0; text-align: right; }
 
 /* Payment */
 .paymentOptions {
@@ -312,10 +323,38 @@
 @media (max-width: 600px) {
   .checkoutPage {
     padding: 1.25rem 0 60px;
+    overflow-x: hidden;
+    width: 100%;
   }
   .pageTitle {
     margin-bottom: 20px;
   }
-  .progress { flex-wrap: wrap; gap: 8px; }
+  .progress { gap: 4px; margin-bottom: 28px; }
+  .progressStep { gap: 5px; font-size: 0.72rem; }
   .stepLine { width: 30px; }
+  .layout { width: 100%; min-width: 0; }
+  .formCard { width: 100%; min-width: 0; box-sizing: border-box; padding: 20px 16px; border-radius: var(--radius-lg); }
+  .formCard h3 { margin-bottom: 18px; }
+  .emiGrid { grid-template-columns: 1fr; }
+  .emiCalculated { align-items: flex-start; gap: 12px; }
+  .emiCalculated > div:last-child { text-align: left !important; }
+  .paymentOption { width: 100%; box-sizing: border-box; align-items: flex-start; gap: 10px; padding: 13px 12px; min-width: 0; }
+  .paymentOption input { margin-top: 3px; flex-shrink: 0; }
+  .paymentOption div { min-width: 0; }
+  .paymentOption strong, .paymentOption span { overflow-wrap: anywhere; }
+  .agreementBox { width: 100%; box-sizing: border-box; margin-top: 18px; padding: 14px 12px; gap: 9px; }
+  .agreementLabel { min-width: 0; }
+  .reviewSection { width: 100%; min-width: 0; }
+  .reviewItem { width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 32px minmax(0, 1fr) 38px 72px; align-items: center; gap: 7px; }
+  .reviewItemName { grid-column: 2; grid-row: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .reviewItemQty { grid-column: 3; grid-row: 1; text-align: center; white-space: nowrap; }
+  .reviewItemPrice { grid-column: 4; grid-row: 1; white-space: nowrap; font-size: 0.82rem; }
+  .stepBtns { width: 100%; align-items: stretch; }
+  .stepBtns .btn { min-width: 0; white-space: normal; }
+  .stepBtns .btn-primary { flex: 1; justify-content: center; text-align: center; box-sizing: border-box; font-size: 0.82rem; }
+  .stepBtns .btn-ghost { flex: 0 0 auto; }
+  .sidebar { width: 100%; min-width: 0; }
+  .summaryCard { width: 100%; box-sizing: border-box; min-width: 0; padding: 20px 16px; }
+  .summaryRow { gap: 12px; }
+  .summaryRow span:last-child { text-align: right; overflow-wrap: anywhere; }
 }

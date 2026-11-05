@@ -69,7 +69,7 @@ export default function CartPage() {
                   </div>
                   <div className={styles.packageTitleBlock}>
                     <span className={styles.packageBadge}><Package size={12} /> Package</span>
-                    <div className={styles.packageName}>{pkg.name}</div>
+                    <div className={styles.packageName} title={pkg.name}>{pkg.name}</div>
                     <div className={styles.packagePricing}>
                       <span className={styles.packagePrice}>৳{pkg.packagePrice.toLocaleString()}</span>
                       {pkg.regularPrice > pkg.packagePrice && (
@@ -121,7 +121,7 @@ export default function CartPage() {
                     )}
                   </div>
                   <div className={styles.itemInfo}>
-                    <Link href={`/products/${item.productId}`} className={styles.itemName}>{item.productName}</Link>
+                    <Link href={`/products/${item.productId}`} className={styles.itemName} title={item.productName}>{item.productName}</Link>
                     <div className={styles.itemPricing}>
                       <span className={styles.itemPrice}>৳{effectivePrice.toLocaleString()}</span>
                       {item.discountPrice && <span className={styles.itemOriginal}>৳{item.price.toLocaleString()}</span>}

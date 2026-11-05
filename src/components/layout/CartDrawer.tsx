@@ -50,7 +50,7 @@ export default function CartDrawer() {
                     </div>
                     <div className={styles.packageTopInfo}>
                       <span className={styles.packageBadge}><Package size={11} /> Package</span>
-                      <span className={styles.packageLineName}>{pkg.name}</span>
+                      <span className={styles.packageLineName} title={pkg.name}>{pkg.name}</span>
                     </div>
                     <button onClick={() => removePackage(pkg.packageId)} className={styles.removeBtn}><Trash2 size={15} /></button>
                   </div>
@@ -90,7 +90,7 @@ export default function CartDrawer() {
                     )}
                   </div>
                   <div className={styles.itemInfo}>
-                    <p className={styles.itemName}>{item.productName}</p>
+                    <p className={styles.itemName} title={item.productName}>{item.productName}</p>
                     <p className={styles.itemPrice}>{formatPrice((item.discountPrice ?? item.price))}</p>
                     <QuantityStepper value={item.quantity} max={item.stock} onChange={value => updateQuantity(item.productId, value)} label={`${item.productName} quantity`} />
                   </div>
