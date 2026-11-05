@@ -2,11 +2,13 @@
 import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Zap, ShieldCheck, Truck, Package } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowLeft, Zap, ShieldCheck, Truck, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCartStore } from '@/store/useCartStore';
 import { getImageUrl } from '@/lib/imageUrl';
 import { itemFromCartItem, trackViewCart } from '@/lib/gtm';
+import { aggregatePackageItems } from '@/lib/packageItems';
+import QuantityStepper from '@/components/ui/QuantityStepper';
 import styles from './cart.module.css';
 
 export default function CartPage() {
@@ -75,18 +77,14 @@ export default function CartPage() {
                       )}
                     </div>
                   </div>
-                  <div className={styles.quantityControl}>
-                    <button onClick={() => updatePackageQuantity(pkg.packageId, pkg.quantity - 1)}><Minus size={14} /></button>
-                    <span>{pkg.quantity}</span>
-                    <button onClick={() => updatePackageQuantity(pkg.packageId, pkg.quantity + 1)}><Plus size={14} /></button>
-                  </div>
+                  <QuantityStepper value={pkg.quantity} onChange={value => updatePackageQuantity(pkg.packageId, value)} label={`${pkg.name} quantity`} />
                   <button className={styles.removeBtn} onClick={() => removePackage(pkg.packageId)}>
                     <Trash2 size={16} />
                   </button>
                 </div>
 
                 <div className={styles.packageItemsList}>
-                  {pkg.items.map((item, i) => (
+                  {aggregatePackageItems(pkg.items).map((item, i) => (
                     <div key={`pkg-${pkg.packageId}-item-${i}`} className={styles.packageComponent}>
                       <div className={styles.packageComponentImg}>
                         {item.imageUrl ? (
@@ -129,11 +127,7 @@ export default function CartPage() {
                       {item.discountPrice && <span className={styles.itemOriginal}>৳{item.price.toLocaleString()}</span>}
                     </div>
                   </div>
-                  <div className={styles.quantityControl}>
-                    <button onClick={() => updateQuantity(item.productId, item.quantity - 1)}><Minus size={14} /></button>
-                    <span>{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1)}><Plus size={14} /></button>
-                  </div>
+                  <QuantityStepper value={item.quantity} max={item.stock} onChange={value => updateQuantity(item.productId, value)} label={`${item.productName} quantity`} />
                   <span className={styles.itemTotal}>৳{(effectivePrice * item.quantity).toLocaleString()}</span>
                   <button className={styles.removeBtn} onClick={() => removeItem(item.productId)}>
                     <Trash2 size={16} />

@@ -182,7 +182,34 @@
   flex-shrink: 0;
 }
 .packageLineName { font-size: 0.85rem; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.packageComponents { font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.4; margin-bottom: 8px; }
+.packageComponents {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.packageComponent {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.packageComponentThumb {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.packageComponentName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.packageComponentCount { color: var(--color-text-subtle); flex-shrink: 0; }
 .packageBottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .packagePriceLine { display: flex; align-items: baseline; gap: 6px; }
 .packageRegularStrike { font-size: 0.72rem; color: var(--color-text-subtle); text-decoration: line-through; }

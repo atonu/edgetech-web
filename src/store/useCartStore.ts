@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ProductListDto, PackageDto } from '@/lib/api';
 import { itemFromCartItem, itemFromProduct, trackAddToCart, trackRemoveFromCart } from '@/lib/gtm';
+import { aggregatePackageItems } from '@/lib/packageItems';
 
 export interface CartItem {
   id: number;
@@ -109,7 +110,7 @@ export const useCartStore = create<CartState>()(
               regularPrice: pkg.regularPrice,
               packagePrice: pkg.packagePrice,
               quantity,
-              items: pkg.items.map(i => ({
+              items: aggregatePackageItems(pkg.items).map(i => ({
                 productId: i.productId,
                 productName: i.productName,
                 imageUrl: i.imageUrl,

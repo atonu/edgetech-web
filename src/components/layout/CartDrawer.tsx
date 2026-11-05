@@ -1,8 +1,11 @@
 'use client';
-import { X, Plus, Minus, Trash2, ShoppingBag, Package } from 'lucide-react';
+import { X, Trash2, ShoppingBag, Package } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore } from '@/store/useCartStore';
+import { getImageUrl } from '@/lib/imageUrl';
+import { aggregatePackageItems } from '@/lib/packageItems';
+import QuantityStepper from '@/components/ui/QuantityStepper';
 import styles from './CartDrawer.module.css';
 
 export default function CartDrawer() {
@@ -52,14 +55,22 @@ export default function CartDrawer() {
                     <button onClick={() => removePackage(pkg.packageId)} className={styles.removeBtn}><Trash2 size={15} /></button>
                   </div>
                   <div className={styles.packageComponents}>
-                    {pkg.items.map(i => i.productName).join(' · ')}
+                    {aggregatePackageItems(pkg.items).map(item => (
+                      <div key={`${pkg.packageId}-${item.productId}`} className={styles.packageComponent}>
+                        <div className={styles.packageComponentThumb}>
+                          {item.imageUrl ? (
+                            <Image src={getImageUrl(item.imageUrl)!} alt="" fill sizes="26px" style={{ objectFit: 'cover' }} />
+                          ) : (
+                            <Package size={12} />
+                          )}
+                        </div>
+                        <span className={styles.packageComponentName}>{item.productName}</span>
+                        {item.quantity > 1 && <span className={styles.packageComponentCount}>×{item.quantity}</span>}
+                      </div>
+                    ))}
                   </div>
                   <div className={styles.packageBottom}>
-                    <div className={styles.qtyControls}>
-                      <button onClick={() => updatePackageQuantity(pkg.packageId, pkg.quantity - 1)} className={styles.qtyBtn}><Minus size={13} /></button>
-                      <span className={styles.qty}>{pkg.quantity}</span>
-                      <button onClick={() => updatePackageQuantity(pkg.packageId, pkg.quantity + 1)} className={styles.qtyBtn}><Plus size={13} /></button>
-                    </div>
+                    <QuantityStepper value={pkg.quantity} onChange={value => updatePackageQuantity(pkg.packageId, value)} label={`${pkg.name} quantity`} />
                     <div className={styles.packagePriceLine}>
                       {pkg.regularPrice > pkg.packagePrice && (
                         <span className={styles.packageRegularStrike}>{formatPrice(pkg.regularPrice * pkg.quantity)}</span>
@@ -81,11 +92,7 @@ export default function CartDrawer() {
                   <div className={styles.itemInfo}>
                     <p className={styles.itemName}>{item.productName}</p>
                     <p className={styles.itemPrice}>{formatPrice((item.discountPrice ?? item.price))}</p>
-                    <div className={styles.qtyControls}>
-                      <button onClick={() => updateQuantity(item.productId, item.quantity - 1)} className={styles.qtyBtn}><Minus size={13} /></button>
-                      <span className={styles.qty}>{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} disabled={item.quantity >= item.stock} className={styles.qtyBtn}><Plus size={13} /></button>
-                    </div>
+                    <QuantityStepper value={item.quantity} max={item.stock} onChange={value => updateQuantity(item.productId, value)} label={`${item.productName} quantity`} />
                   </div>
                   <div className={styles.itemRight}>
                     <p className={styles.subtotal}>{formatPrice((item.discountPrice ?? item.price) * item.quantity)}</p>

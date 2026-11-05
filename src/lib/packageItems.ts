@@ -1,7 +1,5 @@
-import type { PackageItemDto } from '@/lib/api';
-
-export function aggregatePackageItems(items: PackageItemDto[]): PackageItemDto[] {
-  const grouped = new Map<number, PackageItemDto>();
+export function aggregatePackageItems<T extends { productId: number; quantity: number }>(items: T[]): T[] {
+  const grouped = new Map<number, T>();
   for (const item of items) {
     const existing = grouped.get(item.productId);
     if (existing) {
