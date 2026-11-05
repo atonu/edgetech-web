@@ -348,10 +348,10 @@ export default function PackageManager() {
                 </Select>
               </div>
               <div>
-                <Label>Show in Best Sellers</Label>
+                <Label>Featured</Label>
                 <Select value={String(form.isFeatured)} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.value === 'true' }))}>
                   <option value="false">No</option>
-                  <option value="true">Yes — feature on home page</option>
+                  <option value="true">Yes — show on homepage</option>
                 </Select>
               </div>
               <div>
@@ -530,7 +530,7 @@ export default function PackageManager() {
                     <TD>
                       <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
                         <Badge variant={pkg.isActive ? 'success' : 'secondary'}>{pkg.isActive ? 'Active' : 'Hidden'}</Badge>
-                        {pkg.isFeatured && <Badge variant="default">Best Seller</Badge>}
+                        {pkg.isFeatured && <Badge variant="default">Featured</Badge>}
                       </div>
                     </TD>
                     <TD>

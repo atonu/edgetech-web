@@ -172,7 +172,9 @@ export default function HomePage() {
     ]).then(([featuredResult, groupsResult, packagesResult, customersResult]) => {
       if (featuredResult.status === 'fulfilled') setProducts(featuredResult.value.data.items);
       if (groupsResult.status === 'fulfilled') setHomeGroups(groupsResult.value.data);
-      if (packagesResult.status === 'fulfilled') setPackages(packagesResult.value.data ?? []);
+      if (packagesResult.status === 'fulfilled') {
+        setPackages((packagesResult.value.data ?? []).filter(pkg => pkg.isActive && pkg.isFeatured));
+      }
       if (customersResult.status === 'fulfilled') setHappyCustomers(customersResult.value.data);
       setProductsLoading(false);
     });
