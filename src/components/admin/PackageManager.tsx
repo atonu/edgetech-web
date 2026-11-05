@@ -1,8 +1,9 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { Package as PackageIcon, Upload, X } from 'lucide-react';
+import { MoreVertical, Package as PackageIcon, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   adminPackagesApi,
@@ -13,6 +14,7 @@ import {
   ProductListDto,
 } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
+import { aggregatePackageItems } from '@/lib/packageItems';
 import {
   Badge,
   Button,
@@ -68,6 +70,10 @@ export default function PackageManager() {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const formTopRef = useRef<HTMLDivElement>(null);
+  const actionMenuTriggerRef = useRef<HTMLElement | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+  const [actionMenuId, setActionMenuId] = useState<number | null>(null);
+  const [actionMenuPosition, setActionMenuPosition] = useState({ top: 0, left: 0 });
   // Tracks whether the admin manually edited the regular price, so item changes stop auto-filling it.
   const regularDirty = useRef(false);
 
@@ -105,6 +111,47 @@ export default function PackageManager() {
       setForm(f => (f.regularPrice === itemsTotal ? f : { ...f, regularPrice: itemsTotal }));
     }
   }, [itemsTotal]);
+
+  const getActionMenuPosition = (trigger: HTMLElement) => {
+    const rect = trigger.getBoundingClientRect();
+    return {
+      top: rect.bottom + 6,
+      left: Math.max(8, Math.min(rect.left + rect.width / 2 - 75, window.innerWidth - 158)),
+    };
+  };
+
+  const openActionMenu = (packageId: number, trigger: HTMLElement) => {
+    actionMenuTriggerRef.current = trigger;
+    setActionMenuPosition(getActionMenuPosition(trigger));
+    setActionMenuId(packageId);
+  };
+
+  useEffect(() => {
+    if (actionMenuId === null) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (actionMenuRef.current?.contains(target) || actionMenuTriggerRef.current?.contains(target)) return;
+      setActionMenuId(null);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setActionMenuId(null);
+    };
+    const repositionMenu = () => {
+      if (actionMenuTriggerRef.current) setActionMenuPosition(getActionMenuPosition(actionMenuTriggerRef.current));
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('resize', repositionMenu);
+    window.addEventListener('scroll', repositionMenu, true);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('resize', repositionMenu);
+      window.removeEventListener('scroll', repositionMenu, true);
+    };
+  }, [actionMenuId]);
 
   const onSelect = (slotKey: string, product: ProductListDto) =>
     setSelected(prev => ({ ...prev, [slotKey]: product }));
@@ -238,6 +285,33 @@ export default function PackageManager() {
       await loadPackages();
     } catch {
       toast.error('Failed to remove package.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const duplicatePackage = async (pkg: PackageDto) => {
+    setActionMenuId(null);
+    setBusy(`duplicate-${pkg.id}`);
+    try {
+      await adminPackagesApi.create({
+        name: `${pkg.name} Copy`,
+        description: pkg.description ?? '',
+        imageUrl: pkg.imageUrl || undefined,
+        isActive: pkg.isActive,
+        isFeatured: pkg.isFeatured,
+        regularPrice: pkg.regularPrice,
+        packagePrice: pkg.packagePrice,
+        items: aggregatePackageItems(pkg.items).map(item => ({
+          slotKey: item.slotKey,
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      });
+      toast.success('Package duplicated.');
+      await loadPackages();
+    } catch {
+      toast.error('Failed to duplicate package.');
     } finally {
       setBusy(null);
     }
@@ -431,7 +505,19 @@ export default function PackageManager() {
                       </div>
                     </TD>
                     <TD>
-                      <div className={styles.itemsCell}>{pkg.items.map(i => i.productName).join(', ')}</div>
+                      <div className={styles.packageComponents}>
+                        {aggregatePackageItems(pkg.items).map(item => (
+                          <div key={`${pkg.id}-${item.productId}`} className={styles.packageComponent}>
+                            {item.imageUrl ? (
+                              <Image src={getImageUrl(item.imageUrl)!} alt="" width={26} height={26} className={styles.componentThumb} />
+                            ) : (
+                              <div className={styles.componentThumbPlaceholder}><PackageIcon size={12} /></div>
+                            )}
+                            <span className={styles.componentName}>{item.productName}</span>
+                            {item.quantity > 1 && <span className={styles.componentCount}>×{item.quantity}</span>}
+                          </div>
+                        ))}
+                      </div>
                     </TD>
                     <TD>
                       <div className={styles.pricePair}>
@@ -448,9 +534,28 @@ export default function PackageManager() {
                       </div>
                     </TD>
                     <TD>
-                      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
-                        <Button size="sm" variant="outline" onClick={() => editPackage(pkg)}>Edit</Button>
-                        <Button size="sm" variant="destructive" loading={busy === `delete-${pkg.id}`} onClick={() => setConfirmTarget(pkg)}>Delete</Button>
+                      <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          aria-haspopup="menu"
+                          aria-expanded={actionMenuId === pkg.id}
+                          aria-label={`Package actions for ${pkg.name}`}
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                          onClick={event => {
+                            if (actionMenuId === pkg.id) setActionMenuId(null);
+                            else openActionMenu(pkg.id, event.currentTarget);
+                          }}
+                          onKeyDown={event => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              if (actionMenuId === pkg.id) setActionMenuId(null);
+                              else openActionMenu(pkg.id, event.currentTarget);
+                            }
+                          }}
+                        >
+                          <MoreVertical size={18} />
+                        </span>
                       </div>
                     </TD>
                   </tr>
@@ -458,6 +563,45 @@ export default function PackageManager() {
               </tbody>
             </Table>
           </TableWrap>
+          {actionMenuId !== null && typeof document !== 'undefined' && createPortal(
+            <div
+              ref={actionMenuRef}
+              role="menu"
+              style={{
+                position: 'fixed',
+                top: actionMenuPosition.top,
+                left: actionMenuPosition.left,
+                width: 150,
+                background: '#fff',
+                border: '1px solid #d0d7de',
+                borderRadius: 10,
+                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.16)',
+                zIndex: 1000,
+                overflow: 'hidden',
+              }}
+            >
+              {(() => {
+                const pkg = filteredPackages.find(item => item.id === actionMenuId);
+                if (!pkg) return null;
+                return (
+                  <>
+                    <button type="button" role="menuitem" onClick={() => { setActionMenuId(null); editPackage(pkg); }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: 'pointer' }}>Edit</button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={busy === `duplicate-${pkg.id}`}
+                      onClick={() => duplicatePackage(pkg)}
+                      style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', cursor: busy === `duplicate-${pkg.id}` ? 'wait' : 'pointer' }}
+                    >
+                      {busy === `duplicate-${pkg.id}` ? 'Duplicating…' : 'Duplicate'}
+                    </button>
+                    <button type="button" role="menuitem" onClick={() => { setActionMenuId(null); setConfirmTarget(pkg); }} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', background: '#fff', color: '#b42318', cursor: 'pointer' }}>Delete</button>
+                  </>
+                );
+              })()}
+            </div>,
+            document.body,
+          )}
         </CardContent>
       </Card>
 

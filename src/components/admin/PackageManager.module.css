@@ -132,6 +132,57 @@
   max-width: 260px;
 }
 
+.packageComponents {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+  max-width: 300px;
+}
+
+.packageComponent {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.componentThumb,
+.componentThumbPlaceholder {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.componentThumb {
+  object-fit: cover;
+}
+
+.componentThumbPlaceholder {
+  background: var(--color-surface-2);
+  color: var(--color-text-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.componentName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.componentCount {
+  flex-shrink: 0;
+  color: var(--color-text-subtle);
+  font-weight: 600;
+}
+
 /* Image upload */
 .imageUploadRow {
   display: flex;
